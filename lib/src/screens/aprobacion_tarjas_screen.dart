@@ -7,17 +7,17 @@ import '../providers/tarja_provider.dart';
 import '../widgets/main_scaffold.dart';
 import '../theme/app_theme.dart';
 import '../services/tarja_service.dart';
-import 'revision_tarjas_editar_screen.dart';
+import 'aprobacion_tarjas_editar_screen.dart';
 import '../screens/rendimientos_page_screen.dart';
 
-class RevisionTarjasScreen extends StatefulWidget {
-  const RevisionTarjasScreen({super.key});
+class AprobacionTarjasScreen extends StatefulWidget {
+  const AprobacionTarjasScreen({super.key});
 
   @override
-  State<RevisionTarjasScreen> createState() => _RevisionTarjasScreenState();
+  State<AprobacionTarjasScreen> createState() => _AprobacionTarjasScreenState();
 }
 
-class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> 
+class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> 
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _selectedTab = 0;
@@ -91,25 +91,25 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
     // Primero filtrar por tab
     List<Tarja> tarjasFiltradasPorTab;
     switch (_selectedTab) {
-      case 1: // Creadas
-        tarjasFiltradasPorTab = tarjas.where((t) => t.idEstadoactividad == '1').toList();
-        break;
-      case 2: // Revisadas
+      case 1: // Revisadas
         tarjasFiltradasPorTab = tarjas.where((t) => t.idEstadoactividad == '2').toList();
+        break;
+      case 2: // Aprobadas
+        tarjasFiltradasPorTab = tarjas.where((t) => t.idEstadoactividad == '3').toList();
         break;
       case 3: // Propio
         tarjasFiltradasPorTab = tarjas.where((t) => 
-          t.idTipotrabajador == '1' && (t.idEstadoactividad == '1' || t.idEstadoactividad == '2')
+          t.idTipotrabajador == '1' && (t.idEstadoactividad == '2' || t.idEstadoactividad == '3')
         ).toList();
         break;
       case 4: // Contratista
         tarjasFiltradasPorTab = tarjas.where((t) => 
-          t.idTipotrabajador == '2' && (t.idEstadoactividad == '1' || t.idEstadoactividad == '2')
+          t.idTipotrabajador == '2' && (t.idEstadoactividad == '2' || t.idEstadoactividad == '3')
         ).toList();
         break;
-      default: // Todas (solo estado 1 y 2)
+      default: // Todas (solo estado 2 y 3)
         tarjasFiltradasPorTab = tarjas.where((t) => 
-          t.idEstadoactividad == '1' || t.idEstadoactividad == '2'
+          t.idEstadoactividad == '2' || t.idEstadoactividad == '3'
         ).toList();
     }
 
@@ -170,7 +170,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
       case '1':
         return {"nombre": "CREADA", "color": Colors.orange};
       case '2':
-        return {"nombre": "REVISADA", "color": Colors.green};
+        return {"nombre": "REVISADA", "color": Colors.orange};
       case '3':
         return {"nombre": "APROBADA", "color": Colors.green};
       case '4':
@@ -206,13 +206,14 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
     if (tarja.nombreUnidad != null && tarja.nombreUnidad!.isNotEmpty) {
       print('  Retornando nombre: ${tarja.nombreUnidad}');
       return tarja.nombreUnidad!;
-    } else if (tarja.idUnidad.isNotEmpty) {
-      print('  Retornando ID: ${tarja.idUnidad}');
-      return 'ID: ${tarja.idUnidad}';
-    } else {
-      print('  Retornando: Sin unidad');
-      return 'Sin unidad';
     }
+    
+    // Fallback: si no hay nombre específico, mostramos el ID
+    if (tarja.idUnidad.isNotEmpty) {
+      return 'Unidad ID: ${tarja.idUnidad}';
+    }
+    
+    return 'Sin Unidad';
   }
 
   Widget _buildActividadCard(Tarja tarja) {
@@ -230,7 +231,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => RevisionTarjasEditarScreen(tarja: tarja),
+            builder: (context) => AprobacionTarjasEditarScreen(tarja: tarja),
           ),
         ).then((_) {
           // Refrescar datos cuando regrese de la pantalla de edición
@@ -274,7 +275,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                           builder: (context) => AlertDialog(
                             title: const Text('No se puede cambiar el estado'),
                             content: const Text(
-                              'La actividad debe tener rendimientos asociados para poder revisarla.',
+                              'La actividad debe tener rendimientos asociados para poder aprobarla.',
                               style: TextStyle(fontSize: 16),
                             ),
                             icon: const Icon(
@@ -282,19 +283,19 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                               color: Colors.orange,
                               size: 48,
                             ),
-        actions: [
+                            actions: [
                               ElevatedButton(
                                 onPressed: () => Navigator.of(context).pop(),
                                 child: const Text('Entendido'),
-          ),
-        ],
-      ),
+                              ),
+                            ],
+                          ),
                         );
                         return;
                       }
 
-                      // Lógica existente para cambiar estado cuando sí hay rendimientos
-                      final nuevoEstado = tarja.idEstadoactividad == '1' ? '2' : '1';
+                      // Lógica para cambiar estado entre REVISADA y APROBADA
+                      final nuevoEstado = tarja.idEstadoactividad == '2' ? '3' : '2';
                       final nuevoNombre = _getEstadoActividad(nuevoEstado)['nombre'];
                       final confirm = await showDialog<bool>(
                         context: context,
@@ -418,89 +419,89 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                     child: Text(
                       'Personal:${tarja.trabajador} ${_getTipoPersonalText(tarja)}',
                       style: TextStyle(color: textColor.withOpacity(0.7)),
-                      ),
                     ),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
+                children: [
                   Icon(Icons.assessment, color: Colors.purple, size: 20),
                   const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
+                  Expanded(
+                    child: Text(
                       'Tipo Rendimiento: ${tarja.tipo}',
                       style: TextStyle(color: textColor.withOpacity(0.7)),
-                                  ),
-                                ),
+                    ),
+                  ),
                   // Indicador de rendimiento
-                                    GestureDetector(
+                  GestureDetector(
                     onTap: () {
-                                              if (tarja.tieneRendimiento) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => RendimientosPageScreen(
-                                actividadId: tarja.id,
-                                idTipotrabajador: tarja.idTipotrabajador,
-                                idTiporendimiento: tarja.idTiporendimiento,
-                                idContratista: tarja.idContratista,
-                                  ),
-                                ),
-                          );
-                                              } else {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Sin rendimientos'),
-                              content: const Text(
-                                'La actividad no posee rendimientos.',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                              icon: const Icon(
-                                Icons.info_outline,
-                                color: Colors.orange,
-                                size: 48,
-                              ),
-                              actions: [
-                                ElevatedButton(
-                                  onPressed: () => Navigator.of(context).pop(),
-                                  child: const Text('Entendido'),
-                                ),
-                              ],
+                      if (tarja.tieneRendimiento) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => RendimientosPageScreen(
+                              actividadId: tarja.id,
+                              idTipotrabajador: tarja.idTipotrabajador,
+                              idTiporendimiento: tarja.idTiporendimiento,
+                              idContratista: tarja.idContratista,
                             ),
-                          );
-                        }
+                          ),
+                        );
+                      } else {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Sin rendimientos'),
+                            content: const Text(
+                              'La actividad no posee rendimientos.',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            icon: const Icon(
+                              Icons.info_outline,
+                              color: Colors.orange,
+                              size: 48,
+                            ),
+                            actions: [
+                              ElevatedButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text('Entendido'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
                     },
                     child: MouseRegion(
                       cursor: SystemMouseCursors.click,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
+                        decoration: BoxDecoration(
                           color: tarja.tieneRendimiento ? Colors.green : Colors.grey[300],
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            tarja.tieneRendimiento ? Icons.check_circle : Icons.pending_outlined,
-                                            size: 16,
-                                            color: tarja.tieneRendimiento ? Colors.white : Colors.grey[700],
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            tarja.tieneRendimiento ? 'Con rendimiento' : 'Sin rendimiento',
-                                            style: TextStyle(
-                                              color: tarja.tieneRendimiento ? Colors.white : Colors.grey[700],
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              tarja.tieneRendimiento ? Icons.check_circle : Icons.pending_outlined,
+                              size: 16,
+                              color: tarja.tieneRendimiento ? Colors.white : Colors.grey[700],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              tarja.tieneRendimiento ? 'Con rendimiento' : 'Sin rendimiento',
+                              style: TextStyle(
+                                color: tarja.tieneRendimiento ? Colors.white : Colors.grey[700],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -526,15 +527,15 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                   Icon(Icons.schedule, color: Colors.indigo, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
-                                      child: Text(
+                    child: Text(
                       'Horario: ${tarja.horaInicio} - ${tarja.horaFin}',
                       style: TextStyle(color: textColor.withOpacity(0.7)),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -580,7 +581,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
             borderSide: BorderSide.none,
-                            ),
+          ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
             borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
@@ -593,7 +594,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
   @override
   Widget build(BuildContext context) {
     return MainScaffold(
-      title: 'Revisión de Tarjas',
+      title: 'Aprobación de Tarjas',
       onRefresh: _refrescarDatos,
       bottom: _TabBarWithCounters(tabController: _tabController),
       body: Column(
@@ -625,8 +626,8 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                           tarjaProvider.error!,
                           style: const TextStyle(color: Colors.red),
                           textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
+                        ),
+                        const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () => tarjaProvider.cargarTarjas(),
                           child: const Text('Reintentar'),
@@ -639,7 +640,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
+                      children: [
                         Icon(
                           _searchQuery.isNotEmpty ? Icons.search_off : Icons.filter_list,
                           size: 64,
@@ -740,17 +741,17 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                                 style: TextStyle(
                                   color: AppTheme.primaryColor,
                                   fontWeight: FontWeight.w500,
-                                  ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
+                          ),
                           children: tarjas.map((tarja) => _buildActividadCard(tarja)).toList(),
                         ),
                       ),
-              );
+                    );
                   }),
-          );
-        },
+                );
+              },
             ),
           ),
         ],
@@ -769,28 +770,29 @@ class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget
 
   // Métodos para calcular contadores de cada tab
   int _getContadorTodas(List<Tarja> tarjas) {
-    return tarjas.where((t) => 
-      t.idEstadoactividad == '1' || t.idEstadoactividad == '2'
-    ).length;
-  }
-
-  int _getContadorCreadas(List<Tarja> tarjas) {
-    return tarjas.where((t) => t.idEstadoactividad == '1').length;
+    // Solo contar tarjas con estado 2 o 3 (revisadas o aprobadas)
+    return tarjas.where((t) => t.idEstadoactividad == '2' || t.idEstadoactividad == '3').length;
   }
 
   int _getContadorRevisadas(List<Tarja> tarjas) {
     return tarjas.where((t) => t.idEstadoactividad == '2').length;
   }
 
+  int _getContadorAprobadas(List<Tarja> tarjas) {
+    return tarjas.where((t) => t.idEstadoactividad == '3').length;
+  }
+
   int _getContadorPropio(List<Tarja> tarjas) {
+    // Solo contar tarjas propias con estado 2 o 3
     return tarjas.where((t) => 
-      t.idTipotrabajador == '1' && (t.idEstadoactividad == '1' || t.idEstadoactividad == '2')
+      t.idTipotrabajador == '1' && (t.idEstadoactividad == '2' || t.idEstadoactividad == '3')
     ).length;
   }
 
   int _getContadorContratista(List<Tarja> tarjas) {
+    // Solo contar tarjas de contratista con estado 2 o 3
     return tarjas.where((t) => 
-      t.idTipotrabajador == '2' && (t.idEstadoactividad == '1' || t.idEstadoactividad == '2')
+      t.idTipotrabajador == '2' && (t.idEstadoactividad == '2' || t.idEstadoactividad == '3')
     ).length;
   }
 
@@ -833,7 +835,7 @@ class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Creadas'),
+                  const Text('Revisadas'),
                   const SizedBox(width: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -842,7 +844,7 @@ class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      '${_getContadorCreadas(tarjaProvider.tarjas)}',
+                      '${_getContadorRevisadas(tarjaProvider.tarjas)}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -857,7 +859,7 @@ class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Revisadas'),
+                  const Text('Aprobadas'),
                   const SizedBox(width: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -866,7 +868,7 @@ class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      '${_getContadorRevisadas(tarjaProvider.tarjas)}',
+                      '${_getContadorAprobadas(tarjaProvider.tarjas)}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -928,46 +930,6 @@ class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget
           ],
         );
       },
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color? iconColor;
-
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.iconColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: iconColor ?? Colors.grey[600]),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
     );
   }
 } 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/permisos_provider.dart';
 import '../theme/app_theme.dart';
 import 'home_screen.dart';
 
@@ -30,8 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = true);
 
       try {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final success = await authProvider.login(
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.login(
           _usuarioController.text,
           _claveController.text,
         );
@@ -39,6 +40,16 @@ class _LoginScreenState extends State<LoginScreen> {
         if (!mounted) return;
 
         if (success) {
+          // Cargar permisos del usuario
+          try {
+            final permisosProvider = Provider.of<PermisosProvider>(context, listen: false);
+            print('🔍 Iniciando carga de permisos...');
+            await permisosProvider.cargarPermisos();
+            print('🔍 Permisos cargados exitosamente');
+          } catch (e) {
+            print('❌ Error al cargar permisos: $e');
+          }
+
           // Mostrar mensaje de bienvenida
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -150,9 +161,9 @@ class _LoginScreenState extends State<LoginScreen> {
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 30),
-              child: Form(
-                key: _formKey,
-                child: Column(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
                   children: [
                     // 🟢 Logo con animación de escala
                     TweenAnimationBuilder(
@@ -196,12 +207,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       },
                       child: Column(
-                        children: [
-                          const Text(
+                    children: [
+                      const Text(
                             "Bienvenido a LH Tarja",
-                            style: TextStyle(
+                        style: TextStyle(
                               fontSize: 26,
-                              fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                               color: Colors.white,
                               shadows: [
                                 Shadow(
@@ -229,7 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                    ),
+                      ),
                     const SizedBox(height: 40),
                     // 📨 Campo usuario con animación de slide
                     TweenAnimationBuilder(
@@ -258,7 +269,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: TextFormField(
                           controller: _usuarioController,
                           style: const TextStyle(color: Colors.black),
-                          decoration: const InputDecoration(
+                        decoration: const InputDecoration(
                             prefixIcon: Icon(Icons.person, color: AppTheme.primaryColor),
                             filled: true,
                             fillColor: Colors.white,
@@ -269,13 +280,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderSide: BorderSide.none,
                             ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
                               return 'Por favor ingrese su usuario';
-                            }
-                            return null;
-                          },
-                        ),
+                          }
+                          return null;
+                        },
+                      ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -309,19 +320,19 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: const TextStyle(color: Colors.black),
                           textInputAction: TextInputAction.done,
                           onFieldSubmitted: (_) => _login(),
-                          decoration: InputDecoration(
+                        decoration: InputDecoration(
                             prefixIcon: const Icon(Icons.lock, color: AppTheme.primaryColor),
-                            suffixIcon: IconButton(
-                              icon: Icon(
+                          suffixIcon: IconButton(
+                            icon: Icon(
                                 _obscureText ? Icons.visibility : Icons.visibility_off,
                                 color: Colors.grey,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscureText = !_obscureText;
-                                });
-                              },
                             ),
+                            onPressed: () {
+                              setState(() {
+                                  _obscureText = !_obscureText;
+                              });
+                            },
+                          ),
                             filled: true,
                             fillColor: Colors.white,
                             hintText: 'Clave',
@@ -331,13 +342,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderSide: BorderSide.none,
                             ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
                               return 'Por favor ingrese su clave';
-                            }
-                            return null;
-                          },
-                        ),
+                          }
+                          return null;
+                        },
+                      ),
                       ),
                     ),
                     const SizedBox(height: 30),
@@ -356,13 +367,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 50,
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _login,
-                          style: ElevatedButton.styleFrom(
+                        style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                             elevation: 5,
-                          ),
+                        ),
                           child: _isLoading
                               ? const CircularProgressIndicator(
                                   color: Colors.white,
@@ -374,9 +385,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
-                                ),
-                        ),
                       ),
+                        ),
+                  ),
                     ),
                     const SizedBox(height: 30),
                     // Footer con animación de opacidad

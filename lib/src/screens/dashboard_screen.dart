@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/main_scaffold.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -132,50 +133,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         icon: const Icon(Icons.search),
         onPressed: () => setState(() => _isSearching = true),
       ),
-      IconButton(
-        icon: const Icon(Icons.refresh),
-        onPressed: () async {
-          // Mostrar indicador de carga
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Text('Actualizando dashboard...'),
-                ],
-              ),
-              duration: Duration(seconds: 1),
-            ),
-          );
-          
-          // Simular actualización de datos del dashboard
-          await Future.delayed(const Duration(seconds: 1));
-          
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text('Dashboard actualizado'),
-                  ],
-                ),
-                duration: Duration(seconds: 2),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        },
-      ),
       FutureBuilder<Map<String, dynamic>?> (
         future: authProvider.getCurrentUser(),
         builder: (context, snapshot) {
@@ -237,7 +194,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       value: sucursal['id'].toString(),
                                       child: Text(
                                         nombre,
-                                        style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 14),
                                       ),
                                     );
                                   }).toList(),
@@ -268,17 +225,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final authProvider = Provider.of<AuthProvider>(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        leading: _isSearching ? const BackButton() : null,
-        title: _isSearching
-            ? _buildSearchField()
-            : const Text('Dashboard Administrativas'),
-        actions: _buildAppBarActions(themeProvider, authProvider),
-      ),
+    return MainScaffold(
+      title: 'Dashboard Administrativas',
+      onRefresh: () async {
+        await _cargarSucursales();
+      },
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16),

@@ -37,14 +37,14 @@ class AuthService {
         await storage.write(key: 'token', value: data['access_token']);
         
         // Guardar los datos del usuario individualmente
-        await storage.write(key: 'nombre', value: data['usuario']);
+        await storage.write(key: 'nombre', value: data['nombre_usuario'] ?? data['usuario']);
         await storage.write(key: 'id_sucursal', value: data['id_sucursal']?.toString());
         await storage.write(key: 'nombre_sucursal', value: data['sucursal_nombre']);
         await storage.write(key: 'id_rol', value: data['id_rol']?.toString());
         
         // Guardar los datos completos del usuario
         await storage.write(key: 'user_data', value: json.encode({
-          'nombre': data['usuario'],
+          'nombre': data['nombre_usuario'] ?? data['usuario'],
           'id_sucursal': data['id_sucursal'],
           'nombre_sucursal': data['sucursal_nombre'],
           'id_rol': data['id_rol'],

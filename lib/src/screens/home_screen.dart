@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import '../providers/permisos_provider.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
 import 'dashboard_screen.dart';
 import 'revision_tarjas_screen.dart';
+import 'aprobacion_tarjas_screen.dart';
 import 'cambiar_clave_screen.dart';
-import 'cambiar_sucursal_screen.dart';
+import 'ejemplo_permisos_screen.dart';
 import '../widgets/sucursal_selector.dart';
+import '../widgets/main_scaffold.dart';
+import '../widgets/permiso_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,6 +24,20 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
+  int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Cargar permisos automáticamente si no están cargados
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final permisosProvider = context.read<PermisosProvider>();
+      if (!permisosProvider.permisosCargados) {
+        print('🔍 Cargando permisos automáticamente en HomeScreen...');
+        permisosProvider.cargarPermisos();
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -144,50 +162,6 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: const Icon(Icons.search),
         onPressed: () => setState(() => _isSearching = true),
       ),
-      // Botón de actualizar
-      IconButton(
-        icon: const Icon(Icons.refresh),
-        onPressed: () async {
-          // Mostrar indicador de carga
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Text('Actualizando...'),
-                ],
-              ),
-              duration: Duration(seconds: 1),
-              backgroundColor: AppTheme.primaryColor,
-            ),
-          );
-          // Verificar estado de autenticación
-          await authProvider.checkAuthStatus();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text('Aplicación actualizada'),
-                  ],
-                ),
-                duration: Duration(seconds: 2),
-                backgroundColor: AppTheme.successColor,
-              ),
-            );
-          }
-        },
-      ),
       // Selector de sucursal global
       const SucursalSelector(),
       // Botón de tema
@@ -208,13 +182,21 @@ class _HomeScreenState extends State<HomeScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: _isSearching ? const BackButton() : null,
-        title: _isSearching
+    return MainScaffold(
+      title: 'LH Gestión Tarjas',
+      onRefresh: () async {
+        await authProvider.checkAuthStatus();
+      },
+      body: Column(
+        children: [
+          Expanded(
+            child: _isSearching
             ? _buildSearchField()
-            : const Text('LH Gestión Tarjas'),
-        actions: _buildAppBarActions(themeProvider, authProvider),
+                : _selectedIndex == 0
+                    ? DashboardScreen()
+                    : RevisionTarjasScreen(),
+          ),
+        ],
       ),
       drawer: _isSearching ? null : Drawer(
         child: ListView(
@@ -296,8 +278,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 // TODO: Implementar navegación
               },
             ),
-            _MenuItem(
-              icon: Icons.fact_check,
+            PermisoWidget(
+              idPermiso: 2,
+              child: _MenuItem(
+                icon: Icons.search,
               title: 'Revisión de Tarjas',
               onTap: () {
                 Navigator.pop(context);
@@ -306,6 +290,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(builder: (_) => const RevisionTarjasScreen()),
                 );
               },
+              ),
+            ),
+            PermisoWidget(
+              idPermiso: 3,
+              child: _MenuItem(
+                icon: Icons.fact_check,
+                title: 'Aprobación de Tarjas',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AprobacionTarjasScreen()),
+                  );
+                },
+              ),
             ),
             _MenuItem(
               icon: Icons.business,
@@ -431,6 +430,41 @@ class _HomeScreenState extends State<HomeScreen> {
                 // TODO: Implementar navegación
               },
             ),
+
+            // Sistema de Permisos
+            const _MenuHeader(title: 'Sistema de Permisos'),
+            _MenuItem(
+              icon: Icons.security,
+              title: 'Ejemplo de Permisos',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const EjemploPermisosScreen()),
+                );
+              },
+            ),
+            _MenuItem(
+              icon: Icons.bug_report,
+              title: 'Debug Permisos',
+              onTap: () {
+                Navigator.pop(context);
+                final permisosProvider = Provider.of<PermisosProvider>(context, listen: false);
+                print('🔍 Debug - Permisos actuales:');
+                print('   - Total: ${permisosProvider.permisos.length}');
+                for (var permiso in permisosProvider.permisos) {
+                  print('   - ID: ${permiso['id']} (${permiso['id'].runtimeType}), Nombre: ${permiso['nombre']}');
+                }
+                print('🔍 Debug - Verificando permiso ID 2: ${permisosProvider.tienePermisoPorId(2)}');
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Permisos: ${permisosProvider.permisos.length}, ID 2: ${permisosProvider.tienePermisoPorId(2)}'),
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              },
+            ),
             _MenuItem(
               icon: Icons.upload_file,
               title: 'Carga Agriprime',
@@ -469,42 +503,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pop(context);
                 _confirmarCerrarSesion(context, authProvider);
               },
-            ),
-          ],
-        ),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.dashboard_customize,
-              size: 100,
-              color: Theme.of(context).primaryColor,
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              '¡Bienvenido a LH Gestión Tarjas!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Selecciona una opción del menú para comenzar',
-              style: TextStyle(
-                fontSize: 16,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey[400]
-                    : Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.dashboard),
-              label: const Text('Ir al Dashboard'),
-              onPressed: () => _navigateTo(context, const DashboardScreen()),
             ),
           ],
         ),
