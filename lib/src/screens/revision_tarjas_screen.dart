@@ -8,7 +8,6 @@ import '../widgets/main_scaffold.dart';
 import '../theme/app_theme.dart';
 import '../services/tarja_service.dart';
 import 'revision_tarjas_editar_screen.dart';
-import '../screens/rendimientos_page_screen.dart';
 
 class RevisionTarjasScreen extends StatefulWidget {
   const RevisionTarjasScreen({super.key});
@@ -25,6 +24,11 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
   Key _expansionKey = UniqueKey();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  
+  // Nuevo estado para manejar la expansión de rendimientos por tarja
+  Map<String, bool> _rendimientosExpansionState = {};
+  Map<String, List<Map<String, dynamic>>> _rendimientosCache = {};
+  Map<String, bool> _rendimientosLoadingState = {};
 
   @override
   void initState() {
@@ -215,6 +219,66 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
     }
   }
 
+  // Método para cargar rendimientos de una actividad específica
+  Future<void> _cargarRendimientos(Tarja tarja) async {
+    final tarjaId = tarja.id;
+    
+    // Si ya están cargados, no hacer nada
+    if (_rendimientosCache.containsKey(tarjaId)) {
+      return;
+    }
+
+    setState(() {
+      _rendimientosLoadingState[tarjaId] = true;
+    });
+
+    try {
+      final response = await TarjaService.obtenerRendimientos(
+        tarjaId,
+        idTipotrabajador: tarja.idTipotrabajador,
+        idTiporendimiento: tarja.idTiporendimiento,
+        idContratista: tarja.idContratista,
+      );
+
+      List<Map<String, dynamic>> rendimientosList = [];
+      Map<String, dynamic>? actividadInfo;
+      
+      if (response.isNotEmpty && response.first.containsKey('actividad') && response.first.containsKey('rendimientos')) {
+        actividadInfo = response.first['actividad'] as Map<String, dynamic>?;
+        final rendimientosRaw = response.first['rendimientos'] as List<dynamic>?;
+        if (rendimientosRaw != null) {
+          rendimientosList = rendimientosRaw.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+      } else {
+        rendimientosList = response;
+      }
+
+      setState(() {
+        _rendimientosCache[tarjaId] = rendimientosList;
+        _rendimientosLoadingState[tarjaId] = false;
+      });
+    } catch (e) {
+      setState(() {
+        _rendimientosCache[tarjaId] = [];
+        _rendimientosLoadingState[tarjaId] = false;
+      });
+      print('Error al cargar rendimientos: $e');
+    }
+  }
+
+  // Método para alternar la expansión de rendimientos
+  void _toggleRendimientosExpansion(Tarja tarja) {
+    final tarjaId = tarja.id;
+    setState(() {
+      _rendimientosExpansionState[tarjaId] = !(_rendimientosExpansionState[tarjaId] ?? false);
+    });
+    
+    // Si se está expandiendo y no hay rendimientos cargados, cargarlos
+    if (_rendimientosExpansionState[tarjaId] == true && !_rendimientosCache.containsKey(tarjaId)) {
+      _cargarRendimientos(tarja);
+    }
+  }
+
   Widget _buildActividadCard(Tarja tarja) {
     final estadoData = _getEstadoActividad(tarja.idEstadoactividad);
     final String estadoNombre = estadoData['nombre'];
@@ -222,30 +286,27 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.colorScheme.surface;
-    final borderColor = isDark ? Colors.grey[800]! : Colors.grey[200]!;
+    final borderColor = isDark ? Colors.grey[800]! : Colors.green[400]!;
     final textColor = theme.colorScheme.onSurface;
+    final tarjaId = tarja.id;
+    final isRendimientosExpanded = _rendimientosExpansionState[tarjaId] ?? false;
+    final rendimientos = _rendimientosCache[tarjaId] ?? [];
+    final isLoadingRendimientos = _rendimientosLoadingState[tarjaId] ?? false;
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => RevisionTarjasEditarScreen(tarja: tarja),
-          ),
-        ).then((_) {
-          // Refrescar datos cuando regrese de la pantalla de edición
-          final tarjaProvider = context.read<TarjaProvider>();
-          tarjaProvider.cargarTarjas();
-        });
-      },
-      child: Card(
+    return Card(
         color: cardColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
-          side: BorderSide(color: borderColor, width: 1),
+        side: BorderSide(color: isDark ? Colors.grey[600]! : Colors.green[400]!, width: 1.5),
         ),
         elevation: 0,
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Column(
+        children: [
+          // Contenido principal de la card
+          InkWell(
+            onTap: () => _toggleRendimientosExpansion(tarja),
+            borderRadius: BorderRadius.circular(15),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -265,97 +326,24 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                       ),
                     ),
                   ),
-                  InkWell(
-                    onTap: () async {
-                      if (!tarja.tieneRendimiento) {
-                        // Mostrar diálogo informativo cuando no hay rendimientos
-                        await showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('No se puede cambiar el estado'),
-                            content: const Text(
-                              'La actividad debe tener rendimientos asociados para poder revisarla.',
-                              style: TextStyle(fontSize: 16),
-                            ),
-                            icon: const Icon(
-                              Icons.info_outline,
-                              color: Colors.orange,
-                              size: 48,
-                            ),
-        actions: [
-                              ElevatedButton(
-                                onPressed: () => Navigator.of(context).pop(),
-                                child: const Text('Entendido'),
-          ),
-        ],
-      ),
-                        );
-                        return;
-                      }
-
-                      // Lógica existente para cambiar estado cuando sí hay rendimientos
-                      final nuevoEstado = tarja.idEstadoactividad == '1' ? '2' : '1';
-                      final nuevoNombre = _getEstadoActividad(nuevoEstado)['nombre'];
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('Confirmar cambio de estado'),
-                          content: Text('¿Deseas cambiar el estado a "$nuevoNombre"?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(false),
-                              child: const Text('Cancelar'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.of(context).pop(true),
-                              child: const Text('Confirmar'),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (confirm == true) {
-                        try {
-                          await TarjaService().cambiarEstadoActividad(
-                            tarja.id, nuevoEstado,
-                          );
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Estado actualizado a "$nuevoNombre"'), backgroundColor: Colors.green,),
-                            );
-                            // Refrescar la lista usando el provider
-                            final tarjaProvider = context.read<TarjaProvider>();
-                            await tarjaProvider.cargarTarjas();
-                            
-                            // Resetear el estado de expansión después de cargar los datos
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              final tarjasFiltradas = _filtrarTarjas(tarjaProvider.tarjas);
-                              final gruposPorFecha = _agruparPorFecha(tarjasFiltradas);
-                              _resetExpansionState(gruposPorFecha.length);
-                            });
-                          }
-                        } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error al actualizar: $e')),
-                            );
-                          }
-                        }
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
+                      // Mostrar el estado actual como texto informativo
+                      Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: estadoColor,
+                          color: tarja.idEstadoactividad == '1' ? Colors.orange : 
+                                 tarja.idEstadoactividad == '2' ? Colors.green : 
+                                 estadoColor.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: estadoColor, width: 1),
                       ),
                       child: Text(
                         estadoNombre,
-                        style: const TextStyle(
-                          color: Colors.white,
+                          style: TextStyle(
+                            color: tarja.idEstadoactividad == '1' ? Colors.white : 
+                                   tarja.idEstadoactividad == '2' ? Colors.white : 
+                                   estadoColor,
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
-                        ),
                       ),
                     ),
                   ),
@@ -370,6 +358,34 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                     'Unidad: ${obtenerNombreUnidad(tarja)}',
                     style: TextStyle(color: textColor.withOpacity(0.7)),
                   ),
+                      const Spacer(),
+                      // Indicador de rendimientos al lado de la unidad
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: tarja.tieneRendimiento ? Colors.green[100] : Colors.red[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              tarja.tieneRendimiento ? Icons.check_circle : Icons.cancel,
+                              size: 14,
+                              color: tarja.tieneRendimiento ? Colors.green : Colors.red,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              tarja.tieneRendimiento ? 'Con rendimientos' : 'Sin rendimientos',
+                              style: TextStyle(
+                                color: tarja.tieneRendimiento ? Colors.green[800] : Colors.red[800],
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -434,66 +450,41 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                       style: TextStyle(color: textColor.withOpacity(0.7)),
                                   ),
                                 ),
-                  // Indicador de rendimiento
+                      // Botón "Editar" - siempre azul, independiente de si tiene rendimientos
                                     GestureDetector(
                     onTap: () {
-                                              if (tarja.tieneRendimiento) {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => RendimientosPageScreen(
-                                actividadId: tarja.id,
-                                idTipotrabajador: tarja.idTipotrabajador,
-                                idTiporendimiento: tarja.idTiporendimiento,
-                                idContratista: tarja.idContratista,
-                                  ),
-                                ),
-                          );
-                                              } else {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Sin rendimientos'),
-                              content: const Text(
-                                'La actividad no posee rendimientos.',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                              icon: const Icon(
-                                Icons.info_outline,
-                                color: Colors.orange,
-                                size: 48,
-                              ),
-                              actions: [
-                                ElevatedButton(
-                                  onPressed: () => Navigator.of(context).pop(),
-                                  child: const Text('Entendido'),
-                                ),
-                              ],
+                              builder: (context) => RevisionTarjasEditarScreen(tarja: tarja),
                             ),
-                          );
-                        }
+                          ).then((_) {
+                            // Refrescar datos cuando regrese de la pantalla de edición
+                            final tarjaProvider = context.read<TarjaProvider>();
+                            tarjaProvider.cargarTarjas();
+                          });
                     },
                     child: MouseRegion(
                       cursor: SystemMouseCursors.click,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                          color: tarja.tieneRendimiento ? Colors.green : Colors.grey[300],
+                              color: Colors.blue,
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(
-                                            tarja.tieneRendimiento ? Icons.check_circle : Icons.pending_outlined,
+                                  Icons.edit,
                                             size: 16,
-                                            color: tarja.tieneRendimiento ? Colors.white : Colors.grey[700],
+                                  color: Colors.white,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            tarja.tieneRendimiento ? 'Con rendimiento' : 'Sin rendimiento',
+                                  'Editar',
                                             style: TextStyle(
-                                              color: tarja.tieneRendimiento ? Colors.white : Colors.grey[700],
+                                    color: Colors.white,
                                               fontSize: 12,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -531,13 +522,984 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                       style: TextStyle(color: textColor.withOpacity(0.7)),
                                       ),
                                     ),
+                      // Indicador de expansión
+                      Icon(
+                        isRendimientosExpanded ? Icons.expand_less : Icons.expand_more,
+                        color: AppTheme.primaryColor,
+                        size: 24,
+                      ),
                                   ],
                                 ),
                               ],
                             ),
         ),
       ),
+          // Sección expandible de rendimientos
+          if (isRendimientosExpanded)
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(15),
+                  bottomRight: Radius.circular(15),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.assessment, color: AppTheme.primaryColor, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Rendimientos',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (isLoadingRendimientos)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    else if (rendimientos.isEmpty)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.assessment_outlined,
+                                size: 48,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No hay rendimientos registrados',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                       Column(
+                         children: [
+                           // Determinar el tipo de actividad de manera más robusta
+                           Builder(
+                             builder: (context) {
+                               String tipoActividad;
+                               if (tarja.idContratista != null && tarja.idContratista!.isNotEmpty) {
+                                 tipoActividad = 'contratista';
+                               } else if (tarja.idTiporendimiento == '2') {
+                                 tipoActividad = 'grupal';
+                               } else if (tarja.idTipotrabajador == '1') {
+                                 tipoActividad = 'propio';
+                               } else if (tarja.idTipotrabajador == '2') {
+                                 tipoActividad = 'contratista';
+                               } else {
+                                 tipoActividad = 'propio'; // Por defecto
+                               }
+                               
+                               // Detección automática de grupal basada en los datos
+                               if (rendimientos.isNotEmpty) {
+                                 final primerRendimiento = rendimientos.first;
+                                 if (primerRendimiento.containsKey('rendimiento_total') && primerRendimiento.containsKey('cantidad_trab')) {
+                                   tipoActividad = 'grupal';
+                                 }
+                               }
+                               
+                               // Para todos los tipos, mostrar rendimientos individuales
+                               return Column(
+                                 children: rendimientos.asMap().entries.map((entry) {
+                                   final index = entry.key;
+                                   final rendimiento = entry.value;
+                                   return Column(
+                                     children: [
+                                       _buildRendimientoCardCompleto(rendimiento, tarja),
+                                       if (index < rendimientos.length - 1) 
+                                         const SizedBox(height: 12),
+                                     ],
+                                   );
+                                 }).toList(),
+                               );
+                             },
+                           ),
+                         ],
+                       ),
+                    // Resumen del total de rendimientos de la actividad
+                    if (rendimientos.isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      const Divider(),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.calculate, color: AppTheme.primaryColor, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Total Rendimiento de la Actividad:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              _calcularTotalRendimientos(rendimientos, tarja),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.attach_money, color: Colors.green, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Total Pago de la Actividad:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: Colors.green[700],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.green[600],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '\$${_calcularTotalPago(rendimientos, tarja)}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    // Botón de cambio de estado - solo mostrar si hay rendimientos
+                    if (rendimientos.isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      const Divider(),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.verified, color: AppTheme.primaryColor, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Estado actual: $estadoNombre',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              // Lógica para cambiar estado entre CREADA y REVISADA
+                              final nuevoEstado = tarja.idEstadoactividad == '1' ? '2' : '1';
+                              final nuevoNombre = _getEstadoActividad(nuevoEstado)['nombre'];
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Confirmar cambio de estado'),
+                                  content: Text('¿Deseas cambiar el estado a "$nuevoNombre"?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(false),
+                                      child: const Text('Cancelar'),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () => Navigator.of(context).pop(true),
+                                      child: const Text('Confirmar'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                try {
+                                  await TarjaService().cambiarEstadoActividad(
+                                    tarja.id, nuevoEstado,
+                                  );
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Estado actualizado a "$nuevoNombre"'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                    // Refrescar la lista usando el provider
+                                    final tarjaProvider = context.read<TarjaProvider>();
+                                    await tarjaProvider.cargarTarjas();
+                                    
+                                    // Resetear el estado de expansión después de cargar los datos
+                                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                                      final tarjasFiltradas = _filtrarTarjas(tarjaProvider.tarjas);
+                                      final gruposPorFecha = _agruparPorFecha(tarjasFiltradas);
+                                      _resetExpansionState(gruposPorFecha.length);
+                                    });
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error al actualizar: $e')),
+                                    );
+                                  }
+                                }
+                              }
+                            },
+                            icon: Icon(
+                              tarja.idEstadoactividad == '1' ? Icons.check_circle : Icons.undo,
+                              size: 18,
+                            ),
+                            label: Text(
+                              tarja.idEstadoactividad == '1' ? 'Marcar como Revisada' : 'Marcar como Creada',
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: tarja.idEstadoactividad == '1' ? Colors.green : Colors.orange,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
+  }
+
+  // Widget para mostrar un item de rendimiento
+  Widget _buildRendimientoItem(Map<String, dynamic> rendimiento) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.colorScheme.surface;
+    final borderColor = isDark ? Colors.grey[800]! : Colors.grey[200]!;
+
+    return Card(
+      color: cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: borderColor, width: 1),
+      ),
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.all(8),
+              child: Icon(Icons.person, color: Colors.green, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    rendimiento['nombre_colaborador']?.toString() ?? 
+                    rendimiento['nombre_trabajador']?.toString() ?? 
+                    rendimiento['colaborador']?.toString() ?? 
+                    rendimiento['trabajador']?.toString() ?? 
+                    'Sin nombre',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Rendimiento: ${rendimiento['rendimiento']?.toString() ?? rendimiento['cantidad']?.toString() ?? '0'}',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (rendimiento['porcentaje'] != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${(rendimiento['porcentaje'] is num ? (rendimiento['porcentaje'] * 100).toStringAsFixed(0) : rendimiento['porcentaje'].toString())}%',
+                  style: TextStyle(
+                    color: Colors.blue[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Widget para mostrar rendimientos con la misma lógica que RendimientosPageScreen
+  Widget _buildRendimientoCardCompleto(Map<String, dynamic> r, Tarja tarja) {
+    // Determinar el tipo de actividad
+    String tipoActividad;
+    if (tarja.idContratista != null && tarja.idContratista!.isNotEmpty) {
+      tipoActividad = 'contratista';
+    } else if (tarja.idTiporendimiento == '2') {
+      tipoActividad = 'grupal';
+    } else if (tarja.idTipotrabajador == '1') {
+      tipoActividad = 'propio';
+    } else if (tarja.idTipotrabajador == '2') {
+      tipoActividad = 'contratista';
+    } else {
+      tipoActividad = 'propio'; // Por defecto
+    }
+    
+    // Detección automática de grupal basada en los datos del rendimiento
+    if (r.containsKey('rendimiento_total') && r.containsKey('cantidad_trab')) {
+      tipoActividad = 'grupal';
+    }
+
+    final theme = Theme.of(context);
+    final isGrupal = tipoActividad == 'grupal';
+    final colorBorde = theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[200]!;
+    final colorFondo = theme.colorScheme.surface;
+
+    if (isGrupal) {
+      // Debug: ver qué datos están llegando
+      print('🔍 Debug rendimiento grupal:');
+      print('   - Datos completos: $r');
+      print('   - Keys disponibles: ${r.keys.toList()}');
+      
+      // Para grupal, usar los datos del grupo completo
+      final rendimientoTotal = r['rendimiento_total']?.toString() ?? r['rendimiento']?.toString() ?? '0';
+      final cantidadTrab = r['cantidad_trab']?.toString() ?? '1';
+      final porcentajeRaw = r['porcentaje_grupal'] ?? r['porcentaje'];
+      String porcentajeStr = 'N/A';
+      if (porcentajeRaw != null) {
+        final valor = double.tryParse(porcentajeRaw.toString());
+        if (valor != null) {
+          porcentajeStr = (valor * 100).round().toString();
+        }
+      }
+      final labor = r['labor']?.toString() ?? '';
+      
+      print('   - Rendimiento total: $rendimientoTotal');
+      print('   - Cantidad trabajadores: $cantidadTrab');
+      print('   - Porcentaje: $porcentajeStr');
+      print('   - Labor: $labor');
+      
+      return Card(
+        color: colorFondo,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          side: BorderSide(color: colorBorde, width: 1),
+        ),
+        elevation: 0,
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Icon(Icons.add_chart, color: Colors.green, size: 36),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (labor.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.work, color: Colors.purple, size: 16),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(labor, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.groups, color: Colors.amber, size: 16),
+                        const SizedBox(width: 4),
+                        Text('Cantidad trabajadores: ', style: TextStyle(color: Colors.black87)),
+                        Text(cantidadTrab, style: TextStyle(color: Colors.black87)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.percent, color: Colors.blue, size: 16),
+                        const SizedBox(width: 4),
+                        Text('Porcentaje: ', style: TextStyle(color: Colors.black87)),
+                        Text('${porcentajeStr != 'N/A' ? porcentajeStr + '%' : 'N/A'}', style: TextStyle(color: Colors.black87)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.eco, color: Colors.green, size: 28),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Rendimiento total', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
+                          Text(rendimientoTotal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                          Text(tarja.nombreUnidad ?? 'Unidad', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Total estimado por trabajador
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.person, color: Colors.orange, size: 20),
+                      const SizedBox(width: 4),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('Pago estimado por trabajador', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87, fontSize: 12)),
+                          Text(
+                            '\$${_calcularTotalEstimadoPorTrabajador(rendimientoTotal, cantidadTrab, tarja.tarifa)}',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orange[700]),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Para tipo propio y contratista
+    if (tipoActividad == 'propio' || tipoActividad == 'contratista') {
+      final isContratista = tipoActividad == 'contratista';
+      final nombre = isContratista
+          ? (r['nombre_trabajador'] ?? r['trabajador'] ?? 'N/A')
+          : (r['nombre_colaborador'] ?? r['colaborador'] ?? 'N/A');
+      final rendimientoValor = r['rendimiento']?.toString() ?? r['horas_trabajadas']?.toString() ?? r['cantidad']?.toString() ?? '0';
+      final porcentaje = isContratista && r['porcentaje'] != null
+          ? ((r['porcentaje'] is num ? (r['porcentaje'] * 100).toStringAsFixed(0) : r['porcentaje'].toString()) + '%')
+          : null;
+      String labor = r['labor']?.toString() ?? '';
+      
+      return Card(
+        color: theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          side: BorderSide(color: theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[200]!, width: 1),
+        ),
+        elevation: 0,
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Icon(Icons.add_chart, color: Colors.green, size: 36),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (labor.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.work, color: Colors.purple, size: 16),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(labor, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.person, color: Colors.amber, size: 16),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(nombre, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                        ),
+                      ],
+                    ),
+                    if (porcentaje != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.percent, color: Colors.blue, size: 16),
+                          const SizedBox(width: 4),
+                          Text('Porcentaje: ', style: TextStyle(color: Colors.black87)),
+                          Text(porcentaje, style: TextStyle(color: Colors.black87)),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.eco, color: Colors.green, size: 28),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Rendimiento', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
+                          Text(rendimientoValor, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                          Text(tarja.nombreUnidad ?? 'Unidad', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Pago a trabajador
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.person, color: Colors.orange, size: 20),
+                      const SizedBox(width: 4),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('Pago a trabajador', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87, fontSize: 12)),
+                          Text(
+                            '\$${_calcularPagoTrabajador(rendimientoValor, tarja.tarifa)}',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orange[700]),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Caso por defecto
+    return Card(
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[200]!, width: 1),
+      ),
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Icon(Icons.person, color: Colors.green, size: 36),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Rendimiento: ${r['rendimiento']?.toString() ?? r['cantidad']?.toString() ?? '0'}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  Text(
+                    tarja.nombreUnidad ?? 'Unidad',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Pago a trabajador para caso por defecto
+                  Row(
+                    children: [
+                      Icon(Icons.attach_money, color: Colors.orange, size: 16),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Pago a trabajador: ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        '\$${_calcularPagoTrabajador(r['rendimiento']?.toString() ?? r['cantidad']?.toString() ?? '0', tarja.tarifa)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (r['observaciones'] != null && r['observaciones'].toString().isNotEmpty) ...[
+                    Text(
+                      'Observaciones: ${r['observaciones']}',
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Widget para mostrar resumen grupal
+  Widget _buildResumenGrupal(List<Map<String, dynamic>> rendimientos, Tarja tarja) {
+    final theme = Theme.of(context);
+    final colorBorde = theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[200]!;
+    final colorFondo = theme.colorScheme.surface;
+
+    // Para grupal, usar los datos del primer rendimiento que contiene la info del grupo
+    if (rendimientos.isNotEmpty) {
+      final r = rendimientos.first;
+      final rendimientoTotal = r['rendimiento_total']?.toString() ?? '0';
+      final cantidadTrab = r['cantidad_trab']?.toString() ?? '0';
+      final porcentajeRaw = r['porcentaje_grupal'];
+      String porcentajeStr = 'N/A';
+      if (porcentajeRaw != null) {
+        final valor = double.tryParse(porcentajeRaw.toString());
+        if (valor != null) {
+          porcentajeStr = (valor * 100).round().toString();
+        }
+      }
+      final labor = r['labor']?.toString() ?? '';
+      
+      return Card(
+        color: colorFondo,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          side: BorderSide(color: colorBorde, width: 1),
+        ),
+        elevation: 0,
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Icon(Icons.add_chart, color: Colors.green, size: 36),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (labor.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.work, color: Colors.purple, size: 16),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(labor, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.groups, color: Colors.amber, size: 16),
+                        const SizedBox(width: 4),
+                        Text('Cantidad trabajadores: ', style: TextStyle(color: Colors.black87)),
+                        Text(cantidadTrab, style: TextStyle(color: Colors.black87)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.percent, color: Colors.blue, size: 16),
+                        const SizedBox(width: 4),
+                        Text('Porcentaje: ', style: TextStyle(color: Colors.black87)),
+                        Text('${porcentajeStr != 'N/A' ? porcentajeStr + '%' : 'N/A'}', style: TextStyle(color: Colors.black87)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.eco, color: Colors.green, size: 28),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Rendimiento total', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
+                      Text(rendimientoTotal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                      Text(tarja.nombreUnidad ?? 'Unidad', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    // Fallback si no hay rendimientos
+    return Card(
+      color: colorFondo,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: colorBorde, width: 1),
+      ),
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+          child: Text(
+            'No hay datos del grupo disponibles',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Método para calcular el total de rendimientos de una actividad
+  String _calcularTotalRendimientos(List<Map<String, dynamic>> rendimientos, Tarja tarja) {
+    double totalRendimiento = 0;
+    
+    // Determinar el tipo de actividad - priorizar idTiporendimiento para detectar grupal
+    String tipoActividad;
+    if (tarja.idTiporendimiento == '2') {
+      tipoActividad = 'grupal';
+    } else if (tarja.idContratista != null && tarja.idContratista!.isNotEmpty) {
+      tipoActividad = 'contratista';
+    } else if (tarja.idTipotrabajador == '1') {
+      tipoActividad = 'propio';
+    } else if (tarja.idTipotrabajador == '2') {
+      tipoActividad = 'contratista';
+    } else {
+      tipoActividad = 'propio'; // Por defecto
+    }
+    
+    print('🔍 Debug _calcularTotalRendimientos:');
+    print('   - Tipo actividad: $tipoActividad');
+    print('   - idTiporendimiento: ${tarja.idTiporendimiento}');
+    print('   - idTipotrabajador: ${tarja.idTipotrabajador}');
+    print('   - idContratista: ${tarja.idContratista}');
+    print('   - Cantidad rendimientos: ${rendimientos.length}');
+    
+    for (var rendimiento in rendimientos) {
+      double valorRendimiento = 0;
+      
+      if (tipoActividad == 'grupal') {
+        // Para rendimientos grupales, usar rendimiento_total
+        // El valor puede venir como num o string
+        var rendimientoTotal = rendimiento['rendimiento_total'];
+        if (rendimientoTotal is num) {
+          valorRendimiento = rendimientoTotal.toDouble();
+        } else {
+          final rendimientoTotalStr = rendimientoTotal?.toString() ?? rendimiento['rendimiento']?.toString() ?? '0';
+          valorRendimiento = double.tryParse(rendimientoTotalStr) ?? 0;
+        }
+        print('   - Rendimiento grupal raw: $rendimientoTotal -> $valorRendimiento');
+      } else {
+        // Para rendimientos individuales, usar rendimiento o cantidad
+        final rendimientoValor = rendimiento['rendimiento']?.toString() ?? rendimiento['cantidad']?.toString() ?? '0';
+        valorRendimiento = double.tryParse(rendimientoValor) ?? 0;
+        print('   - Rendimiento individual: $rendimientoValor -> $valorRendimiento');
+      }
+      
+      totalRendimiento += valorRendimiento;
+    }
+    
+    print('   - Total final: $totalRendimiento');
+    return totalRendimiento.toStringAsFixed(2);
+  }
+
+  // Método para calcular el total de pago de una actividad
+  String _calcularTotalPago(List<Map<String, dynamic>> rendimientos, Tarja tarja) {
+    // Obtener el total de rendimientos
+    final totalRendimientoStr = _calcularTotalRendimientos(rendimientos, tarja);
+    final totalRendimiento = double.tryParse(totalRendimientoStr) ?? 0;
+    
+    // Obtener la tarifa de la actividad
+    final tarifa = double.tryParse(tarja.tarifa) ?? 0;
+    
+    // Calcular el total de pago: tarifa * rendimiento total
+    final totalPago = tarifa * totalRendimiento;
+    
+    print('💰 Debug _calcularTotalPago:');
+    print('   - Total rendimiento: $totalRendimiento');
+    print('   - Tarifa: $tarifa');
+    print('   - Total pago: $totalPago');
+    
+    // Formatear como número entero con separación de miles
+    final totalPagoEntero = totalPago.round();
+    return _formatearNumeroConSeparadores(totalPagoEntero);
+  }
+
+  // Método para formatear números con separadores de miles
+  String _formatearNumeroConSeparadores(int numero) {
+    return numero.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match match) => '${match[1]},'
+    );
+  }
+
+  // Método para calcular el pago a trabajador individual
+  String _calcularPagoTrabajador(String rendimientoValor, String tarifa) {
+    // Convertir el rendimiento a double
+    final rendimiento = double.tryParse(rendimientoValor) ?? 0;
+    
+    // Convertir la tarifa a double
+    final tarifaDouble = double.tryParse(tarifa) ?? 0;
+    
+    // Calcular el pago: tarifa * rendimiento
+    final pago = tarifaDouble * rendimiento;
+    
+    print('💰 Debug _calcularPagoTrabajador:');
+    print('   - Rendimiento: $rendimiento');
+    print('   - Tarifa: $tarifaDouble');
+    print('   - Pago: $pago');
+    
+    // Formatear como número entero con separación de miles
+    final pagoEntero = pago.round();
+    return _formatearNumeroConSeparadores(pagoEntero);
+  }
+
+  // Método para calcular el total estimado por trabajador en rendimientos grupales
+  String _calcularTotalEstimadoPorTrabajador(String rendimientoTotal, String cantidadTrab, String tarifa) {
+    // Convertir valores a double
+    final rendimiento = double.tryParse(rendimientoTotal) ?? 0;
+    final cantidad = double.tryParse(cantidadTrab) ?? 1;
+    final tarifaDouble = double.tryParse(tarifa) ?? 0;
+    
+    // Calcular: (rendimiento_total ÷ cantidad_trabajadores) × tarifa
+    final rendimientoPorTrabajador = rendimiento / cantidad;
+    final totalEstimado = rendimientoPorTrabajador * tarifaDouble;
+    
+    print('👥 Debug _calcularTotalEstimadoPorTrabajador:');
+    print('   - Rendimiento total: $rendimiento');
+    print('   - Cantidad trabajadores: $cantidad');
+    print('   - Rendimiento por trabajador: $rendimientoPorTrabajador');
+    print('   - Tarifa: $tarifaDouble');
+    print('   - Total estimado por trabajador: $totalEstimado');
+    
+    // Formatear como número entero con separación de miles
+    final totalEntero = totalEstimado.round();
+    return _formatearNumeroConSeparadores(totalEntero);
   }
 
   Widget _buildSearchBar() {

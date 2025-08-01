@@ -5,7 +5,6 @@ import '../providers/theme_provider.dart';
 import '../providers/permisos_provider.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
-import 'dashboard_screen.dart';
 import 'revision_tarjas_screen.dart';
 import 'aprobacion_tarjas_screen.dart';
 import 'cambiar_clave_screen.dart';
@@ -177,6 +176,55 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
   }
 
+  Widget _buildDashboardPlaceholder() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.dashboard,
+            size: 80,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Dashboard Administrativas',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'En desarrollo',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[500],
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Dashboard Administrativas - En desarrollo'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            },
+            icon: const Icon(Icons.info_outline),
+            label: const Text('Más información'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -193,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: _isSearching
             ? _buildSearchField()
                 : _selectedIndex == 0
-                    ? DashboardScreen()
+                    ? _buildDashboardPlaceholder()
                     : RevisionTarjasScreen(),
           ),
         ],
@@ -257,7 +305,16 @@ class _HomeScreenState extends State<HomeScreen> {
             _MenuItem(
               icon: Icons.dashboard,
               title: 'Dashboard Administrativas',
-              onTap: () => _navigateTo(context, const DashboardScreen()),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Implementar Dashboard Administrativas
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Dashboard Administrativas - En desarrollo'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              },
             ),
             _MenuItem(
               icon: Icons.assignment,

@@ -209,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                     children: [
                       const Text(
-                            "Bienvenido a LH Tarja",
+                            "Bienvenido a LH Gestión Tarjas",
                         style: TextStyle(
                               fontSize: 26,
                           fontWeight: FontWeight.bold,
