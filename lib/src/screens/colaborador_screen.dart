@@ -6,6 +6,8 @@ import '../providers/colaborador_provider.dart';
 import '../widgets/main_scaffold.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import 'colaborador_crear_screen.dart';
+import 'colaborador_editar_screen.dart';
 
 class ColaboradorScreen extends StatefulWidget {
   const ColaboradorScreen({super.key});
@@ -579,38 +581,21 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
     );
   }
 
-  void _mostrarDialogoCrearColaborador() {
-    // TODO: Implementar diálogo de creación
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Crear Colaborador'),
-        content: const Text('Funcionalidad en desarrollo...'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _mostrarDialogoEditarColaborador(Colaborador colaborador) {
-    // TODO: Implementar diálogo de edición
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Editar Colaborador'),
-        content: Text('Editar ${colaborador.nombreCompleto} - Funcionalidad en desarrollo...'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
+
+  void _mostrarDialogoEditarColaborador(Colaborador colaborador) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ColaboradorEditarScreen(colaborador: colaborador),
       ),
     );
+    
+    // Si se editó exitosamente un colaborador, refrescar la lista
+    if (result == true) {
+      final colaboradorProvider = context.read<ColaboradorProvider>();
+      await colaboradorProvider.cargarColaboradores();
+    }
   }
 
   @override
@@ -729,6 +714,21 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
         ],
       ),
     );
+  }
+
+  void _mostrarDialogoCrearColaborador() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ColaboradorCrearScreen(),
+      ),
+    );
+    
+    // Si se creó exitosamente un colaborador, refrescar la lista
+    if (result == true) {
+      final colaboradorProvider = context.read<ColaboradorProvider>();
+      await colaboradorProvider.cargarColaboradores();
+    }
   }
 }
 

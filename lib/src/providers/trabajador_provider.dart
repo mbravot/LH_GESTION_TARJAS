@@ -165,6 +165,26 @@ class TrabajadorProvider extends ChangeNotifier {
     }
   }
 
+  // Eliminar trabajador
+  Future<bool> eliminarTrabajador(String id) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await ApiService.eliminarTrabajador(id);
+      await cargarTrabajadores(); // Recargar la lista
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // Filtros
   void setFiltroContratista(String? idContratista) {
     _filtroContratista = idContratista;

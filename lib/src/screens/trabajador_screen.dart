@@ -6,6 +6,8 @@ import '../providers/trabajador_provider.dart';
 import '../widgets/main_scaffold.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import 'trabajador_crear_screen.dart';
+import 'trabajador_editar_screen.dart';
 
 class TrabajadorScreen extends StatefulWidget {
   const TrabajadorScreen({super.key});
@@ -485,12 +487,17 @@ class _TrabajadorScreenState extends State<TrabajadorScreen>
                       fontSize: 14,
                     ),
                   ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => _mostrarDialogoEditarTrabajador(trabajador),
-                    icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
-                    tooltip: 'Editar trabajador',
-                  ),
+                                     const Spacer(),
+                   IconButton(
+                     onPressed: () => _mostrarDialogoEditarTrabajador(trabajador),
+                     icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
+                     tooltip: 'Editar trabajador',
+                   ),
+                   IconButton(
+                     onPressed: () => _mostrarDialogoEliminarTrabajador(trabajador),
+                     icon: Icon(Icons.delete, color: Colors.red, size: 20),
+                     tooltip: 'Eliminar trabajador',
+                   ),
                 ],
               ),
             ],
@@ -529,19 +536,30 @@ class _TrabajadorScreenState extends State<TrabajadorScreen>
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cerrar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _mostrarDialogoEditarTrabajador(trabajador);
-            },
-            child: const Text('Editar'),
-          ),
-        ],
+                 actions: [
+           TextButton(
+             onPressed: () => Navigator.of(context).pop(),
+             child: const Text('Cerrar'),
+           ),
+           ElevatedButton(
+             onPressed: () {
+               Navigator.of(context).pop();
+               _mostrarDialogoEditarTrabajador(trabajador);
+             },
+             child: const Text('Editar'),
+           ),
+           ElevatedButton(
+             onPressed: () {
+               Navigator.of(context).pop();
+               _mostrarDialogoEliminarTrabajador(trabajador);
+             },
+             style: ElevatedButton.styleFrom(
+               backgroundColor: Colors.red,
+               foregroundColor: Colors.white,
+             ),
+             child: const Text('Eliminar'),
+           ),
+         ],
       ),
     );
   }
@@ -573,38 +591,167 @@ class _TrabajadorScreenState extends State<TrabajadorScreen>
     );
   }
 
-  void _mostrarDialogoCrearTrabajador() {
-    // Implementar diálogo para crear trabajador
+  void _mostrarDialogoCrearTrabajador() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const TrabajadorCrearScreen(),
+      ),
+    );
+    
+    // Si se creó exitosamente un trabajador, refrescar la lista
+    if (result == true) {
+      final trabajadorProvider = context.read<TrabajadorProvider>();
+      await trabajadorProvider.cargarTrabajadores();
+    }
+  }
+
+  void _mostrarDialogoEditarTrabajador(Trabajador trabajador) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TrabajadorEditarScreen(
+          trabajadorId: trabajador.id,
+        ),
+      ),
+    ).then((result) {
+      // Si la edición fue exitosa, refrescar la lista
+      if (result == true) {
+        final trabajadorProvider = context.read<TrabajadorProvider>();
+        trabajadorProvider.cargarTrabajadores();
+      }
+    });
+  }
+
+  void _mostrarDialogoEliminarTrabajador(Trabajador trabajador) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Crear Nuevo Trabajador'),
-        content: const Text('Funcionalidad en desarrollo...'),
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: Colors.red),
+            const SizedBox(width: 8),
+            const Text('Confirmar Eliminación'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '¿Estás seguro de que quieres eliminar al trabajador:',
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    trabajador.nombreCompleto,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.red[800],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'RUT: ${trabajador.rutCompleto}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.red[700],
+                    ),
+                  ),
+                  if (trabajador.nombreContratista != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Contratista: ${trabajador.nombreContratista}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.red[700],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Esta acción no se puede deshacer.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.red[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cerrar'),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _eliminarTrabajador(trabajador);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
           ),
         ],
       ),
     );
   }
 
-  void _mostrarDialogoEditarTrabajador(Trabajador trabajador) {
-    // Implementar diálogo para editar trabajador
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Editar Trabajador'),
-        content: const Text('Funcionalidad en desarrollo...'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cerrar'),
+  Future<void> _eliminarTrabajador(Trabajador trabajador) async {
+    final trabajadorProvider = context.read<TrabajadorProvider>();
+    
+    try {
+      final success = await trabajadorProvider.eliminarTrabajador(trabajador.id);
+      
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Trabajador "${trabajador.nombreCompleto}" eliminado correctamente'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al eliminar trabajador: ${trabajadorProvider.error}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error inesperado: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
-        ],
-      ),
-    );
+        );
+      }
+    }
   }
 
   @override

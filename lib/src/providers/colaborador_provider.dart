@@ -114,13 +114,13 @@ class ColaboradorProvider extends ChangeNotifier {
   }
 
   // Editar colaborador
-  Future<bool> editarColaborador(String id, Map<String, dynamic> colaboradorData) async {
+  Future<bool> editarColaborador(String colaboradorId, Map<String, dynamic> colaboradorData) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      await ApiService.editarColaborador(id, colaboradorData);
+      await ApiService.editarColaborador(colaboradorId, colaboradorData);
       await cargarColaboradores(); // Recargar la lista
       return true;
     } catch (e) {
