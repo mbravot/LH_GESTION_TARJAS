@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '../services/tarja_service.dart';
+import '../services/api_service.dart';
 
 class PermisosProvider with ChangeNotifier {
   List<Map<String, dynamic>> _permisos = [];
@@ -18,7 +18,7 @@ class PermisosProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _permisos = await TarjaService.obtenerPermisosUsuario();
+      _permisos = await ApiService.obtenerPermisosUsuario();
       print('🔍 Permisos cargados: ${_permisos.length}');
       for (var permiso in _permisos) {
         print('   - ID: ${permiso['id']}, Nombre: ${permiso['nombre']}');
@@ -41,7 +41,7 @@ class PermisosProvider with ChangeNotifier {
     }
 
     try {
-      final tiene = await TarjaService.verificarPermiso(nombrePermiso);
+      final tiene = await ApiService.verificarPermiso(nombrePermiso);
       _permisosCache[nombrePermiso] = tiene;
       return tiene;
     } catch (e) {
@@ -76,7 +76,7 @@ class PermisosProvider with ChangeNotifier {
   // Verificar múltiples permisos
   Future<Map<String, bool>> verificarMultiplesPermisos(List<String> permisos) async {
     try {
-      return await TarjaService.verificarMultiplesPermisos(permisos);
+      return await ApiService.verificarMultiplesPermisos(permisos);
     } catch (e) {
       return {for (var permiso in permisos) permiso: false};
     }

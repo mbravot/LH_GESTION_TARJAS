@@ -3,12 +3,20 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/permisos_provider.dart';
+import '../providers/trabajador_provider.dart';
+import '../providers/colaborador_provider.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
 import 'revision_tarjas_screen.dart';
 import 'aprobacion_tarjas_screen.dart';
 import 'cambiar_clave_screen.dart';
 import 'ejemplo_permisos_screen.dart';
+import 'trabajador_screen.dart';
+import 'colaborador_screen.dart';
+import '../providers/vacacion_provider.dart';
+import 'vacaciones_screen.dart';
+import '../providers/licencia_provider.dart';
+import 'licencias_screen.dart';
 import '../widgets/sucursal_selector.dart';
 import '../widgets/main_scaffold.dart';
 import '../widgets/permiso_widget.dart';
@@ -302,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             // Dashboards
             const _MenuHeader(title: 'Dashboards'),
-            _MenuItem(
+            /*_MenuItem(
               icon: Icons.dashboard,
               title: 'Dashboard Administrativas',
               onTap: () {
@@ -323,18 +331,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pop(context);
                 // TODO: Implementar navegación
               },
-            ),
+            ),*/
 
             // Gestión de Tarjas
             const _MenuHeader(title: 'Gestión de Tarjas'),
-            _MenuItem(
+            /*_MenuItem(
               icon: Icons.factory,
               title: 'Avance por Plantas',
               onTap: () {
                 Navigator.pop(context);
                 // TODO: Implementar navegación
               },
-            ),
+            ),*/
             PermisoWidget(
               idPermiso: 2,
               child: _MenuItem(
@@ -363,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
             ),
-            _MenuItem(
+            /*_MenuItem(
               icon: Icons.business,
               title: 'Tarja Propios',
               onTap: () {
@@ -378,16 +386,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pop(context);
                 // TODO: Implementar navegación
               },
-            ),
+            ),*/
 
             // Gestión de Personal
             const _MenuHeader(title: 'Gestión de Personal'),
             _MenuItem(
-              icon: Icons.person_outline,
-              title: 'Ficha Personal',
+              icon: Icons.people,
+              title: 'Colaboradores',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implementar navegación
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ColaboradorScreen(),
+                  ),
+                );
               },
             ),
             _MenuItem(
@@ -395,7 +408,12 @@ class _HomeScreenState extends State<HomeScreen> {
               title: 'Licencias',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implementar navegación
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LicenciasScreen(),
+                  ),
+                );
               },
             ),
             _MenuItem(
@@ -403,10 +421,15 @@ class _HomeScreenState extends State<HomeScreen> {
               title: 'Vacaciones',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implementar navegación
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const VacacionesScreen(),
+                  ),
+                );
               },
             ),
-            _MenuItem(
+            /*_MenuItem(
               icon: Icons.time_to_leave,
               title: 'Permisos',
               onTap: () {
@@ -421,7 +444,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pop(context);
                 // TODO: Implementar navegación
               },
-            ),
+            ),*/
 
             // Gestión de Trabajadores
             const _MenuHeader(title: 'Gestión de Trabajadores'),
@@ -430,7 +453,12 @@ class _HomeScreenState extends State<HomeScreen> {
               title: 'Trabajadores',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implementar navegación
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TrabajadorScreen(),
+                  ),
+                );
               },
             ),
             _MenuItem(

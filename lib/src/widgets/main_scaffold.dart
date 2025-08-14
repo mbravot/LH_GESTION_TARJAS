@@ -4,6 +4,10 @@ import '../providers/auth_provider.dart';
 import '../providers/tarja_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/permisos_provider.dart';
+import '../providers/trabajador_provider.dart';
+import '../providers/colaborador_provider.dart';
+import '../providers/vacacion_provider.dart';
+import '../providers/licencia_provider.dart';
 import '../theme/app_theme.dart';
 import 'sucursal_selector.dart';
 import 'user_info.dart';
@@ -30,6 +34,10 @@ class MainScaffold extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final tarjaProvider = Provider.of<TarjaProvider>(context, listen: false);
     final permisosProvider = Provider.of<PermisosProvider>(context, listen: false);
+    final trabajadorProvider = Provider.of<TrabajadorProvider>(context, listen: false);
+                final colaboradorProvider = Provider.of<ColaboradorProvider>(context, listen: false);
+            final vacacionProvider = Provider.of<VacacionProvider>(context, listen: false);
+            final licenciaProvider = Provider.of<LicenciaProvider>(context, listen: false);
     
     // Mostrar indicador de carga
     ScaffoldMessenger.of(context).showSnackBar(
@@ -71,6 +79,22 @@ class MainScaffold extends StatelessWidget {
         if (tarjaProvider != null) {
           await tarjaProvider.cargarTarjas();
         }
+        
+        // Si hay TrabajadorProvider disponible, recargar trabajadores
+        if (trabajadorProvider != null) {
+          await trabajadorProvider.cargarTrabajadores();
+        }
+        
+        // Si hay ColaboradorProvider disponible, recargar colaboradores
+                    if (colaboradorProvider != null) {
+              await colaboradorProvider.cargarColaboradores();
+            }
+            if (vacacionProvider != null) {
+              await vacacionProvider.cargarVacaciones();
+            }
+            if (licenciaProvider != null) {
+              await licenciaProvider.cargarLicencias();
+            }
       }
 
       // Mostrar mensaje de éxito

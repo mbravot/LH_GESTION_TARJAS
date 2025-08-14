@@ -5,6 +5,10 @@ import 'src/providers/auth_provider.dart';
 import 'src/providers/theme_provider.dart';
 import 'src/providers/tarja_provider.dart';
 import 'src/providers/permisos_provider.dart';
+import 'src/providers/trabajador_provider.dart';
+import 'src/providers/colaborador_provider.dart';
+import 'src/providers/vacacion_provider.dart';
+import 'src/providers/licencia_provider.dart';
 import 'src/screens/splash_screen.dart';
 import 'src/theme/app_theme.dart';
 
@@ -18,6 +22,10 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => TarjaProvider()),
         ChangeNotifierProvider(create: (_) => PermisosProvider()),
+                            ChangeNotifierProvider(create: (_) => TrabajadorProvider()),
+                    ChangeNotifierProvider(create: (_) => ColaboradorProvider()),
+                    ChangeNotifierProvider(create: (_) => VacacionProvider()),
+                    ChangeNotifierProvider(create: (_) => LicenciaProvider()),
       ],
       child: const MyApp(),
     ),

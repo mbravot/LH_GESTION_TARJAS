@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/tarja.dart';
 import '../providers/auth_provider.dart';
-import '../services/tarja_service.dart';
+import '../services/api_service.dart';
 import '../widgets/main_scaffold.dart';
 import '../theme/app_theme.dart';
 
@@ -71,7 +71,7 @@ class _AprobacionTarjasEditarScreenState extends State<AprobacionTarjasEditarScr
   Future<void> _cargarLabores() async {
     setState(() { _isLoadingLabores = true; _errorLabores = null; });
     try {
-      final labores = await TarjaService.getLabores();
+      final labores = await ApiService.getLabores();
       setState(() { _labores = labores; });
     } catch (e) {
       setState(() { _errorLabores = e.toString(); });
@@ -83,7 +83,7 @@ class _AprobacionTarjasEditarScreenState extends State<AprobacionTarjasEditarScr
   Future<void> _cargarUnidades() async {
     setState(() { _isLoadingUnidades = true; _errorUnidades = null; });
     try {
-      final unidades = await TarjaService.getUnidades();
+      final unidades = await ApiService.getUnidades();
       setState(() { _unidades = unidades; });
     } catch (e) {
       setState(() { _errorUnidades = e.toString(); });
@@ -115,7 +115,7 @@ class _AprobacionTarjasEditarScreenState extends State<AprobacionTarjasEditarScr
         'id_estadoactividad': widget.tarja.idEstadoactividad,
         'id_contratista': widget.tarja.idTipotrabajador == '2' ? widget.tarja.idContratista : null,
       };
-      await TarjaService().actualizarTarja(widget.tarja.id, datosActualizados);
+              await ApiService().actualizarTarja(widget.tarja.id, datosActualizados);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Actividad actualizada correctamente'), backgroundColor: AppTheme.successColor),

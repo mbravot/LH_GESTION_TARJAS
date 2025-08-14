@@ -1,10 +1,9 @@
 import 'package:flutter/foundation.dart';
 import '../models/tarja.dart';
-import '../services/tarja_service.dart';
+import '../services/api_service.dart';
 import 'auth_provider.dart';
 
 class TarjaProvider extends ChangeNotifier {
-  final TarjaService _tarjaService = TarjaService();
   List<Tarja> _tarjas = [];
   bool _isLoading = false;
   String? _error;
@@ -58,7 +57,7 @@ class TarjaProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _tarjas = await _tarjaService.getTarjasByDate(DateTime.now(), _idSucursal!);
+      _tarjas = await ApiService().getTarjasByDate(DateTime.now(), _idSucursal!);
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -72,7 +71,7 @@ class TarjaProvider extends ChangeNotifier {
   // Actualizar tarja
   Future<void> actualizarTarja(String id, Map<String, dynamic> datos) async {
     try {
-      await _tarjaService.actualizarTarja(id, datos);
+      await ApiService().actualizarTarja(id, datos);
       await cargarTarjas();
     } catch (e) {
       _error = e.toString();

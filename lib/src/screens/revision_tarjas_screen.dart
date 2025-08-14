@@ -6,7 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/tarja_provider.dart';
 import '../widgets/main_scaffold.dart';
 import '../theme/app_theme.dart';
-import '../services/tarja_service.dart';
+import '../services/api_service.dart';
 import 'revision_tarjas_editar_screen.dart';
 
 class RevisionTarjasScreen extends StatefulWidget {
@@ -233,7 +233,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
     });
 
     try {
-      final response = await TarjaService.obtenerRendimientos(
+      final response = await ApiService.obtenerRendimientos(
         tarjaId,
         idTipotrabajador: tarja.idTipotrabajador,
         idTiporendimiento: tarja.idTiporendimiento,
@@ -754,7 +754,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                               );
                               if (confirm == true) {
                                 try {
-                                  await TarjaService().cambiarEstadoActividad(
+                                  await ApiService().cambiarEstadoActividad(
                                     tarja.id, nuevoEstado,
                                   );
                                   if (mounted) {
@@ -1029,7 +1029,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                         children: [
                           Text('Pago estimado por trabajador', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87, fontSize: 12)),
                           Text(
-                            '\$${_calcularTotalEstimadoPorTrabajador(rendimientoTotal, cantidadTrab, tarja.tarifa)}',
+                            '\$${_calcularTotalEstimadoPorTrabajador(rendimientoTotal, cantidadTrab, tarja.tarifa, r)}',
                             style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orange[700]),
                           ),
                         ],
@@ -1150,7 +1150,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                         children: [
                           Text('Pago a trabajador', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87, fontSize: 12)),
                           Text(
-                            '\$${_calcularPagoTrabajador(rendimientoValor, tarja.tarifa)}',
+                            '\$${_calcularPagoTrabajador(rendimientoValor, tarja.tarifa, r)}',
                             style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orange[700]),
                           ),
                         ],
@@ -1222,7 +1222,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
                         ),
                       ),
                       Text(
-                        '\$${_calcularPagoTrabajador(r['rendimiento']?.toString() ?? r['cantidad']?.toString() ?? '0', tarja.tarifa)}',
+                        '\$${_calcularPagoTrabajador(r['rendimiento']?.toString() ?? r['cantidad']?.toString() ?? '0', tarja.tarifa, r)}',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -1430,20 +1430,86 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
 
   // Método para calcular el total de pago de una actividad
   String _calcularTotalPago(List<Map<String, dynamic>> rendimientos, Tarja tarja) {
-    // Obtener el total de rendimientos
-    final totalRendimientoStr = _calcularTotalRendimientos(rendimientos, tarja);
-    final totalRendimiento = double.tryParse(totalRendimientoStr) ?? 0;
+    // Determinar el tipo de actividad
+    String tipoActividad;
+    if (tarja.idTiporendimiento == '2') {
+      tipoActividad = 'grupal';
+    } else if (tarja.idContratista != null && tarja.idContratista!.isNotEmpty) {
+      tipoActividad = 'contratista';
+    } else if (tarja.idTipotrabajador == '1') {
+      tipoActividad = 'propio';
+    } else if (tarja.idTipotrabajador == '2') {
+      tipoActividad = 'contratista';
+    } else {
+      tipoActividad = 'propio'; // Por defecto
+    }
     
     // Obtener la tarifa de la actividad
     final tarifa = double.tryParse(tarja.tarifa) ?? 0;
     
-    // Calcular el total de pago: tarifa * rendimiento total
-    final totalPago = tarifa * totalRendimiento;
+    double totalPago = 0;
     
     print('💰 Debug _calcularTotalPago:');
-    print('   - Total rendimiento: $totalRendimiento');
+    print('   - Tipo actividad: $tipoActividad');
     print('   - Tarifa: $tarifa');
-    print('   - Total pago: $totalPago');
+    
+    if (tipoActividad == 'propio') {
+      // Para propios: tarifa * rendimiento total (sin porcentaje)
+      final totalRendimientoStr = _calcularTotalRendimientos(rendimientos, tarja);
+      final totalRendimiento = double.tryParse(totalRendimientoStr) ?? 0;
+      totalPago = tarifa * totalRendimiento;
+      
+      print('   - Total rendimiento: $totalRendimiento');
+      print('   - Total pago (propio): $totalPago');
+    } else if (tipoActividad == 'contratista') {
+      // Para contratistas individuales: suma de (rendimiento × tarifa × (1 + porcentaje))
+      for (var rendimiento in rendimientos) {
+        final rendimientoValor = rendimiento['rendimiento']?.toString() ?? rendimiento['cantidad']?.toString() ?? '0';
+        final rendimientoDouble = double.tryParse(rendimientoValor) ?? 0;
+        
+        // Obtener el porcentaje del trabajador
+        final porcentajeRaw = rendimiento['porcentaje'];
+        double porcentaje = 0;
+        if (porcentajeRaw != null) {
+          if (porcentajeRaw is num) {
+            porcentaje = porcentajeRaw.toDouble();
+          } else {
+            porcentaje = double.tryParse(porcentajeRaw.toString()) ?? 0;
+          }
+        }
+        
+        final pagoIndividual = rendimientoDouble * tarifa * (1 + porcentaje);
+        totalPago += pagoIndividual;
+        
+        print('   - Rendimiento individual: $rendimientoDouble, Porcentaje: $porcentaje, Pago: $pagoIndividual');
+      }
+      
+      print('   - Total pago (contratista individual): $totalPago');
+    } else if (tipoActividad == 'grupal') {
+      // Para grupales: suma de (rendimiento del grupo × tarifa × (1 + porcentaje)) para cada registro
+      for (var rendimiento in rendimientos) {
+        final rendimientoTotal = rendimiento['rendimiento_total']?.toString() ?? rendimiento['rendimiento']?.toString() ?? '0';
+        final rendimientoTotalDouble = double.tryParse(rendimientoTotal) ?? 0;
+        
+        // Obtener el porcentaje del grupo
+        final porcentajeRaw = rendimiento['porcentaje_grupal'] ?? rendimiento['porcentaje'];
+        double porcentaje = 0;
+        if (porcentajeRaw != null) {
+          if (porcentajeRaw is num) {
+            porcentaje = porcentajeRaw.toDouble();
+          } else {
+            porcentaje = double.tryParse(porcentajeRaw.toString()) ?? 0;
+          }
+        }
+        
+        final pagoGrupal = rendimientoTotalDouble * tarifa * (1 + porcentaje);
+        totalPago += pagoGrupal;
+        
+        print('   - Rendimiento grupal: $rendimientoTotalDouble, Porcentaje: $porcentaje, Pago: $pagoGrupal');
+      }
+      
+      print('   - Total pago (grupal): $totalPago');
+    }
     
     // Formatear como número entero con separación de miles
     final totalPagoEntero = totalPago.round();
@@ -1459,19 +1525,33 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
   }
 
   // Método para calcular el pago a trabajador individual
-  String _calcularPagoTrabajador(String rendimientoValor, String tarifa) {
+  String _calcularPagoTrabajador(String rendimientoValor, String tarifa, [Map<String, dynamic>? rendimientoData]) {
     // Convertir el rendimiento a double
     final rendimiento = double.tryParse(rendimientoValor) ?? 0;
     
     // Convertir la tarifa a double
     final tarifaDouble = double.tryParse(tarifa) ?? 0;
     
-    // Calcular el pago: tarifa * rendimiento
-    final pago = tarifaDouble * rendimiento;
+    // Determinar si es contratista y obtener el porcentaje
+    double porcentaje = 0;
+    if (rendimientoData != null) {
+      final porcentajeRaw = rendimientoData['porcentaje'];
+      if (porcentajeRaw != null) {
+        if (porcentajeRaw is num) {
+          porcentaje = porcentajeRaw.toDouble();
+        } else {
+          porcentaje = double.tryParse(porcentajeRaw.toString()) ?? 0;
+        }
+      }
+    }
+    
+    // Calcular el pago: tarifa * rendimiento * (1 + porcentaje)
+    final pago = tarifaDouble * rendimiento * (1 + porcentaje);
     
     print('💰 Debug _calcularPagoTrabajador:');
     print('   - Rendimiento: $rendimiento');
     print('   - Tarifa: $tarifaDouble');
+    print('   - Porcentaje: $porcentaje');
     print('   - Pago: $pago');
     
     // Formatear como número entero con separación de miles
@@ -1480,21 +1560,35 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen>
   }
 
   // Método para calcular el total estimado por trabajador en rendimientos grupales
-  String _calcularTotalEstimadoPorTrabajador(String rendimientoTotal, String cantidadTrab, String tarifa) {
+  String _calcularTotalEstimadoPorTrabajador(String rendimientoTotal, String cantidadTrab, String tarifa, [Map<String, dynamic>? rendimientoData]) {
     // Convertir valores a double
     final rendimiento = double.tryParse(rendimientoTotal) ?? 0;
     final cantidad = double.tryParse(cantidadTrab) ?? 1;
     final tarifaDouble = double.tryParse(tarifa) ?? 0;
     
-    // Calcular: (rendimiento_total ÷ cantidad_trabajadores) × tarifa
+    // Obtener el porcentaje del grupo
+    double porcentaje = 0;
+    if (rendimientoData != null) {
+      final porcentajeRaw = rendimientoData['porcentaje_grupal'] ?? rendimientoData['porcentaje'];
+      if (porcentajeRaw != null) {
+        if (porcentajeRaw is num) {
+          porcentaje = porcentajeRaw.toDouble();
+        } else {
+          porcentaje = double.tryParse(porcentajeRaw.toString()) ?? 0;
+        }
+      }
+    }
+    
+    // Calcular: (rendimiento_total ÷ cantidad_trabajadores) × tarifa × (1 + porcentaje)
     final rendimientoPorTrabajador = rendimiento / cantidad;
-    final totalEstimado = rendimientoPorTrabajador * tarifaDouble;
+    final totalEstimado = rendimientoPorTrabajador * tarifaDouble * (1 + porcentaje);
     
     print('👥 Debug _calcularTotalEstimadoPorTrabajador:');
     print('   - Rendimiento total: $rendimiento');
     print('   - Cantidad trabajadores: $cantidad');
     print('   - Rendimiento por trabajador: $rendimientoPorTrabajador');
     print('   - Tarifa: $tarifaDouble');
+    print('   - Porcentaje: $porcentaje');
     print('   - Total estimado por trabajador: $totalEstimado');
     
     // Formatear como número entero con separación de miles
