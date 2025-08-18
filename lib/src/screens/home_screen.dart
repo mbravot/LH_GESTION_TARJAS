@@ -17,6 +17,7 @@ import '../providers/vacacion_provider.dart';
 import 'vacaciones_screen.dart';
 import '../providers/licencia_provider.dart';
 import 'licencias_screen.dart';
+import 'permiso_screen.dart';
 import '../widgets/sucursal_selector.dart';
 import '../widgets/main_scaffold.dart';
 import '../widgets/permiso_widget.dart';
@@ -429,12 +430,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-            /*_MenuItem(
-              icon: Icons.time_to_leave,
+            _MenuItem(
+              icon: Icons.assignment_turned_in,
               title: 'Permisos',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implementar navegación
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PermisoScreen(),
+                  ),
+                );
               },
             ),
             _MenuItem(
@@ -444,7 +450,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pop(context);
                 // TODO: Implementar navegación
               },
-            ),*/
+            ),
 
             // Gestión de Trabajadores
             const _MenuHeader(title: 'Gestión de Trabajadores'),
