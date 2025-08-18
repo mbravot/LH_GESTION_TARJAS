@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthService {
+  //final String baseUrl = 'https://api-lh-gestion-tarjas-927498545444.us-central1.run.app/api';
   final String baseUrl = 'http://192.168.1.52:5000/api';
   final storage = const FlutterSecureStorage();
 

@@ -8,6 +8,8 @@ import '../providers/colaborador_provider.dart';
 import '../widgets/main_scaffold.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import 'licencia_crear_screen.dart';
+import 'licencia_editar_screen.dart';
 
 class LicenciasScreen extends StatefulWidget {
   const LicenciasScreen({super.key});
@@ -425,7 +427,7 @@ class _LicenciasScreenState extends State<LicenciasScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          licencia.periodoFormateado,
+                          licencia.periodoFormateadoEspanol,
                           style: TextStyle(
                             color: textColor.withOpacity(0.7),
                             fontSize: 14,
@@ -498,11 +500,11 @@ class _LicenciasScreenState extends State<LicenciasScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildInfoRow('Colaborador', licencia.nombreCompletoColaborador),
-              _buildInfoRow('Período', licencia.periodoFormateado),
+              _buildInfoRow('Período', licencia.periodoFormateadoEspanol),
               _buildInfoRow('Duración', '${licencia.duracionDias} días'),
               _buildInfoRow('Estado', licencia.estado),
-              _buildInfoRow('Fecha Inicio', licencia.fechaInicioFormateada),
-              _buildInfoRow('Fecha Fin', licencia.fechaFinFormateada),
+              _buildInfoRow('Fecha Inicio', licencia.fechaInicioFormateadaEspanol),
+              _buildInfoRow('Fecha Fin', licencia.fechaFinFormateadaEspanol),
             ],
           ),
         ),
@@ -550,38 +552,34 @@ class _LicenciasScreenState extends State<LicenciasScreen>
     );
   }
 
-  void _mostrarDialogoCrearLicencia() {
-    // TODO: Implementar diálogo de creación
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Crear Licencia Médica'),
-        content: const Text('Funcionalidad en desarrollo...'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
+  void _mostrarDialogoCrearLicencia() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LicenciaCrearScreen(),
       ),
     );
+    
+    // Si se creó exitosamente una licencia, refrescar la lista
+    if (result == true) {
+      final licenciaProvider = context.read<LicenciaProvider>();
+      await licenciaProvider.cargarLicencias();
+    }
   }
 
-  void _mostrarDialogoEditarLicencia(Licencia licencia) {
-    // TODO: Implementar diálogo de edición
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Editar Licencia Médica'),
-        content: Text('Editar licencia de ${licencia.nombreCompletoColaborador} - Funcionalidad en desarrollo...'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
+  void _mostrarDialogoEditarLicencia(Licencia licencia) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LicenciaEditarScreen(licencia: licencia),
       ),
     );
+    
+    // Si se editó exitosamente una licencia, refrescar la lista
+    if (result == true) {
+      final licenciaProvider = context.read<LicenciaProvider>();
+      await licenciaProvider.cargarLicencias();
+    }
   }
 
   void _confirmarEliminarLicencia(Licencia licencia) {

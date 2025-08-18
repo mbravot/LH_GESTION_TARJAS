@@ -8,6 +8,8 @@ import '../providers/colaborador_provider.dart';
 import '../widgets/main_scaffold.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import 'vacacion_crear_screen.dart';
+import 'vacacion_editar_screen.dart';
 
 class VacacionesScreen extends StatefulWidget {
   const VacacionesScreen({super.key});
@@ -424,13 +426,13 @@ class _VacacionesScreenState extends State<VacacionesScreen>
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          vacacion.periodoFormateado,
-                          style: TextStyle(
-                            color: textColor.withOpacity(0.7),
-                            fontSize: 14,
-                          ),
-                        ),
+                                                 Text(
+                           vacacion.periodoFormateadoEspanol,
+                           style: TextStyle(
+                             color: textColor.withOpacity(0.7),
+                             fontSize: 14,
+                           ),
+                         ),
                       ],
                     ),
                   ),
@@ -460,13 +462,13 @@ class _VacacionesScreenState extends State<VacacionesScreen>
                 children: [
                   Icon(Icons.calendar_today, color: Colors.purple, size: 16),
                   const SizedBox(width: 8),
-                  Text(
-                    '${vacacion.duracionDias} días',
-                    style: TextStyle(
-                      color: textColor.withOpacity(0.7),
-                      fontSize: 14,
-                    ),
-                  ),
+                                     Text(
+                     vacacion.duracionTexto,
+                     style: TextStyle(
+                       color: textColor.withOpacity(0.7),
+                       fontSize: 14,
+                     ),
+                   ),
                   const Spacer(),
                   IconButton(
                     onPressed: () => _mostrarDialogoEditarVacacion(vacacion),
@@ -498,11 +500,11 @@ class _VacacionesScreenState extends State<VacacionesScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildInfoRow('Colaborador', vacacion.nombreCompletoColaborador),
-              _buildInfoRow('Período', vacacion.periodoFormateado),
-              _buildInfoRow('Duración', '${vacacion.duracionDias} días'),
-              _buildInfoRow('Estado', vacacion.estado),
-              _buildInfoRow('Fecha Inicio', vacacion.fechaInicioFormateada),
-              _buildInfoRow('Fecha Fin', vacacion.fechaFinFormateada),
+                             _buildInfoRow('Período', vacacion.periodoFormateadoEspanol),
+               _buildInfoRow('Duración', vacacion.duracionTexto),
+               _buildInfoRow('Estado', vacacion.estado),
+               _buildInfoRow('Fecha Inicio', vacacion.fechaInicioFormateadaEspanol),
+               _buildInfoRow('Fecha Fin', vacacion.fechaFinFormateadaEspanol),
             ],
           ),
         ),
@@ -550,38 +552,34 @@ class _VacacionesScreenState extends State<VacacionesScreen>
     );
   }
 
-  void _mostrarDialogoCrearVacacion() {
-    // TODO: Implementar diálogo de creación
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Crear Vacación'),
-        content: const Text('Funcionalidad en desarrollo...'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
+  void _mostrarDialogoCrearVacacion() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const VacacionCrearScreen(),
       ),
     );
+    
+    // Si se creó exitosamente una vacación, refrescar la lista
+    if (result == true) {
+      final vacacionProvider = context.read<VacacionProvider>();
+      await vacacionProvider.cargarVacaciones();
+    }
   }
 
-  void _mostrarDialogoEditarVacacion(Vacacion vacacion) {
-    // TODO: Implementar diálogo de edición
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Editar Vacación'),
-        content: Text('Editar vacación de ${vacacion.nombreCompletoColaborador} - Funcionalidad en desarrollo...'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
+  void _mostrarDialogoEditarVacacion(Vacacion vacacion) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VacacionEditarScreen(vacacion: vacacion),
       ),
     );
+    
+    // Si se editó exitosamente una vacación, refrescar la lista
+    if (result == true) {
+      final vacacionProvider = context.read<VacacionProvider>();
+      await vacacionProvider.cargarVacaciones();
+    }
   }
 
   void _confirmarEliminarVacacion(Vacacion vacacion) {
