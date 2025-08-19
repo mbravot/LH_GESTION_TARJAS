@@ -43,6 +43,7 @@ class _ContratistaScreenState extends State<ContratistaScreen>
   }
 
   Future<void> _cargarDatosIniciales() async {
+    print('🚀 Inicializando pantalla de contratistas...');
     final provider = Provider.of<ContratistaProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
@@ -50,8 +51,10 @@ class _ContratistaScreenState extends State<ContratistaScreen>
 
     // Usar Future.delayed para evitar el error de setState durante build
     Future.delayed(Duration.zero, () async {
+      print('📡 Cargando datos de contratistas...');
       await provider.cargarContratistas();
       await provider.cargarOpciones();
+      print('✅ Datos cargados. Contratistas: ${provider.contratistas.length}');
     });
   }
 
@@ -182,12 +185,12 @@ class _ContratistaScreenState extends State<ContratistaScreen>
                     MaterialPageRoute(builder: (_) => const ContratistaCrearScreen()),
                   );
                 },
-                icon: const Icon(Icons.add),
-                label: const Text('Nuevo'),
+                icon: const Icon(Icons.add, size: 20),
+                label: const Text('Nuevo', style: TextStyle(fontSize: 14)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.successColor,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

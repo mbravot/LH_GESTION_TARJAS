@@ -174,12 +174,12 @@ class _LicenciasScreenState extends State<LicenciasScreen>
               const SizedBox(width: 12),
               ElevatedButton.icon(
                 onPressed: () => _mostrarDialogoCrearLicencia(),
-                icon: const Icon(Icons.add),
-                label: const Text('Nueva'),
+                icon: const Icon(Icons.add, size: 20),
+                label: const Text('Nueva', style: TextStyle(fontSize: 14)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

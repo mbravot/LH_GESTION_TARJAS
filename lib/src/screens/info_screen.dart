@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
+import '../widgets/main_scaffold.dart';
 
-class InfoPage extends StatefulWidget {
+class InfoScreen extends StatefulWidget {
+  const InfoScreen({super.key});
+
   @override
-  _InfoPageState createState() => _InfoPageState();
+  State<InfoScreen> createState() => _InfoScreenState();
 }
 
-class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
+class _InfoScreenState extends State<InfoScreen> with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late AnimationController _pulseController;
@@ -18,17 +22,17 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
     super.initState();
     
     _fadeController = AnimationController(
-      duration: Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
     
     _slideController = AnimationController(
-      duration: Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
     
     _pulseController = AnimationController(
-      duration: Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
 
@@ -41,7 +45,7 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
     ));
 
     _slideAnimation = Tween<Offset>(
-      begin: Offset(0, 0.5),
+      begin: const Offset(0, 0.5),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _slideController,
@@ -60,11 +64,11 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
   }
 
   void _startAnimations() async {
-    await Future.delayed(Duration(milliseconds: 300));
+    await Future.delayed(const Duration(milliseconds: 300));
     _fadeController.forward();
-    await Future.delayed(Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 500));
     _slideController.forward();
-    await Future.delayed(Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 800));
     _pulseController.repeat(reverse: true);
   }
 
@@ -78,26 +82,21 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Acerca de'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+    return MainScaffold(
+      title: 'Acerca de',
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              AppTheme.primaryColor.withOpacity(0.1),
               Colors.white,
             ],
           ),
         ),
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
           child: Column(
             children: [
               // Logo animado
@@ -110,30 +109,27 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        Theme.of(context).colorScheme.primary,
-                        Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                        AppTheme.primaryColor,
+                        AppTheme.primaryColor.withOpacity(0.7),
                       ],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                        color: AppTheme.primaryColor.withOpacity(0.3),
                         blurRadius: 20,
                         spreadRadius: 5,
                       ),
                     ],
                   ),
-                                     child: ClipOval(
-                     child: Image.asset(
-                       'assets/images/lh.jpg',
-                       width: 60,
-                       height: 60,
-                       fit: BoxFit.cover,
-                     ),
-                   ),
+                  child: const Icon(
+                    Icons.work,
+                    size: 60,
+                    color: Colors.white,
+                  ),
                 ),
               ),
               
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
               
               // Título principal
               SlideTransition(
@@ -141,24 +137,24 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: Text(
-                    'LH Tarja',
+                    'LH Gestión Tarjas',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: AppTheme.primaryColor,
                       letterSpacing: 2,
                     ),
                   ),
                 ),
               ),
               
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               
               // Subtítulo
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Text(
-                  'Sistema de Gestión de Actividades',
+                  'Sistema de Gestión de Personal y Actividades',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[600],
@@ -167,13 +163,13 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                 ),
               ),
               
-              SizedBox(height: 40),
+              const SizedBox(height: 40),
               
-              // Información del equipo
+              // Información de la empresa
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Container(
-                  padding: EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(15),
@@ -181,7 +177,7 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
                         blurRadius: 10,
-                        offset: Offset(0, 5),
+                        offset: const Offset(0, 5),
                       ),
                     ],
                   ),
@@ -190,13 +186,13 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                       Row(
                         children: [
                           Icon(
-                            Icons.people,
-                            color: Theme.of(context).colorScheme.primary,
+                            Icons.business,
+                            color: AppTheme.primaryColor,
                             size: 24,
                           ),
-                          SizedBox(width: 10),
+                          const SizedBox(width: 10),
                           Text(
-                            'Desarrollado por',
+                            'Desarrollado para',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -205,36 +201,37 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                           ),
                         ],
                       ),
-                      SizedBox(height: 15),
+                      const SizedBox(height: 15),
                       Text(
-                        'Equipo de TI',
+                        'Sociedad Agrícola La Hornilla',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: AppTheme.primaryColor,
                         ),
                       ),
-                      SizedBox(height: 5),
+                      const SizedBox(height: 5),
                       Text(
-                        'Sociedad Agrícola La Hornilla',
+                        'Sistema integral de gestión de personal y actividades agrícolas',
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey[600],
                           fontWeight: FontWeight.w500,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
                 ),
               ),
               
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
               
-              // Características de la app
+              // Módulos de la aplicación
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Container(
-                  padding: EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(15),
@@ -242,7 +239,60 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
                         blurRadius: 10,
-                        offset: Offset(0, 5),
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.apps,
+                            color: AppTheme.primaryColor,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Módulos Disponibles',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      _buildModuleItem(Icons.people, 'Colaboradores', 'Gestión completa del personal'),
+                      _buildModuleItem(Icons.assignment, 'Vacaciones', 'Control de días de vacaciones'),
+                      _buildModuleItem(Icons.event_available, 'Permisos', 'Gestión de permisos diarios'),
+                      _buildModuleItem(Icons.access_time, 'Horas Trabajadas', 'Seguimiento de jornadas'),
+                      _buildModuleItem(Icons.timer, 'Horas Extras', 'Control de tiempo adicional'),
+                      _buildModuleItem(Icons.business_center, 'Otros CECOs', 'Horas extras para otros centros'),
+                      _buildModuleItem(Icons.card_giftcard, 'Bono Especial', 'Gestión de bonificaciones'),
+                      _buildModuleItem(Icons.person_outline, 'Contratistas', 'Administración de contratistas'),
+                    ],
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 30),
+              
+              // Características técnicas
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
                       ),
                     ],
                   ),
@@ -256,7 +306,7 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                             color: Colors.amber,
                             size: 24,
                           ),
-                          SizedBox(width: 10),
+                          const SizedBox(width: 10),
                           Text(
                             'Características',
                             style: TextStyle(
@@ -267,17 +317,67 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                           ),
                         ],
                       ),
-                      SizedBox(height: 15),
-                      _buildFeatureItem(Icons.assignment, 'Control de Actividades', 'Seguimiento detallado de tareas'),
-                      _buildFeatureItem(Icons.speed, 'Gestión de Rendimientos', 'Control eficiente de productividad'),
-                      _buildFeatureItem(Icons.people, 'Gestión de Personal', 'Administración de trabajadores y contratistas'),
-                      _buildFeatureItem(Icons.analytics, 'Reportes en Tiempo Real', 'Información actualizada al momento'),
+                      const SizedBox(height: 15),
+                      _buildFeatureItem(Icons.cloud_sync, 'Sincronización en Tiempo Real', 'Datos actualizados automáticamente'),
+                      _buildFeatureItem(Icons.security, 'Autenticación Segura', 'Acceso protegido por credenciales'),
+                      _buildFeatureItem(Icons.filter_list, 'Filtros Avanzados', 'Búsqueda y filtrado inteligente'),
+                      _buildFeatureItem(Icons.analytics, 'Estadísticas en Vivo', 'Reportes y métricas actualizadas'),
+                      _buildFeatureItem(Icons.mobile_friendly, 'Diseño Responsivo', 'Funciona en cualquier dispositivo'),
+                      _buildFeatureItem(Icons.backup, 'Respaldo Automático', 'Datos seguros en la nube'),
                     ],
                   ),
                 ),
               ),
               
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
+              
+              // Información de contacto
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.contact_support,
+                            color: AppTheme.primaryColor,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Soporte Técnico',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      _buildContactItem(Icons.email, 'Email', 'soporte@lahornilla.cl'),
+                      _buildContactItem(Icons.phone, 'Teléfono', '+56 9 XXXX XXXX'),
+                      _buildContactItem(Icons.location_on, 'Ubicación', 'La Hornilla, Chile'),
+                    ],
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 30),
               
               // Mensaje motivacional
               ScaleTransition(
@@ -285,17 +385,17 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: Container(
-                    padding: EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                          Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                          AppTheme.primaryColor.withOpacity(0.1),
+                          AppTheme.primaryColor.withOpacity(0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(15),
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                        color: AppTheme.primaryColor.withOpacity(0.3),
                         width: 2,
                       ),
                     ),
@@ -306,19 +406,19 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                           color: Colors.red,
                           size: 30,
                         ),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         Text(
-                          '¡Gracias por usar LH Tarja!',
+                          '¡Gracias por usar LH Gestión Tarjas!',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: AppTheme.primaryColor,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        SizedBox(height: 5),
+                        const SizedBox(height: 5),
                         Text(
-                          'Seguimos trabajando para mejorar tu experiencia',
+                          'Seguimos trabajando para mejorar tu experiencia de gestión',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -331,7 +431,7 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                 ),
               ),
               
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -339,24 +439,24 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildFeatureItem(IconData icon, String title, String description) {
+  Widget _buildModuleItem(IconData icon, String title, String description) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              color: AppTheme.primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               icon,
-              color: Theme.of(context).colorScheme.primary,
+              color: AppTheme.primaryColor,
               size: 20,
             ),
           ),
-          SizedBox(width: 15),
+          const SizedBox(width: 15),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,24 +483,24 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTechItem(String title, String description) {
+  Widget _buildFeatureItem(IconData icon, String title, String description) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: Colors.amber.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
-              Icons.code,
-              color: Colors.blue,
+              icon,
+              color: Colors.amber,
               size: 20,
             ),
           ),
-          SizedBox(width: 15),
+          const SizedBox(width: 15),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -414,6 +514,50 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                 ),
                 Text(
                   description,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactItem(IconData icon, String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: AppTheme.primaryColor,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                Text(
+                  value,
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[600],

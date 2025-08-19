@@ -26,6 +26,7 @@ import 'contratista_screen.dart';
 import '../widgets/sucursal_selector.dart';
 import '../widgets/main_scaffold.dart';
 import '../widgets/permiso_widget.dart';
+import 'info_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -280,13 +281,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Icon(
                           Icons.person,
                           size: 35,
-                          color: AppTheme.primaryColor,
+                          color: Colors.purple,
                         ),
                       ),
                       IconButton(
                         icon: Icon(
                           themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                          color: Colors.white,
+                          color: Colors.yellow,
                         ),
                         onPressed: () => themeProvider.toggleTheme(),
                       ),
@@ -507,7 +508,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // Gestión de Trabajadores
             const _MenuHeader(title: 'Gestión de Trabajadores'),
             _MenuItem(
-              icon: Icons.groups,
+              icon: Icons.people,
               title: 'Trabajadores',
               onTap: () {
                 Navigator.pop(context);
@@ -528,7 +529,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),*/
             _MenuItem(
-              icon: Icons.person_off_outlined,
+              icon: Icons.groups,
               title: 'Contratistas',
                onTap: () {
                   Navigator.pop(context);
@@ -603,17 +604,19 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
 
+            const Divider(),
             _MenuItem(
               icon: Icons.info,
               title: 'Acerca de',
               iconColor: Colors.purple,
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implementar navegación
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const InfoScreen()),
+                );
               },
             ),
-
-            const Divider(),
             _MenuItem(
               icon: Icons.lock,
               title: 'Cambiar Contraseña',

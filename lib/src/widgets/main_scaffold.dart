@@ -83,50 +83,82 @@ class MainScaffold extends StatelessWidget {
         }
         
         // Si hay TarjaProvider disponible, recargar tarjas
-        if (tarjaProvider != null) {
+        try {
           await tarjaProvider.cargarTarjas();
+        } catch (e) {
+          // Ignorar si el provider no está disponible
         }
         
         // Si hay TrabajadorProvider disponible, recargar trabajadores
-        if (trabajadorProvider != null) {
+        try {
           await trabajadorProvider.cargarTrabajadores();
+        } catch (e) {
+          // Ignorar si el provider no está disponible
         }
         
         // Si hay ColaboradorProvider disponible, recargar colaboradores
-        if (colaboradorProvider != null) {
+        try {
           await colaboradorProvider.cargarColaboradores();
+        } catch (e) {
+          // Ignorar si el provider no está disponible
         }
-        if (vacacionProvider != null) {
+        try {
           await vacacionProvider.cargarVacaciones();
+        } catch (e) {
+          // Ignorar si el provider no está disponible
         }
-        if (licenciaProvider != null) {
+        try {
           await licenciaProvider.cargarLicencias();
+        } catch (e) {
+          // Ignorar si el provider no está disponible
         }
-        if (permisoProvider != null) {
+        try {
           await permisoProvider.cargarPermisos();
+        } catch (e) {
+          // Ignorar si el provider no está disponible
         }
         
         // Si hay HorasTrabajadasProvider disponible, recargar horas trabajadas
-        final horasTrabajadasProvider = context.read<HorasTrabajadasProvider>();
-        await horasTrabajadasProvider.cargarHorasTrabajadas();
+        try {
+          final horasTrabajadasProvider = context.read<HorasTrabajadasProvider>();
+          await horasTrabajadasProvider.cargarHorasTrabajadas();
+        } catch (e) {
+          // Ignorar si el provider no está disponible
+        }
         
         // Si hay HorasExtrasProvider disponible, recargar horas extras
-        final horasExtrasProvider = context.read<HorasExtrasProvider>();
-        await horasExtrasProvider.cargarRendimientos();
+        try {
+          final horasExtrasProvider = context.read<HorasExtrasProvider>();
+          await horasExtrasProvider.cargarRendimientos();
+        } catch (e) {
+          // Ignorar si el provider no está disponible
+        }
         
         // Si hay HorasExtrasOtrosCecosProvider disponible, recargar horas extras otros CECOs
-        final horasExtrasOtrosCecosProvider = context.read<HorasExtrasOtrosCecosProvider>();
-        await horasExtrasOtrosCecosProvider.cargarHorasExtras();
+        try {
+          final horasExtrasOtrosCecosProvider = context.read<HorasExtrasOtrosCecosProvider>();
+          await horasExtrasOtrosCecosProvider.cargarHorasExtras();
+        } catch (e) {
+          // Ignorar si el provider no está disponible
+        }
         
         // Si hay BonoEspecialProvider disponible, recargar bonos especiales
-        final bonoEspecialProvider = context.read<BonoEspecialProvider>();
-        await bonoEspecialProvider.cargarBonosEspeciales();
-        await bonoEspecialProvider.cargarResumenes();
+        try {
+          final bonoEspecialProvider = context.read<BonoEspecialProvider>();
+          await bonoEspecialProvider.cargarBonosEspeciales();
+          await bonoEspecialProvider.cargarResumenes();
+        } catch (e) {
+          // Ignorar si el provider no está disponible
+        }
         
         // Si hay ContratistaProvider disponible, recargar contratistas
-        final contratistaProvider = context.read<ContratistaProvider>();
-        await contratistaProvider.cargarContratistas();
-        await contratistaProvider.cargarOpciones();
+        try {
+          final contratistaProvider = context.read<ContratistaProvider>();
+          await contratistaProvider.cargarContratistas();
+          await contratistaProvider.cargarOpciones();
+        } catch (e) {
+          // Ignorar si el provider no está disponible
+        }
       }
 
       // Mostrar mensaje de éxito

@@ -32,21 +32,41 @@ class Contratista {
   });
 
   factory Contratista.fromJson(Map<String, dynamic> json) {
-    return Contratista(
-      id: json['id'] ?? '',
-      rut: json['rut'] ?? '',
-      nombre: json['nombre'] ?? '',
-      apellidoPaterno: json['apellido_paterno'] ?? '',
-      apellidoMaterno: json['apellido_materno'] ?? '',
-      email: json['email'],
-      telefono: json['telefono'],
-      direccion: json['direccion'],
-      fechaNacimiento: _parseFecha(json['fecha_nacimiento']),
-      fechaIncorporacion: _parseFecha(json['fecha_incorporacion']),
-      estado: json['estado'] ?? 'ACTIVO',
-      observaciones: json['observaciones'],
-      timestamp: _parseFecha(json['timestamp']) ?? DateTime.now(),
-    );
+    try {
+      return Contratista(
+        id: json['id']?.toString() ?? '',
+        rut: json['rut']?.toString() ?? '',
+        nombre: json['nombre']?.toString() ?? '',
+        apellidoPaterno: json['apellido_paterno']?.toString() ?? '',
+        apellidoMaterno: json['apellido_materno']?.toString() ?? '',
+        email: json['email']?.toString(),
+        telefono: json['telefono']?.toString(),
+        direccion: json['direccion']?.toString(),
+        fechaNacimiento: _parseFecha(json['fecha_nacimiento']),
+        fechaIncorporacion: _parseFecha(json['fecha_incorporacion']),
+        estado: _getEstadoFromId(json['id_estado']),
+        observaciones: json['observaciones']?.toString(),
+        timestamp: _parseFecha(json['timestamp']) ?? DateTime.now(),
+      );
+    } catch (e) {
+      print('❌ Error al parsear contratista: $e');
+      print('📄 JSON problemático: $json');
+      rethrow;
+    }
+  }
+
+  static String _getEstadoFromId(dynamic idEstado) {
+    if (idEstado == null) return 'ACTIVO';
+    switch (idEstado.toString()) {
+      case '1':
+        return 'ACTIVO';
+      case '2':
+        return 'INACTIVO';
+      case '3':
+        return 'SUSPENDIDO';
+      default:
+        return 'ACTIVO';
+    }
   }
 
   static DateTime? _parseFecha(dynamic fecha) {
@@ -88,9 +108,22 @@ class Contratista {
       'direccion': direccion,
       'fecha_nacimiento': fechaNacimiento?.toIso8601String().split('T')[0],
       'fecha_incorporacion': fechaIncorporacion?.toIso8601String().split('T')[0],
-      'estado': estado,
+      'id_estado': _getEstadoId(estado),
       'observaciones': observaciones,
     };
+  }
+
+  static int _getEstadoId(String estado) {
+    switch (estado.toUpperCase()) {
+      case 'ACTIVO':
+        return 1;
+      case 'INACTIVO':
+        return 2;
+      case 'SUSPENDIDO':
+        return 3;
+      default:
+        return 1;
+    }
   }
 
   // Getters para nombre completo

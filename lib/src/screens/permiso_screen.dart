@@ -171,12 +171,12 @@ class _PermisoScreenState extends State<PermisoScreen> with SingleTickerProvider
               const SizedBox(width: 12),
               ElevatedButton.icon(
                 onPressed: () => _mostrarDialogoCrearPermiso(),
-                icon: const Icon(Icons.add),
-                label: const Text('Nuevo'),
+                icon: const Icon(Icons.add, size: 20),
+                label: const Text('Nuevo', style: TextStyle(fontSize: 14)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

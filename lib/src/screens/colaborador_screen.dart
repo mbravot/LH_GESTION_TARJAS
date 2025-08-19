@@ -16,19 +16,15 @@ class ColaboradorScreen extends StatefulWidget {
   State<ColaboradorScreen> createState() => _ColaboradorScreenState();
 }
 
-class _ColaboradorScreenState extends State<ColaboradorScreen> 
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  int _selectedTab = 0;
+class _ColaboradorScreenState extends State<ColaboradorScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _showFiltros = false;
+  String _filtroActivo = 'todos'; // 'todos', 'activos', 'inactivos'
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _tabController.addListener(_onTabChanged);
     _cargarDatosIniciales();
   }
 
@@ -51,31 +47,8 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _onTabChanged() {
-    setState(() {
-      _selectedTab = _tabController.index;
-      _actualizarFiltrosPorTab();
-    });
-  }
-
-  void _actualizarFiltrosPorTab() {
-    final colaboradorProvider = context.read<ColaboradorProvider>();
-    switch (_selectedTab) {
-      case 1: // Activos
-        colaboradorProvider.setFiltroEstado('1');
-        break;
-      case 2: // Inactivos
-        colaboradorProvider.setFiltroEstado('2');
-        break;
-      default: // Todos
-        colaboradorProvider.setFiltroEstado('todos');
-        break;
-    }
   }
 
   void _onSearchChanged(String query) {
@@ -84,6 +57,25 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
     });
     final colaboradorProvider = context.read<ColaboradorProvider>();
     colaboradorProvider.setFiltroBusqueda(query);
+  }
+
+  void _aplicarFiltro(String filtro) {
+    setState(() {
+      _filtroActivo = filtro;
+    });
+    
+    final colaboradorProvider = context.read<ColaboradorProvider>();
+    switch (filtro) {
+      case 'activos':
+        colaboradorProvider.setFiltroEstado('1');
+        break;
+      case 'inactivos':
+        colaboradorProvider.setFiltroEstado('2');
+        break;
+      default: // 'todos'
+        colaboradorProvider.setFiltroEstado('todos');
+        break;
+    }
   }
 
   List<Colaborador> _filtrarColaboradores(List<Colaborador> colaboradores) {
@@ -169,16 +161,20 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
                 ),
               ),
               const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: () => _mostrarDialogoCrearColaborador(),
-                icon: const Icon(Icons.person_add),
-                label: const Text('Nuevo'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              SizedBox(
+                width: 120,
+                child: ElevatedButton.icon(
+                  onPressed: () => _mostrarDialogoCrearColaborador(),
+                  icon: const Icon(Icons.person_add, size: 20),
+                  label: const Text('Nuevo', style: TextStyle(fontSize: 14)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.successColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
                   ),
                 ),
               ),
@@ -257,6 +253,9 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
                         colaboradorProvider.limpiarFiltros();
                         _searchController.clear();
                         _onSearchChanged('');
+                        setState(() {
+                          _filtroActivo = 'todos';
+                        });
                       },
                       icon: const Icon(Icons.clear_all),
                       label: const Text('Limpiar filtros'),
@@ -289,7 +288,9 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
                   'Total',
                   colaboradorProvider.totalColaboradores.toString(),
                   Icons.people,
-                  AppTheme.primaryColor,
+                  Colors.orange,
+                  'todos',
+                  colaboradorProvider.totalColaboradores > 0,
                 ),
               ),
               const SizedBox(width: 12),
@@ -299,6 +300,8 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
                   colaboradorProvider.colaboradoresActivos.toString(),
                   Icons.check_circle,
                   Colors.green,
+                  'activos',
+                  colaboradorProvider.colaboradoresActivos > 0,
                 ),
               ),
               const SizedBox(width: 12),
@@ -308,6 +311,8 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
                   colaboradorProvider.colaboradoresInactivos.toString(),
                   Icons.cancel,
                   Colors.red,
+                  'inactivos',
+                  colaboradorProvider.colaboradoresInactivos > 0,
                 ),
               ),
             ],
@@ -317,35 +322,65 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
     );
   }
 
-  Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icono, color: color, size: 32),
-          const SizedBox(height: 8),
-          Text(
-            valor,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+  Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color, String filtro, bool tieneDatos) {
+    final isActivo = _filtroActivo == filtro;
+    
+    return GestureDetector(
+      onTap: tieneDatos ? () => _aplicarFiltro(filtro) : null,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isActivo ? color.withOpacity(0.2) : color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isActivo ? color : color.withOpacity(0.3),
+            width: isActivo ? 2 : 1,
           ),
-          Text(
-            titulo,
-            style: TextStyle(
-              fontSize: 12,
-              color: color.withOpacity(0.8),
-              fontWeight: FontWeight.w500,
+          boxShadow: isActivo ? [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-          ),
-        ],
+          ] : null,
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icono, 
+              color: color, 
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              valor,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              titulo,
+              style: TextStyle(
+                fontSize: 12,
+                color: color.withOpacity(0.8),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (isActivo) ...[
+              const SizedBox(height: 4),
+              Container(
+                width: 20,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -433,42 +468,42 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
                 ],
               ),
               const SizedBox(height: 12),
-                             if (colaborador.cargoText != 'Sin cargo') ...[
-                 Row(
-                   children: [
-                     Icon(Icons.work, color: Colors.blue, size: 16),
-                     const SizedBox(width: 8),
-                     Expanded(
-                       child: Text(
-                         'Cargo: ${colaborador.cargoText}',
-                         style: TextStyle(
-                           color: textColor.withOpacity(0.7),
-                           fontSize: 14,
-                         ),
-                       ),
-                     ),
-                   ],
-                 ),
-                 const SizedBox(height: 8),
-               ],
-               if (colaborador.sucursalText != 'Sucursal ${colaborador.idSucursal}') ...[
-                 Row(
-                   children: [
-                     Icon(Icons.location_on, color: Colors.purple, size: 16),
-                     const SizedBox(width: 8),
-                     Expanded(
-                       child: Text(
-                         'Sucursal: ${colaborador.sucursalText}',
-                         style: TextStyle(
-                           color: textColor.withOpacity(0.7),
-                           fontSize: 14,
-                         ),
-                       ),
-                     ),
-                   ],
-                 ),
-                 const SizedBox(height: 8),
-               ],
+              if (colaborador.cargoText != 'Sin cargo') ...[
+                Row(
+                  children: [
+                    Icon(Icons.work, color: Colors.blue, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Cargo: ${colaborador.cargoText}',
+                        style: TextStyle(
+                          color: textColor.withOpacity(0.7),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+              if (colaborador.sucursalText != 'Sucursal ${colaborador.idSucursal}') ...[
+                Row(
+                  children: [
+                    Icon(Icons.location_on, color: Colors.purple, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Sucursal: ${colaborador.sucursalText}',
+                        style: TextStyle(
+                          color: textColor.withOpacity(0.7),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
               if (colaborador.fechaIncorporacion != null) ...[
                 Row(
                   children: [
@@ -581,8 +616,6 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
     );
   }
 
-
-
   void _mostrarDialogoEditarColaborador(Colaborador colaborador) async {
     final result = await Navigator.push(
       context,
@@ -603,7 +636,6 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
     return MainScaffold(
       title: 'Colaboradores',
       onRefresh: _refrescarDatos,
-      bottom: _TabBarWithCounters(tabController: _tabController),
       body: Column(
         children: [
           _buildSearchBar(),
@@ -729,102 +761,5 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
       final colaboradorProvider = context.read<ColaboradorProvider>();
       await colaboradorProvider.cargarColaboradores();
     }
-  }
-}
-
-class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget {
-  final TabController tabController;
-
-  const _TabBarWithCounters({required this.tabController});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(48.0);
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<ColaboradorProvider>(
-      builder: (context, colaboradorProvider, child) {
-        return TabBar(
-          controller: tabController,
-          indicatorColor: AppTheme.primaryColor,
-          labelColor: AppTheme.accentColor,
-          unselectedLabelColor: Colors.white,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Todos'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${colaboradorProvider.totalColaboradores}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Activos'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${colaboradorProvider.colaboradoresActivos}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Inactivos'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${colaboradorProvider.colaboradoresInactivos}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 }

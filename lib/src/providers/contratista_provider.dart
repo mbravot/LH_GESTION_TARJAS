@@ -49,11 +49,27 @@ class ContratistaProvider extends ChangeNotifier {
   Future<void> cargarContratistas() async {
     _setLoading(true);
     try {
+      print('🔄 Cargando contratistas...');
       final response = await ApiService.obtenerContratistas();
-      _contratistas = response.map((json) => Contratista.fromJson(json)).toList();
+      print('📊 Respuesta del API: ${response.length} contratistas');
+      print('📄 Primer contrato: ${response.isNotEmpty ? response.first : 'No hay datos'}');
+      _contratistas = response.map((json) {
+        print('🔍 Procesando JSON: $json');
+        try {
+          final contratista = Contratista.fromJson(json);
+          print('✅ Contratista creado: ${contratista.nombre} - ${contratista.estado}');
+          return contratista;
+        } catch (e) {
+          print('❌ Error al crear contratista desde JSON: $e');
+          print('📄 JSON problemático: $json');
+          rethrow;
+        }
+      }).toList();
+      print('✅ Contratistas cargados: ${_contratistas.length}');
       _aplicarFiltros();
       _error = '';
     } catch (e) {
+      print('❌ Error al cargar contratistas: $e');
       _error = 'Error al cargar contratistas: $e';
       _contratistas = [];
       _contratistasFiltradas = [];
@@ -64,12 +80,48 @@ class ContratistaProvider extends ChangeNotifier {
 
   Future<void> cargarOpciones() async {
     try {
-      final response = await ApiService.obtenerOpcionesContratistas();
-      _estadosDisponibles = response['estados']?.cast<String>() ?? [];
+      print('🔄 Cargando opciones de contratistas...');
+      
+      // Usar estados por defecto primero
+      _estadosDisponibles = ['ACTIVO', 'INACTIVO', 'SUSPENDIDO'];
+      
+      // Intentar cargar desde el backend (opcional)
+      try {
+        final response = await ApiService.obtenerOpcionesContratistas();
+        print('📊 Respuesta de opciones: $response');
+        
+        // Manejar diferentes estructuras de respuesta
+        if (response['estados'] != null) {
+          if (response['estados'] is List) {
+            final estadosBackend = (response['estados'] as List)
+                .map((e) {
+                  if (e is Map) {
+                    return e['nombre']?.toString() ?? 'ACTIVO';
+                  }
+                  return e.toString();
+                })
+                .toSet() // Eliminar duplicados
+                .toList();
+            if (estadosBackend.isNotEmpty) {
+              _estadosDisponibles = estadosBackend;
+            }
+          } else {
+            print('⚠️ Estados no es una lista: ${response['estados']}');
+          }
+        } else {
+          print('⚠️ No se encontraron estados en la respuesta');
+        }
+      } catch (apiError) {
+        print('⚠️ Error al cargar opciones del backend (usando por defecto): $apiError');
+      }
+      
+      print('✅ Estados disponibles: $_estadosDisponibles');
       notifyListeners();
     } catch (e) {
+      print('❌ Error crítico al cargar opciones: $e');
       _error = 'Error al cargar opciones: $e';
-      _estadosDisponibles = [];
+      _estadosDisponibles = ['ACTIVO', 'INACTIVO', 'SUSPENDIDO']; // Estados por defecto
+      notifyListeners();
     }
   }
 
