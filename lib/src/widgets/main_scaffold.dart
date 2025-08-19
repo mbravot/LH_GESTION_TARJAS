@@ -13,6 +13,7 @@ import '../providers/horas_trabajadas_provider.dart';
 import '../providers/horas_extras_provider.dart';
 import '../providers/horas_extras_otroscecos_provider.dart';
 import '../providers/bono_especial_provider.dart';
+import '../providers/contratista_provider.dart';
 import '../theme/app_theme.dart';
 import 'sucursal_selector.dart';
 import 'user_info.dart';
@@ -121,6 +122,11 @@ class MainScaffold extends StatelessWidget {
         final bonoEspecialProvider = context.read<BonoEspecialProvider>();
         await bonoEspecialProvider.cargarBonosEspeciales();
         await bonoEspecialProvider.cargarResumenes();
+        
+        // Si hay ContratistaProvider disponible, recargar contratistas
+        final contratistaProvider = context.read<ContratistaProvider>();
+        await contratistaProvider.cargarContratistas();
+        await contratistaProvider.cargarOpciones();
       }
 
       // Mostrar mensaje de éxito

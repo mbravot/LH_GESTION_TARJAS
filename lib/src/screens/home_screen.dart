@@ -22,6 +22,7 @@ import 'horas_trabajadas_screen.dart';
 import 'horas_extras_screen.dart';
 import 'horas_extras_otroscecos_screen.dart';
 import 'bono_especial_screen.dart';
+import 'contratista_screen.dart';
 import '../widgets/sucursal_selector.dart';
 import '../widgets/main_scaffold.dart';
 import '../widgets/permiso_widget.dart';
@@ -456,38 +457,6 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),*/
 
-            // Gestión de Trabajadores
-            const _MenuHeader(title: 'Gestión de Trabajadores'),
-            _MenuItem(
-              icon: Icons.groups,
-              title: 'Trabajadores',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const TrabajadorScreen(),
-                  ),
-                );
-              },
-            ),
-            _MenuItem(
-              icon: Icons.person_add,
-              title: 'Pre-enrolados',
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implementar navegación
-              },
-            ),
-            _MenuItem(
-              icon: Icons.person_off_outlined,
-              title: 'Desactivar Usuarios',
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implementar navegación
-              },
-            ),
-
             // Control de Horas y Bonos
             const _MenuHeader(title: 'Control de Horas y Bonos'),
             _MenuItem(
@@ -534,6 +503,43 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
+
+            // Gestión de Trabajadores
+            const _MenuHeader(title: 'Gestión de Trabajadores'),
+            _MenuItem(
+              icon: Icons.groups,
+              title: 'Trabajadores',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TrabajadorScreen(),
+                  ),
+                );
+              },
+            ),
+            /*_MenuItem(
+              icon: Icons.person_add,
+              title: 'Pre-enrolados',
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Implementar navegación
+              },
+            ),*/
+            _MenuItem(
+              icon: Icons.person_off_outlined,
+              title: 'Contratistas',
+               onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ContratistaScreen()
+                    ),
+                  );
+                },
+              ),
 
             // Reportes y Edición
             const _MenuHeader(title: 'Reportes y Edición'),
@@ -582,7 +588,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             _MenuItem(
               icon: Icons.upload_file,
-              title: 'Carga Agriprime',
+              title: 'Carga Agroprime',
               onTap: () {
                 Navigator.pop(context);
                 // TODO: Implementar navegación
@@ -591,6 +597,16 @@ class _HomeScreenState extends State<HomeScreen> {
             _MenuItem(
               icon: Icons.edit,
               title: 'Edición de Datos',
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Implementar navegación
+              },
+            ),
+
+            _MenuItem(
+              icon: Icons.info,
+              title: 'Acerca de',
+              iconColor: Colors.purple,
               onTap: () {
                 Navigator.pop(context);
                 // TODO: Implementar navegación
