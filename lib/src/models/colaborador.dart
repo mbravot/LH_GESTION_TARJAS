@@ -175,6 +175,98 @@ class Colaborador {
     return idSucursalContrato ?? 'Sin sucursal de contrato';
   }
 
+  // Método para parsear fechas en formato "Mon, 18 Aug 2025 00:00:00 GMT"
+  DateTime? _parseFecha(String? fechaStr) {
+    if (fechaStr == null || fechaStr.isEmpty) return null;
+    
+    try {
+      // Intentar parsear como ISO primero
+      return DateTime.parse(fechaStr);
+    } catch (e) {
+      try {
+        // Si falla, intentar con el formato específico del backend
+        // "Mon, 18 Aug 2025 00:00:00 GMT"
+        final regex = RegExp(r'(\w{3}), (\d{1,2}) (\w{3}) (\d{4}) (\d{2}):(\d{2}):(\d{2}) GMT');
+        final match = regex.firstMatch(fechaStr);
+        
+        if (match != null) {
+          final day = int.parse(match.group(2)!);
+          final monthStr = match.group(3)!;
+          final year = int.parse(match.group(4)!);
+          final hour = int.parse(match.group(5)!);
+          final minute = int.parse(match.group(6)!);
+          final second = int.parse(match.group(7)!);
+          
+          // Mapear nombres de meses a números
+          final monthMap = {
+            'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+            'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+          };
+          
+          final month = monthMap[monthStr];
+          if (month != null) {
+            return DateTime(year, month, day, hour, minute, second);
+          }
+        }
+        return null;
+      } catch (e) {
+        return null;
+      }
+    }
+  }
+
+  // Método para formatear fecha de nacimiento en formato chileno
+  String get fechaNacimientoFormateada {
+    final fecha = _parseFecha(fechaNacimiento);
+    if (fecha != null) {
+      return '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}';
+    }
+    return fechaNacimiento ?? 'Sin fecha';
+  }
+
+  // Método para formatear fecha de incorporación en formato chileno
+  String get fechaIncorporacionFormateada {
+    final fecha = _parseFecha(fechaIncorporacion);
+    if (fecha != null) {
+      return '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}';
+    }
+    return fechaIncorporacion ?? 'Sin fecha';
+  }
+
+  // Método para formatear fecha de nacimiento en español con día de la semana
+  String get fechaNacimientoFormateadaEspanol {
+    final fecha = _parseFecha(fechaNacimiento);
+    if (fecha != null) {
+      final diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+      final meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      
+      final diaSemana = diasSemana[fecha.weekday - 1];
+      final dia = fecha.day.toString().padLeft(2, '0');
+      final mes = meses[fecha.month - 1];
+      final anio = fecha.year;
+      
+      return '$diaSemana, $dia $mes $anio';
+    }
+    return fechaNacimiento ?? 'Sin fecha';
+  }
+
+  // Método para formatear fecha de incorporación en español con día de la semana
+  String get fechaIncorporacionFormateadaEspanol {
+    final fecha = _parseFecha(fechaIncorporacion);
+    if (fecha != null) {
+      final diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+      final meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      
+      final diaSemana = diasSemana[fecha.weekday - 1];
+      final dia = fecha.day.toString().padLeft(2, '0');
+      final mes = meses[fecha.month - 1];
+      final anio = fecha.year;
+      
+      return '$diaSemana, $dia $mes $anio';
+    }
+    return fechaIncorporacion ?? 'Sin fecha';
+  }
+
   // Método para clonar el colaborador con cambios
   Colaborador copyWith({
     String? id,

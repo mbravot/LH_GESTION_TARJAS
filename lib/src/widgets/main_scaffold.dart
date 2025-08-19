@@ -9,6 +9,10 @@ import '../providers/trabajador_provider.dart';
 import '../providers/colaborador_provider.dart';
 import '../providers/vacacion_provider.dart';
 import '../providers/licencia_provider.dart';
+import '../providers/horas_trabajadas_provider.dart';
+import '../providers/horas_extras_provider.dart';
+import '../providers/horas_extras_otroscecos_provider.dart';
+import '../providers/bono_especial_provider.dart';
 import '../theme/app_theme.dart';
 import 'sucursal_selector.dart';
 import 'user_info.dart';
@@ -100,6 +104,23 @@ class MainScaffold extends StatelessWidget {
         if (permisoProvider != null) {
           await permisoProvider.cargarPermisos();
         }
+        
+        // Si hay HorasTrabajadasProvider disponible, recargar horas trabajadas
+        final horasTrabajadasProvider = context.read<HorasTrabajadasProvider>();
+        await horasTrabajadasProvider.cargarHorasTrabajadas();
+        
+        // Si hay HorasExtrasProvider disponible, recargar horas extras
+        final horasExtrasProvider = context.read<HorasExtrasProvider>();
+        await horasExtrasProvider.cargarRendimientos();
+        
+        // Si hay HorasExtrasOtrosCecosProvider disponible, recargar horas extras otros CECOs
+        final horasExtrasOtrosCecosProvider = context.read<HorasExtrasOtrosCecosProvider>();
+        await horasExtrasOtrosCecosProvider.cargarHorasExtras();
+        
+        // Si hay BonoEspecialProvider disponible, recargar bonos especiales
+        final bonoEspecialProvider = context.read<BonoEspecialProvider>();
+        await bonoEspecialProvider.cargarBonosEspeciales();
+        await bonoEspecialProvider.cargarResumenes();
       }
 
       // Mostrar mensaje de éxito

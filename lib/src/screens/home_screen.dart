@@ -18,6 +18,10 @@ import 'vacaciones_screen.dart';
 import '../providers/licencia_provider.dart';
 import 'licencias_screen.dart';
 import 'permiso_screen.dart';
+import 'horas_trabajadas_screen.dart';
+import 'horas_extras_screen.dart';
+import 'horas_extras_otroscecos_screen.dart';
+import 'bono_especial_screen.dart';
 import '../widgets/sucursal_selector.dart';
 import '../widgets/main_scaffold.dart';
 import '../widgets/permiso_widget.dart';
@@ -443,14 +447,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-            _MenuItem(
+            /*_MenuItem(
               icon: Icons.person_off,
               title: 'Inasistencias',
               onTap: () {
                 Navigator.pop(context);
                 // TODO: Implementar navegación
               },
-            ),
+            ),*/
 
             // Gestión de Trabajadores
             const _MenuHeader(title: 'Gestión de Trabajadores'),
@@ -491,7 +495,10 @@ class _HomeScreenState extends State<HomeScreen> {
               title: 'Horas Trabajadas',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implementar navegación
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HorasTrabajadasScreen()),
+                );
               },
             ),
             _MenuItem(
@@ -499,7 +506,21 @@ class _HomeScreenState extends State<HomeScreen> {
               title: 'Horas Extras',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implementar navegación
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HorasExtrasScreen()),
+                );
+              },
+            ),
+            _MenuItem(
+              icon: Icons.add_circle_outline,
+              title: 'Horas Extras en Otros Cecos',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HorasExtrasOtrosCecosScreen()),
+                );
               },
             ),
             _MenuItem(
@@ -507,7 +528,10 @@ class _HomeScreenState extends State<HomeScreen> {
               title: 'Bono Especial',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implementar navegación
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BonoEspecialScreen()),
+                );
               },
             ),
 

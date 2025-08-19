@@ -475,7 +475,7 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
                     Icon(Icons.calendar_today, color: Colors.orange, size: 16),
                     const SizedBox(width: 8),
                     Text(
-                      'Incorporación: ${colaborador.fechaIncorporacion}',
+                      'Incorporación: ${colaborador.fechaIncorporacionFormateadaEspanol}',
                       style: TextStyle(
                         color: textColor.withOpacity(0.7),
                         fontSize: 14,
@@ -527,9 +527,9 @@ class _ColaboradorScreenState extends State<ColaboradorScreen>
               if (colaborador.cargoText != 'Sin cargo')
                 _buildInfoRow('Cargo', colaborador.cargoText),
               if (colaborador.fechaNacimiento != null)
-                _buildInfoRow('Fecha Nacimiento', colaborador.fechaNacimiento!),
+                _buildInfoRow('Fecha Nacimiento', colaborador.fechaNacimientoFormateadaEspanol),
               if (colaborador.fechaIncorporacion != null)
-                _buildInfoRow('Fecha Incorporación', colaborador.fechaIncorporacion!),
+                _buildInfoRow('Fecha Incorporación', colaborador.fechaIncorporacionFormateadaEspanol),
               if (colaborador.previsionText != 'Sin previsión')
                 _buildInfoRow('Previsión', colaborador.previsionText),
               if (colaborador.afpText != 'Sin AFP')
