@@ -23,10 +23,8 @@ class _PermisoCrearScreenState extends State<PermisoCrearScreen> {
   DateTime? _fechaSeleccionada;
   
   List<Map<String, dynamic>> _tiposPermiso = [];
-  List<Map<String, dynamic>> _estadosPermiso = [];
   List<Colaborador> _colaboradores = [];
   
-  bool _isLoading = false;
   bool _isSaving = false;
   bool _isLoadingData = true;
   String? _error;
@@ -55,26 +53,20 @@ class _PermisoCrearScreenState extends State<PermisoCrearScreen> {
 
       await Future.wait([
         permisoProvider.cargarTiposPermiso(),
-        permisoProvider.cargarEstadosPermiso(),
         colaboradorProvider.cargarColaboradores(),
       ]);
 
       setState(() {
         _tiposPermiso = permisoProvider.tiposPermiso;
-        _estadosPermiso = permisoProvider.estadosPermiso;
-        _colaboradores = colaboradorProvider.colaboradores.where((c) => c.estadoText == 'Activo').toList();
+        _colaboradores = colaboradorProvider.colaboradoresActivosList;
       });
       
       // Establecer valores por defecto
       if (_tiposPermiso.isNotEmpty) {
         _tipoPermisoSeleccionado = _tiposPermiso.first['id'].toString();
       }
-      if (_colaboradores.isNotEmpty) {
-        _colaboradorSeleccionado = _colaboradores.first.id;
-      }
-      if (_estadosPermiso.isNotEmpty) {
-        _estadoPermisoSeleccionado = _estadosPermiso.first['id'].toString();
-      }
+      // Estado por defecto: ID 1 (Programado)
+      _estadoPermisoSeleccionado = '1';
       _fechaSeleccionada = DateTime.now();
       
     } catch (e) {
@@ -184,9 +176,9 @@ class _PermisoCrearScreenState extends State<PermisoCrearScreen> {
     _formKey.currentState?.reset();
     _horasController.clear();
     setState(() {
-      _colaboradorSeleccionado = _colaboradores.isNotEmpty ? _colaboradores.first.id : null;
+      _colaboradorSeleccionado = null;
       _tipoPermisoSeleccionado = _tiposPermiso.isNotEmpty ? _tiposPermiso.first['id'].toString() : null;
-      _estadoPermisoSeleccionado = _estadosPermiso.isNotEmpty ? _estadosPermiso.first['id'].toString() : null;
+      _estadoPermisoSeleccionado = '1'; // Estado por defecto: ID 1 (Programado)
       _fechaSeleccionada = DateTime.now();
     });
   }
@@ -486,24 +478,7 @@ class _PermisoCrearScreenState extends State<PermisoCrearScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 16),
-                                _buildDropdown(
-                                  label: 'Estado',
-                                  value: _estadoPermisoSeleccionado,
-                                  items: _estadosPermiso,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _estadoPermisoSeleccionado = value;
-                                    });
-                                  },
-                                  isRequired: true,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Debes seleccionar un estado';
-                                    }
-                                    return null;
-                                  },
-                                ),
+                                // Estado oculto - siempre será ID 1 (Programado)
                               ],
                             ),
                           ),

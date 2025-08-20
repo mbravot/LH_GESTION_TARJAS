@@ -16,8 +16,7 @@ class UserInfo extends StatelessWidget {
     }
 
     // Debug: imprimir todos los datos del usuario
-    print('DEBUG - UserInfo - userData completo: $userData');
-    print('DEBUG - UserInfo - campo nombre: ${userData['nombre']}');
+
     
     final userName = userData['nombre'] ?? 'Usuario';
     

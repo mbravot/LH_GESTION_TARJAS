@@ -16,18 +16,14 @@ class PermisoScreen extends StatefulWidget {
   State<PermisoScreen> createState() => _PermisoScreenState();
 }
 
-class _PermisoScreenState extends State<PermisoScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  int _selectedTab = 0;
+class _PermisoScreenState extends State<PermisoScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
   bool _showFiltros = false;
+  String _filtroActivo = 'todos'; // 'todos', 'hoy', 'programados', 'completados'
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(_onTabChanged);
     _cargarDatosIniciales();
   }
 
@@ -59,40 +55,33 @@ class _PermisoScreenState extends State<PermisoScreen> with SingleTickerProvider
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _onTabChanged() {
+  void _aplicarFiltro(String filtro) {
     setState(() {
-      _selectedTab = _tabController.index;
-      _actualizarFiltrosPorTab();
+      _filtroActivo = filtro;
     });
-  }
-
-  void _actualizarFiltrosPorTab() {
+    
     final permisoProvider = context.read<PermisoProvider>();
-    switch (_selectedTab) {
-      case 1: // Hoy
+    switch (filtro) {
+      case 'hoy':
         permisoProvider.filtrarPorEstado('Hoy');
         break;
-      case 2: // Programados
+      case 'programados':
         permisoProvider.filtrarPorEstado('Programado');
         break;
-      case 3: // Completados
+      case 'completados':
         permisoProvider.filtrarPorEstado('Completado');
         break;
-      default: // Todos
+      default: // 'todos'
         permisoProvider.limpiarFiltros();
         break;
     }
   }
 
   void _onSearchChanged(String query) {
-    setState(() {
-      _searchQuery = query.toLowerCase();
-    });
     final permisoProvider = context.read<PermisoProvider>();
     permisoProvider.filtrarPermisos(query);
   }
@@ -126,6 +115,9 @@ class _PermisoScreenState extends State<PermisoScreen> with SingleTickerProvider
                       onPressed: () {
                         _searchController.clear();
                         _onSearchChanged('');
+                        setState(() {
+                          _filtroActivo = 'todos';
+                        });
                         FocusScope.of(context).unfocus();
                       },
                     )
@@ -287,6 +279,9 @@ class _PermisoScreenState extends State<PermisoScreen> with SingleTickerProvider
                         permisoProvider.limpiarFiltros();
                         _searchController.clear();
                         _onSearchChanged('');
+                        setState(() {
+                          _filtroActivo = 'todos';
+                        });
                       },
                       icon: const Icon(Icons.clear_all),
                       label: const Text('Limpiar filtros'),
@@ -319,36 +314,44 @@ class _PermisoScreenState extends State<PermisoScreen> with SingleTickerProvider
               Expanded(
                 child: _buildTarjetaEstadistica(
                   'Total',
-                  stats['total'].toString(),
+                  stats['total']?.toString() ?? '0',
                   Icons.assignment,
-                  AppTheme.primaryColor,
+                  Colors.purple,
+                  'todos',
+                  (stats['total'] ?? 0) > 0,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _buildTarjetaEstadistica(
                   'Hoy',
-                  stats['hoy'].toString(),
+                  stats['hoy']?.toString() ?? '0',
                   Icons.today,
                   Colors.orange,
+                  'hoy',
+                  (stats['hoy'] ?? 0) > 0,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _buildTarjetaEstadistica(
                   'Programados',
-                  stats['programados'].toString(),
+                  stats['programados']?.toString() ?? '0',
                   Icons.schedule,
                   Colors.blue,
+                  'programados',
+                  (stats['programados'] ?? 0) > 0,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _buildTarjetaEstadistica(
                   'Completados',
-                  stats['completados'].toString(),
+                  stats['completados']?.toString() ?? '0',
                   Icons.check_circle,
                   Colors.green,
+                  'completados',
+                  (stats['completados'] ?? 0) > 0,
                 ),
               ),
             ],
@@ -358,36 +361,66 @@ class _PermisoScreenState extends State<PermisoScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icono, color: color, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            valor,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+  Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color, String filtro, bool tieneDatos) {
+    final isActivo = _filtroActivo == filtro;
+    
+    return GestureDetector(
+      onTap: tieneDatos ? () => _aplicarFiltro(filtro) : null,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isActivo ? color.withOpacity(0.2) : color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isActivo ? color : color.withOpacity(0.3),
+            width: isActivo ? 2 : 1,
           ),
-          Text(
-            titulo,
-            style: TextStyle(
-              fontSize: 10,
-              color: color.withOpacity(0.8),
-              fontWeight: FontWeight.w500,
+          boxShadow: isActivo ? [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ] : null,
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icono, 
+              color: color, 
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              valor,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              titulo,
+              style: TextStyle(
+                fontSize: 10,
+                color: color.withOpacity(0.8),
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (isActivo) ...[
+              const SizedBox(height: 4),
+              Container(
+                width: 20,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -672,7 +705,6 @@ class _PermisoScreenState extends State<PermisoScreen> with SingleTickerProvider
     return MainScaffold(
       title: 'Gestión de Permisos',
       onRefresh: _refrescarDatos,
-      bottom: _TabBarWithCounters(tabController: _tabController),
       body: Column(
         children: [
           _buildSearchBar(),
@@ -788,125 +820,4 @@ class _PermisoScreenState extends State<PermisoScreen> with SingleTickerProvider
 
 }
 
-class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget {
-  final TabController tabController;
 
-  const _TabBarWithCounters({required this.tabController});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(48.0);
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<PermisoProvider>(
-      builder: (context, permisoProvider, child) {
-        final stats = permisoProvider.estadisticas;
-        
-        return TabBar(
-          controller: tabController,
-          indicatorColor: AppTheme.primaryColor,
-          labelColor: AppTheme.accentColor,
-          unselectedLabelColor: Colors.white,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Todos'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['total']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Hoy'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['hoy']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Programados'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['programados']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Completados'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['completados']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}

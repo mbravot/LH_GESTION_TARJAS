@@ -5,15 +5,11 @@ import '../theme/app_theme.dart';
 
 // Sistema de logging condicional
 void logInfo(String message) {
-  if (const bool.fromEnvironment('dart.vm.product') == false) {
-    print("ℹ️ $message");
-  }
+  // Log silencioso
 }
 
 void logError(String message) {
-  if (const bool.fromEnvironment('dart.vm.product') == false) {
-    print("❌ $message");
-  }
+  // Log silencioso
 }
 
 class CambiarSucursalScreen extends StatefulWidget {

@@ -19,15 +19,10 @@ class PermisosProvider with ChangeNotifier {
 
     try {
       _permisos = await ApiService.obtenerPermisosUsuario();
-      print('🔍 Permisos cargados: ${_permisos.length}');
-      for (var permiso in _permisos) {
-        print('   - ID: ${permiso['id']}, Nombre: ${permiso['nombre']}');
-      }
       _isLoading = false;
       notifyListeners();
     } catch (e) {
       _error = e.toString();
-      print('❌ Error al cargar permisos: $e');
       _isLoading = false;
       notifyListeners();
     }
@@ -53,7 +48,6 @@ class PermisosProvider with ChangeNotifier {
   bool tienePermisoPorId(int idPermiso) {
     // Si no hay permisos cargados, intentar cargarlos automáticamente
     if (_permisos.isEmpty && !_isLoading) {
-      print('🔍 No hay permisos cargados, cargando automáticamente...');
       cargarPermisos();
       return false; // Retornar false temporalmente mientras se cargan
     }
@@ -68,8 +62,6 @@ class PermisosProvider with ChangeNotifier {
       }
       return false;
     });
-    print('🔍 Verificando permiso ID $idPermiso: $tiene');
-    print('   - Permisos disponibles: ${_permisos.map((p) => '${p['id']} (${p['id'].runtimeType})').toList()}');
     return tiene;
   }
 
@@ -93,7 +85,6 @@ class PermisosProvider with ChangeNotifier {
 
   // Recargar permisos (útil después de refrescar la página)
   Future<void> recargarPermisos() async {
-    print('🔍 Recargando permisos...');
     await cargarPermisos();
   }
 

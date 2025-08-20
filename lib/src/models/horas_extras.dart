@@ -42,7 +42,7 @@ class HorasExtras {
                 .toList();
           }
         } catch (e) {
-          print('Error parsing actividades_detalle: $e');
+          // Error silencioso al parsear actividades
         }
       } else if (json['actividades_detalle'] is List) {
         // Si ya es una lista

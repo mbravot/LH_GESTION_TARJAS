@@ -26,7 +26,7 @@ class PermisoWidget extends StatelessWidget {
         }
         
         final tienePermiso = permisosProvider.tienePermisoPorId(idPermiso);
-        print('🔍 PermisoWidget - ID: $idPermiso, Tiene permiso: $tienePermiso');
+    
         
         if (tienePermiso) {
           return child;

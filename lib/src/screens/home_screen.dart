@@ -47,7 +47,6 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final permisosProvider = context.read<PermisosProvider>();
       if (!permisosProvider.permisosCargados) {
-        print('🔍 Cargando permisos automáticamente en HomeScreen...');
         permisosProvider.cargarPermisos();
       }
     });
@@ -572,12 +571,6 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () {
                 Navigator.pop(context);
                 final permisosProvider = Provider.of<PermisosProvider>(context, listen: false);
-                print('🔍 Debug - Permisos actuales:');
-                print('   - Total: ${permisosProvider.permisos.length}');
-                for (var permiso in permisosProvider.permisos) {
-                  print('   - ID: ${permiso['id']} (${permiso['id'].runtimeType}), Nombre: ${permiso['nombre']}');
-                }
-                print('🔍 Debug - Verificando permiso ID 2: ${permisosProvider.tienePermisoPorId(2)}');
                 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

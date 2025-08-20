@@ -201,20 +201,11 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen>
   }
 
   String obtenerNombreUnidad(Tarja tarja) {
-    // Debug logging
-    print('DEBUG - obtenerNombreUnidad:');
-    print('  nombreUnidad: ${tarja.nombreUnidad}');
-    print('  idUnidad: ${tarja.idUnidad}');
-    print('  nombreUsuario: ${tarja.nombreUsuario}');
-    
     if (tarja.nombreUnidad != null && tarja.nombreUnidad!.isNotEmpty) {
-      print('  Retornando nombre: ${tarja.nombreUnidad}');
       return tarja.nombreUnidad!;
     } else if (tarja.idUnidad.isNotEmpty) {
-      print('  Retornando ID: ${tarja.idUnidad}');
       return 'ID: ${tarja.idUnidad}';
     } else {
-      print('  Retornando: Sin unidad');
       return 'Sin unidad';
     }
   }
@@ -1313,12 +1304,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen>
       tipoActividad = 'propio'; // Por defecto
     }
     
-    print('🔍 Debug _calcularTotalRendimientos:');
-    print('   - Tipo actividad: $tipoActividad');
-    print('   - idTiporendimiento: ${tarja.idTiporendimiento}');
-    print('   - idTipotrabajador: ${tarja.idTipotrabajador}');
-    print('   - idContratista: ${tarja.idContratista}');
-    print('   - Cantidad rendimientos: ${rendimientos.length}');
+
     
     for (var rendimiento in rendimientos) {
       double valorRendimiento = 0;
@@ -1333,18 +1319,15 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen>
           final rendimientoTotalStr = rendimientoTotal?.toString() ?? rendimiento['rendimiento']?.toString() ?? '0';
           valorRendimiento = double.tryParse(rendimientoTotalStr) ?? 0;
         }
-        print('   - Rendimiento grupal raw: $rendimientoTotal -> $valorRendimiento');
+        // Valor ya calculado arriba
       } else {
         // Para rendimientos individuales, usar rendimiento o cantidad
         final rendimientoValor = rendimiento['rendimiento']?.toString() ?? rendimiento['cantidad']?.toString() ?? '0';
         valorRendimiento = double.tryParse(rendimientoValor) ?? 0;
-        print('   - Rendimiento individual: $rendimientoValor -> $valorRendimiento');
       }
       
       totalRendimiento += valorRendimiento;
     }
-    
-    print('   - Total final: $totalRendimiento');
     return totalRendimiento.toStringAsFixed(2);
   }
 
@@ -1369,9 +1352,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen>
     
     double totalPago = 0;
     
-    print('💰 Debug _calcularTotalPago:');
-    print('   - Tipo actividad: $tipoActividad');
-    print('   - Tarifa: $tarifa');
+
     
     if (tipoActividad == 'propio') {
       // Para propios: tarifa * rendimiento total (sin porcentaje)
@@ -1379,8 +1360,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen>
       final totalRendimiento = double.tryParse(totalRendimientoStr) ?? 0;
       totalPago = tarifa * totalRendimiento;
       
-      print('   - Total rendimiento: $totalRendimiento');
-      print('   - Total pago (propio): $totalPago');
+
     } else if (tipoActividad == 'contratista') {
       // Para contratistas individuales: suma de (rendimiento × tarifa × (1 + porcentaje))
       for (var rendimiento in rendimientos) {
@@ -1401,10 +1381,8 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen>
         final pagoIndividual = rendimientoDouble * tarifa * (1 + porcentaje);
         totalPago += pagoIndividual;
         
-        print('   - Rendimiento individual: $rendimientoDouble, Porcentaje: $porcentaje, Pago: $pagoIndividual');
+
       }
-      
-      print('   - Total pago (contratista individual): $totalPago');
     } else if (tipoActividad == 'grupal') {
       // Para grupales: suma de (rendimiento del grupo × tarifa × (1 + porcentaje)) para cada registro
       for (var rendimiento in rendimientos) {
@@ -1468,11 +1446,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen>
     // Calcular el pago: tarifa * rendimiento * (1 + porcentaje)
     final pago = tarifaDouble * rendimiento * (1 + porcentaje);
     
-    print('💰 Debug _calcularPagoTrabajador:');
-    print('   - Rendimiento: $rendimiento');
-    print('   - Tarifa: $tarifaDouble');
-    print('   - Porcentaje: $porcentaje');
-    print('   - Pago: $pago');
+
     
     // Formatear como número entero con separación de miles
     final pagoEntero = pago.round();
@@ -1503,13 +1477,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen>
     final rendimientoPorTrabajador = rendimiento / cantidad;
     final totalEstimado = rendimientoPorTrabajador * tarifaDouble * (1 + porcentaje);
     
-    print('👥 Debug _calcularTotalEstimadoPorTrabajador:');
-    print('   - Rendimiento total: $rendimiento');
-    print('   - Cantidad trabajadores: $cantidad');
-    print('   - Rendimiento por trabajador: $rendimientoPorTrabajador');
-    print('   - Tarifa: $tarifaDouble');
-    print('   - Porcentaje: $porcentaje');
-    print('   - Total estimado por trabajador: $totalEstimado');
+
     
     // Formatear como número entero con separación de miles
     final totalEntero = totalEstimado.round();
@@ -1673,7 +1641,6 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen>
                           key: ValueKey('expansion_$i'),
                           initiallyExpanded: expanded,
                           onExpansionChanged: (isExpanded) {
-                            print('DEBUG - ExpansionTile $i changed to: $isExpanded');
                             if (_expansionState.length > i) {
                               setState(() {
                                 _expansionState[i] = isExpanded;

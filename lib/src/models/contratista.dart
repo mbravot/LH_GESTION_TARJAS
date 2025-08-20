@@ -49,8 +49,6 @@ class Contratista {
         timestamp: _parseFecha(json['timestamp']) ?? DateTime.now(),
       );
     } catch (e) {
-      print('❌ Error al parsear contratista: $e');
-      print('📄 JSON problemático: $json');
       rethrow;
     }
   }

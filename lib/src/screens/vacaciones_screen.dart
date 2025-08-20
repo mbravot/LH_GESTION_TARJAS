@@ -18,19 +18,15 @@ class VacacionesScreen extends StatefulWidget {
   State<VacacionesScreen> createState() => _VacacionesScreenState();
 }
 
-class _VacacionesScreenState extends State<VacacionesScreen> 
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  int _selectedTab = 0;
+class _VacacionesScreenState extends State<VacacionesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _showFiltros = false;
+  String _filtroActivo = 'todos'; // 'todos', 'programadas', 'en_curso', 'completadas'
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(_onTabChanged);
     _cargarDatosIniciales();
   }
 
@@ -62,31 +58,27 @@ class _VacacionesScreenState extends State<VacacionesScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _onTabChanged() {
+  void _aplicarFiltro(String filtro) {
     setState(() {
-      _selectedTab = _tabController.index;
-      _actualizarFiltrosPorTab();
+      _filtroActivo = filtro;
     });
-  }
-
-  void _actualizarFiltrosPorTab() {
+    
     final vacacionProvider = context.read<VacacionProvider>();
-    switch (_selectedTab) {
-      case 1: // Programadas
+    switch (filtro) {
+      case 'programadas':
         vacacionProvider.setFiltroEstado('Programada');
         break;
-      case 2: // En curso
+      case 'en_curso':
         vacacionProvider.setFiltroEstado('En curso');
         break;
-      case 3: // Completadas
+      case 'completadas':
         vacacionProvider.setFiltroEstado('Completada');
         break;
-      default: // Todos
+      default: // 'todos'
         vacacionProvider.setFiltroEstado('todos');
         break;
     }
@@ -129,6 +121,9 @@ class _VacacionesScreenState extends State<VacacionesScreen>
                       onPressed: () {
                         _searchController.clear();
                         _onSearchChanged('');
+                        setState(() {
+                          _filtroActivo = 'todos';
+                        });
                         FocusScope.of(context).unfocus();
                       },
                     )
@@ -256,6 +251,9 @@ class _VacacionesScreenState extends State<VacacionesScreen>
                         vacacionProvider.limpiarFiltros();
                         _searchController.clear();
                         _onSearchChanged('');
+                        setState(() {
+                          _filtroActivo = 'todos';
+                        });
                       },
                       icon: const Icon(Icons.clear_all),
                       label: const Text('Limpiar filtros'),
@@ -288,7 +286,9 @@ class _VacacionesScreenState extends State<VacacionesScreen>
                   'Total',
                   vacacionProvider.totalVacaciones.toString(),
                   Icons.calendar_month,
-                  AppTheme.primaryColor,
+                  Colors.purple,
+                  'todos',
+                  vacacionProvider.totalVacaciones > 0,
                 ),
               ),
               const SizedBox(width: 8),
@@ -298,6 +298,8 @@ class _VacacionesScreenState extends State<VacacionesScreen>
                   vacacionProvider.vacacionesProgramadas.toString(),
                   Icons.schedule,
                   Colors.blue,
+                  'programadas',
+                  vacacionProvider.vacacionesProgramadas > 0,
                 ),
               ),
               const SizedBox(width: 8),
@@ -307,6 +309,8 @@ class _VacacionesScreenState extends State<VacacionesScreen>
                   vacacionProvider.vacacionesEnCurso.toString(),
                   Icons.play_circle,
                   Colors.orange,
+                  'en_curso',
+                  vacacionProvider.vacacionesEnCurso > 0,
                 ),
               ),
               const SizedBox(width: 8),
@@ -316,6 +320,8 @@ class _VacacionesScreenState extends State<VacacionesScreen>
                   vacacionProvider.vacacionesCompletadas.toString(),
                   Icons.check_circle,
                   Colors.green,
+                  'completadas',
+                  vacacionProvider.vacacionesCompletadas > 0,
                 ),
               ),
             ],
@@ -325,36 +331,66 @@ class _VacacionesScreenState extends State<VacacionesScreen>
     );
   }
 
-  Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icono, color: color, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            valor,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+  Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color, String filtro, bool tieneDatos) {
+    final isActivo = _filtroActivo == filtro;
+    
+    return GestureDetector(
+      onTap: tieneDatos ? () => _aplicarFiltro(filtro) : null,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isActivo ? color.withOpacity(0.2) : color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isActivo ? color : color.withOpacity(0.3),
+            width: isActivo ? 2 : 1,
           ),
-          Text(
-            titulo,
-            style: TextStyle(
-              fontSize: 10,
-              color: color.withOpacity(0.8),
-              fontWeight: FontWeight.w500,
+          boxShadow: isActivo ? [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ] : null,
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icono, 
+              color: color, 
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              valor,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              titulo,
+              style: TextStyle(
+                fontSize: 10,
+                color: color.withOpacity(0.8),
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (isActivo) ...[
+              const SizedBox(height: 4),
+              Container(
+                width: 20,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -629,7 +665,6 @@ class _VacacionesScreenState extends State<VacacionesScreen>
     return MainScaffold(
       title: 'Vacaciones',
       onRefresh: _refrescarDatos,
-      bottom: _TabBarWithCounters(tabController: _tabController),
       body: Column(
         children: [
           _buildSearchBar(),
@@ -739,127 +774,6 @@ class _VacacionesScreenState extends State<VacacionesScreen>
           ),
         ],
       ),
-    );
-  }
-}
-
-class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget {
-  final TabController tabController;
-
-  const _TabBarWithCounters({required this.tabController});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(48.0);
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<VacacionProvider>(
-      builder: (context, vacacionProvider, child) {
-        return TabBar(
-          controller: tabController,
-          indicatorColor: AppTheme.primaryColor,
-          labelColor: AppTheme.accentColor,
-          unselectedLabelColor: Colors.white,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Todas'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${vacacionProvider.totalVacaciones}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Programadas'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${vacacionProvider.vacacionesProgramadas}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('En curso'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${vacacionProvider.vacacionesEnCurso}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Completadas'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${vacacionProvider.vacacionesCompletadas}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }

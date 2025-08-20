@@ -18,19 +18,15 @@ class LicenciasScreen extends StatefulWidget {
   State<LicenciasScreen> createState() => _LicenciasScreenState();
 }
 
-class _LicenciasScreenState extends State<LicenciasScreen> 
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  int _selectedTab = 0;
+class _LicenciasScreenState extends State<LicenciasScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _showFiltros = false;
+  String _filtroActivo = 'todos'; // 'todos', 'programadas', 'en_curso', 'completadas'
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(_onTabChanged);
     _cargarDatosIniciales();
   }
 
@@ -62,34 +58,8 @@ class _LicenciasScreenState extends State<LicenciasScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _onTabChanged() {
-    setState(() {
-      _selectedTab = _tabController.index;
-      _actualizarFiltrosPorTab();
-    });
-  }
-
-  void _actualizarFiltrosPorTab() {
-    final licenciaProvider = context.read<LicenciaProvider>();
-    switch (_selectedTab) {
-      case 1: // Programadas
-        licenciaProvider.setFiltroEstado('Programada');
-        break;
-      case 2: // En curso
-        licenciaProvider.setFiltroEstado('En curso');
-        break;
-      case 3: // Completadas
-        licenciaProvider.setFiltroEstado('Completada');
-        break;
-      default: // Todos
-        licenciaProvider.setFiltroEstado('todos');
-        break;
-    }
   }
 
   void _onSearchChanged(String query) {
@@ -98,6 +68,28 @@ class _LicenciasScreenState extends State<LicenciasScreen>
     });
     final licenciaProvider = context.read<LicenciaProvider>();
     licenciaProvider.setFiltroBusqueda(query);
+  }
+
+  void _aplicarFiltro(String filtro) {
+    setState(() {
+      _filtroActivo = filtro;
+    });
+    
+    final licenciaProvider = context.read<LicenciaProvider>();
+    switch (filtro) {
+      case 'programadas':
+        licenciaProvider.setFiltroEstado('Programada');
+        break;
+      case 'en_curso':
+        licenciaProvider.setFiltroEstado('En curso');
+        break;
+      case 'completadas':
+        licenciaProvider.setFiltroEstado('Completada');
+        break;
+      default: // 'todos'
+        licenciaProvider.setFiltroEstado('todos');
+        break;
+    }
   }
 
   Widget _buildSearchBar() {
@@ -256,6 +248,9 @@ class _LicenciasScreenState extends State<LicenciasScreen>
                         licenciaProvider.limpiarFiltros();
                         _searchController.clear();
                         _onSearchChanged('');
+                        setState(() {
+                          _filtroActivo = 'todos';
+                        });
                       },
                       icon: const Icon(Icons.clear_all),
                       label: const Text('Limpiar filtros'),
@@ -288,7 +283,9 @@ class _LicenciasScreenState extends State<LicenciasScreen>
                   'Total',
                   licenciaProvider.totalLicencias.toString(),
                   Icons.medical_services,
-                  AppTheme.primaryColor,
+                  Colors.purple,
+                  'todos',
+                  licenciaProvider.totalLicencias > 0,
                 ),
               ),
               const SizedBox(width: 8),
@@ -298,6 +295,8 @@ class _LicenciasScreenState extends State<LicenciasScreen>
                   licenciaProvider.licenciasProgramadas.toString(),
                   Icons.schedule,
                   Colors.blue,
+                  'programadas',
+                  licenciaProvider.licenciasProgramadas > 0,
                 ),
               ),
               const SizedBox(width: 8),
@@ -307,6 +306,8 @@ class _LicenciasScreenState extends State<LicenciasScreen>
                   licenciaProvider.licenciasEnCurso.toString(),
                   Icons.play_circle,
                   Colors.orange,
+                  'en_curso',
+                  licenciaProvider.licenciasEnCurso > 0,
                 ),
               ),
               const SizedBox(width: 8),
@@ -316,6 +317,8 @@ class _LicenciasScreenState extends State<LicenciasScreen>
                   licenciaProvider.licenciasCompletadas.toString(),
                   Icons.check_circle,
                   Colors.green,
+                  'completadas',
+                  licenciaProvider.licenciasCompletadas > 0,
                 ),
               ),
             ],
@@ -325,36 +328,66 @@ class _LicenciasScreenState extends State<LicenciasScreen>
     );
   }
 
-  Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icono, color: color, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            valor,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+  Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color, String filtro, bool tieneDatos) {
+    final isActivo = _filtroActivo == filtro;
+    
+    return GestureDetector(
+      onTap: tieneDatos ? () => _aplicarFiltro(filtro) : null,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isActivo ? color.withOpacity(0.2) : color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isActivo ? color : color.withOpacity(0.3),
+            width: isActivo ? 2 : 1,
           ),
-          Text(
-            titulo,
-            style: TextStyle(
-              fontSize: 10,
-              color: color.withOpacity(0.8),
-              fontWeight: FontWeight.w500,
+          boxShadow: isActivo ? [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ] : null,
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icono, 
+              color: color, 
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              valor,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              titulo,
+              style: TextStyle(
+                fontSize: 10,
+                color: color.withOpacity(0.8),
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (isActivo) ...[
+              const SizedBox(height: 4),
+              Container(
+                width: 20,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -629,7 +662,6 @@ class _LicenciasScreenState extends State<LicenciasScreen>
     return MainScaffold(
       title: 'Licencias Médicas',
       onRefresh: _refrescarDatos,
-      bottom: _TabBarWithCounters(tabController: _tabController),
       body: Column(
         children: [
           _buildSearchBar(),
@@ -739,127 +771,6 @@ class _LicenciasScreenState extends State<LicenciasScreen>
           ),
         ],
       ),
-    );
-  }
-}
-
-class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget {
-  final TabController tabController;
-
-  const _TabBarWithCounters({required this.tabController});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(48.0);
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<LicenciaProvider>(
-      builder: (context, licenciaProvider, child) {
-        return TabBar(
-          controller: tabController,
-          indicatorColor: AppTheme.primaryColor,
-          labelColor: AppTheme.accentColor,
-          unselectedLabelColor: Colors.white,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Todas'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${licenciaProvider.totalLicencias}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Programadas'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${licenciaProvider.licenciasProgramadas}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('En curso'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${licenciaProvider.licenciasEnCurso}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Completadas'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${licenciaProvider.licenciasCompletadas}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }

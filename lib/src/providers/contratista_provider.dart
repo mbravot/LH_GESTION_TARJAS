@@ -49,27 +49,17 @@ class ContratistaProvider extends ChangeNotifier {
   Future<void> cargarContratistas() async {
     _setLoading(true);
     try {
-      print('🔄 Cargando contratistas...');
       final response = await ApiService.obtenerContratistas();
-      print('📊 Respuesta del API: ${response.length} contratistas');
-      print('📄 Primer contrato: ${response.isNotEmpty ? response.first : 'No hay datos'}');
       _contratistas = response.map((json) {
-        print('🔍 Procesando JSON: $json');
         try {
-          final contratista = Contratista.fromJson(json);
-          print('✅ Contratista creado: ${contratista.nombre} - ${contratista.estado}');
-          return contratista;
+          return Contratista.fromJson(json);
         } catch (e) {
-          print('❌ Error al crear contratista desde JSON: $e');
-          print('📄 JSON problemático: $json');
           rethrow;
         }
       }).toList();
-      print('✅ Contratistas cargados: ${_contratistas.length}');
       _aplicarFiltros();
       _error = '';
     } catch (e) {
-      print('❌ Error al cargar contratistas: $e');
       _error = 'Error al cargar contratistas: $e';
       _contratistas = [];
       _contratistasFiltradas = [];
@@ -80,15 +70,12 @@ class ContratistaProvider extends ChangeNotifier {
 
   Future<void> cargarOpciones() async {
     try {
-      print('🔄 Cargando opciones de contratistas...');
-      
       // Usar estados por defecto primero
       _estadosDisponibles = ['ACTIVO', 'INACTIVO', 'SUSPENDIDO'];
       
       // Intentar cargar desde el backend (opcional)
       try {
         final response = await ApiService.obtenerOpcionesContratistas();
-        print('📊 Respuesta de opciones: $response');
         
         // Manejar diferentes estructuras de respuesta
         if (response['estados'] != null) {
@@ -105,20 +92,14 @@ class ContratistaProvider extends ChangeNotifier {
             if (estadosBackend.isNotEmpty) {
               _estadosDisponibles = estadosBackend;
             }
-          } else {
-            print('⚠️ Estados no es una lista: ${response['estados']}');
           }
-        } else {
-          print('⚠️ No se encontraron estados en la respuesta');
         }
       } catch (apiError) {
-        print('⚠️ Error al cargar opciones del backend (usando por defecto): $apiError');
+        // Error silencioso, usar estados por defecto
       }
       
-      print('✅ Estados disponibles: $_estadosDisponibles');
       notifyListeners();
     } catch (e) {
-      print('❌ Error crítico al cargar opciones: $e');
       _error = 'Error al cargar opciones: $e';
       _estadosDisponibles = ['ACTIVO', 'INACTIVO', 'SUSPENDIDO']; // Estados por defecto
       notifyListeners();

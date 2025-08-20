@@ -60,30 +60,17 @@ class HorasTrabajadasProvider extends ChangeNotifier {
     _error = null;
     
     try {
-      print('🔍 DEBUG: Iniciando carga de horas trabajadas');
       final response = await _apiService.obtenerResumenHorasDiarias(
         fechaInicio: _fechaInicio?.toIso8601String().split('T')[0],
         fechaFin: _fechaFin?.toIso8601String().split('T')[0],
         idColaborador: _filtroColaborador.isNotEmpty ? _filtroColaborador : null,
       );
       
-      print('🔍 DEBUG: Respuesta del API: ${response.length} registros');
-      if (response.isNotEmpty) {
-        print('🔍 DEBUG: Primer registro: ${response.first}');
-      }
-      
       _horasTrabajadas = response.map((json) => HorasTrabajadas.fromJson(json)).toList();
-      print('🔍 DEBUG: HorasTrabajadas parseadas: ${_horasTrabajadas.length}');
-      if (_horasTrabajadas.isNotEmpty) {
-        print('🔍 DEBUG: Primer HorasTrabajadas: ${_horasTrabajadas.first.colaborador} - ${_horasTrabajadas.first.estadoTrabajo}');
-      }
-      
       _aplicarFiltros();
-      print('🔍 DEBUG: Filtros aplicados. Filtrados: ${_horasTrabajadasFiltradas.length}');
       
       _setLoading(false);
     } catch (e) {
-      print('🔍 DEBUG: Error en cargarHorasTrabajadas: $e');
       _error = e.toString();
       _setLoading(false);
     }
@@ -122,8 +109,6 @@ class HorasTrabajadasProvider extends ChangeNotifier {
   // Método para aplicar todos los filtros
   void _aplicarFiltros() {
     List<HorasTrabajadas> filtrados = List.from(_horasTrabajadas);
-    
-    print('🔍 DEBUG: Aplicando filtros. Total: ${_horasTrabajadas.length}, Filtro estado: "$_filtroEstado"');
 
     // Aplicar filtro de búsqueda
     if (_filtroBusqueda.isNotEmpty) {
@@ -140,13 +125,9 @@ class HorasTrabajadasProvider extends ChangeNotifier {
 
     // Aplicar filtro de estado
     if (_filtroEstado.isNotEmpty && _filtroEstado != 'todos') {
-      print('🔍 DEBUG: Aplicando filtro de estado: "$_filtroEstado"');
       filtrados = filtrados.where((horas) {
-        final coincide = horas.estadoTrabajo == _filtroEstado;
-        print('🔍 DEBUG: Comparando "${horas.estadoTrabajo}" con "$_filtroEstado" = $coincide');
-        return coincide;
+        return horas.estadoTrabajo == _filtroEstado;
       }).toList();
-      print('🔍 DEBUG: Después de filtro estado: ${filtrados.length} registros');
     }
 
     // Aplicar filtro de colaborador
@@ -157,7 +138,6 @@ class HorasTrabajadasProvider extends ChangeNotifier {
     }
 
     _horasTrabajadasFiltradas = filtrados;
-    print('🔍 DEBUG: Final filtros aplicados: ${_horasTrabajadasFiltradas.length} registros');
     notifyListeners();
   }
 

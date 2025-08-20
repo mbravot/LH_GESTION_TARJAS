@@ -35,7 +35,6 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen>
   }
 
   void _onTabChanged() {
-    print('🔍 DEBUG: _onTabChanged - Tab index: ${_tabController.index}');
     setState(() {
       _selectedTab = _tabController.index;
     });
@@ -82,11 +81,6 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen>
   Widget build(BuildContext context) {
     return Consumer<HorasTrabajadasProvider>(
       builder: (context, provider, child) {
-        print('🔍 DEBUG: Build method - Total registros: ${provider.horasTrabajadas.length}');
-        print('🔍 DEBUG: Build method - Registros filtrados: ${provider.horasTrabajadasFiltradas.length}');
-        print('🔍 DEBUG: Build method - Loading: ${provider.isLoading}');
-        print('🔍 DEBUG: Build method - Error: ${provider.error}');
-        
         return MainScaffold(
           title: 'Control de Horas',
           onRefresh: _refrescarDatos,
