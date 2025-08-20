@@ -1679,18 +1679,25 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           decoration: BoxDecoration(
-            color: isActive ? color.withOpacity(0.1) : Colors.transparent,
+            color: isActive ? color.withOpacity(0.2) : color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isActive ? color : Colors.grey.withOpacity(0.3),
+              color: isActive ? color : color.withOpacity(0.3),
               width: isActive ? 2 : 1,
             ),
+            boxShadow: isActive ? [
+              BoxShadow(
+                color: color.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ] : null,
           ),
           child: Column(
             children: [
               Icon(
                 icono,
-                color: isActive ? color : Colors.grey[600],
+                color: color,
                 size: 24,
               ),
               const SizedBox(height: 4),
@@ -1699,7 +1706,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isActive ? color : Colors.grey[800],
+                  color: color,
                 ),
               ),
               const SizedBox(height: 2),
@@ -1707,11 +1714,22 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                 titulo,
                 style: TextStyle(
                   fontSize: 12,
-                  color: isActive ? color : Colors.grey[600],
+                  color: color.withOpacity(0.8),
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                 ),
                 textAlign: TextAlign.center,
               ),
+              if (isActive) ...[
+                const SizedBox(height: 4),
+                Container(
+                  width: 20,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

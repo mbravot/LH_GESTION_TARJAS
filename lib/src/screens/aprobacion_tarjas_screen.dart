@@ -16,10 +16,8 @@ class AprobacionTarjasScreen extends StatefulWidget {
   State<AprobacionTarjasScreen> createState() => _AprobacionTarjasScreenState();
 }
 
-class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> 
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  int _selectedTab = 0;
+class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
+  String? _filtroActivo;
   List<bool> _expansionState = [];
   Key _expansionKey = UniqueKey();
   final TextEditingController _searchController = TextEditingController();
@@ -33,8 +31,6 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
-    _tabController.addListener(_onTabChanged);
     _cargarDatosIniciales();
   }
 
@@ -70,14 +66,13 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _onTabChanged() {
+  void _aplicarFiltro(String? filtro) {
     setState(() {
-      _selectedTab = _tabController.index;
+      _filtroActivo = filtro;
       final tarjaProvider = context.read<TarjaProvider>();
       final tarjasFiltradas = _filtrarTarjas(tarjaProvider.tarjas);
       final gruposPorFecha = _agruparPorFecha(tarjasFiltradas);
@@ -92,21 +87,21 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen>
   }
 
   List<Tarja> _filtrarTarjas(List<Tarja> tarjas) {
-    // Primero filtrar por tab
+    // Primero filtrar por filtro activo
     List<Tarja> tarjasFiltradasPorTab;
-    switch (_selectedTab) {
-      case 1: // Revisadas
+    switch (_filtroActivo) {
+      case 'revisadas':
         tarjasFiltradasPorTab = tarjas.where((t) => t.idEstadoactividad == '2').toList();
         break;
-      case 2: // Aprobadas
+      case 'aprobadas':
         tarjasFiltradasPorTab = tarjas.where((t) => t.idEstadoactividad == '3').toList();
         break;
-      case 3: // Propio
+      case 'propio':
         tarjasFiltradasPorTab = tarjas.where((t) => 
           t.idTipotrabajador == '1' && (t.idEstadoactividad == '2' || t.idEstadoactividad == '3')
         ).toList();
         break;
-      case 4: // Contratista
+      case 'contratista':
         tarjasFiltradasPorTab = tarjas.where((t) => 
           t.idTipotrabajador == '2' && (t.idEstadoactividad == '2' || t.idEstadoactividad == '3')
         ).toList();
@@ -1534,15 +1529,170 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen>
     );
   }
 
+  Widget _buildEstadisticas() {
+    return Consumer<TarjaProvider>(
+      builder: (context, tarjaProvider, child) {
+        final tarjas = tarjaProvider.tarjas;
+        
+        // Calcular estadísticas
+        final total = tarjas.where((t) => t.idEstadoactividad == '2' || t.idEstadoactividad == '3').length;
+        final revisadas = tarjas.where((t) => t.idEstadoactividad == '2').length;
+        final aprobadas = tarjas.where((t) => t.idEstadoactividad == '3').length;
+        final propio = tarjas.where((t) => 
+          t.idTipotrabajador == '1' && (t.idEstadoactividad == '2' || t.idEstadoactividad == '3')
+        ).length;
+        final contratista = tarjas.where((t) => 
+          t.idTipotrabajador == '2' && (t.idEstadoactividad == '2' || t.idEstadoactividad == '3')
+        ).length;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  'Total',
+                  total.toString(),
+                  Icons.assessment,
+                  Colors.purple,
+                  _filtroActivo == null,
+                  () => _aplicarFiltro(null),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  'Revisadas',
+                  revisadas.toString(),
+                  Icons.check_circle,
+                  Colors.orange,
+                  _filtroActivo == 'revisadas',
+                  () => _aplicarFiltro('revisadas'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  'Aprobadas',
+                  aprobadas.toString(),
+                  Icons.verified,
+                  Colors.green,
+                  _filtroActivo == 'aprobadas',
+                  () => _aplicarFiltro('aprobadas'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  'Propio',
+                  propio.toString(),
+                  Icons.person,
+                  Colors.blue,
+                  _filtroActivo == 'propio',
+                  () => _aplicarFiltro('propio'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  'Contratista',
+                  contratista.toString(),
+                  Icons.people,
+                  Colors.purple,
+                  _filtroActivo == 'contratista',
+                  () => _aplicarFiltro('contratista'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTarjetaEstadistica(
+    String titulo,
+    String valor,
+    IconData icono,
+    Color color,
+    bool isActive,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            color: isActive ? color.withOpacity(0.2) : color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isActive ? color : color.withOpacity(0.3),
+              width: isActive ? 2 : 1,
+            ),
+            boxShadow: isActive ? [
+              BoxShadow(
+                color: color.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ] : null,
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icono,
+                color: color,
+                size: 24,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                valor,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                titulo,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: color.withOpacity(0.8),
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              if (isActive) ...[
+                const SizedBox(height: 4),
+                Container(
+                  width: 20,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Aprobación de Tarjas',
       onRefresh: _refrescarDatos,
-      bottom: _TabBarWithCounters(tabController: _tabController),
       body: Column(
         children: [
           _buildSearchBar(),
+          _buildEstadisticas(),
           Expanded(
             child: Consumer<TarjaProvider>(
               builder: (context, tarjaProvider, child) {
@@ -1702,176 +1852,4 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen>
   }
 }
 
-class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget {
-  final TabController tabController;
-
-  const _TabBarWithCounters({required this.tabController});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(48.0);
-
-  // Métodos para calcular contadores de cada tab
-  int _getContadorTodas(List<Tarja> tarjas) {
-    // Solo contar tarjas con estado 2 o 3 (revisadas o aprobadas)
-    return tarjas.where((t) => t.idEstadoactividad == '2' || t.idEstadoactividad == '3').length;
-  }
-
-  int _getContadorRevisadas(List<Tarja> tarjas) {
-    return tarjas.where((t) => t.idEstadoactividad == '2').length;
-  }
-
-  int _getContadorAprobadas(List<Tarja> tarjas) {
-    return tarjas.where((t) => t.idEstadoactividad == '3').length;
-  }
-
-  int _getContadorPropio(List<Tarja> tarjas) {
-    // Solo contar tarjas propias con estado 2 o 3
-    return tarjas.where((t) => 
-      t.idTipotrabajador == '1' && (t.idEstadoactividad == '2' || t.idEstadoactividad == '3')
-    ).length;
-  }
-
-  int _getContadorContratista(List<Tarja> tarjas) {
-    // Solo contar tarjas de contratista con estado 2 o 3
-    return tarjas.where((t) => 
-      t.idTipotrabajador == '2' && (t.idEstadoactividad == '2' || t.idEstadoactividad == '3')
-    ).length;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<TarjaProvider>(
-      builder: (context, tarjaProvider, child) {
-        return TabBar(
-          controller: tabController,
-          isScrollable: true,
-          indicatorColor: AppTheme.primaryColor,
-          labelColor: AppTheme.accentColor,
-          unselectedLabelColor: Colors.white,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Todas'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${_getContadorTodas(tarjaProvider.tarjas)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Revisadas'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${_getContadorRevisadas(tarjaProvider.tarjas)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Aprobadas'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${_getContadorAprobadas(tarjaProvider.tarjas)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Propio'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${_getContadorPropio(tarjaProvider.tarjas)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Contratista'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.purple,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${_getContadorContratista(tarjaProvider.tarjas)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-} 
+ 
