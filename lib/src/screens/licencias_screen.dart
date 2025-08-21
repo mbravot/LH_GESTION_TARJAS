@@ -332,7 +332,7 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
     final isActivo = _filtroActivo == filtro;
     
     return GestureDetector(
-      onTap: tieneDatos ? () => _aplicarFiltro(filtro) : null,
+      onTap: () => _aplicarFiltro(filtro),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(

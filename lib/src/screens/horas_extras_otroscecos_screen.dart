@@ -13,49 +13,35 @@ class HorasExtrasOtrosCecosScreen extends StatefulWidget {
   State<HorasExtrasOtrosCecosScreen> createState() => _HorasExtrasOtrosCecosScreenState();
 }
 
-class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  int _selectedTab = 0;
+class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScreen> {
   String _searchQuery = '';
   bool _showFiltros = false;
+  String _filtroActivo = 'todos'; // 'todos', 'futuras', 'hoy', 'pasadas'
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(_onTabChanged);
     _cargarDatosIniciales();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  void _onTabChanged() {
+  void _aplicarFiltro(String filtro) {
     setState(() {
-      _selectedTab = _tabController.index;
+      _filtroActivo = filtro;
     });
-    _actualizarFiltrosPorTab();
-  }
-
-  void _actualizarFiltrosPorTab() {
-    final provider = Provider.of<HorasExtrasOtrosCecosProvider>(context, listen: false);
     
-    switch (_selectedTab) {
-      case 0: // Todos
-        // No aplicar filtro de estado
-        break;
-      case 1: // Futuras
+    final provider = Provider.of<HorasExtrasOtrosCecosProvider>(context, listen: false);
+    switch (filtro) {
+      case 'futuras':
         // Filtrar por futuras
         break;
-      case 2: // Hoy
+      case 'hoy':
         // Filtrar por hoy
         break;
-      case 3: // Pasadas
+      case 'pasadas':
         // Filtrar por pasadas
+        break;
+      default: // 'todos'
+        // No aplicar filtro de estado
         break;
     }
   }
@@ -85,7 +71,6 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
         return MainScaffold(
           title: 'Horas Extras Otros CECOs',
           onRefresh: _refrescarDatos,
-          bottom: _TabBarWithCounters(tabController: _tabController),
           body: Column(
             children: [
               // Barra de búsqueda y filtros
@@ -94,17 +79,9 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
               // Estadísticas
               _buildEstadisticas(provider),
               
-              // Contenido de los tabs
+              // Lista de horas extras
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildListaHorasExtras(provider.horasExtrasFiltradas),
-                    _buildListaHorasExtras(provider.horasExtrasFiltradas.where((h) => h.esFuturo).toList()),
-                    _buildListaHorasExtras(provider.horasExtrasFiltradas.where((h) => h.esHoy).toList()),
-                    _buildListaHorasExtras(provider.horasExtrasFiltradas.where((h) => h.esPasado).toList()),
-                  ],
-                ),
+                child: _buildListaHorasExtras(provider.horasExtrasFiltradas),
               ),
             ],
           ),
@@ -430,6 +407,7 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
               valor: stats['futuras'].toString(),
               color: Colors.blue,
               icono: Icons.schedule,
+              filtro: 'futuras',
             ),
           ),
           const SizedBox(width: 8),
@@ -439,6 +417,7 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
               valor: stats['hoy'].toString(),
               color: Colors.green,
               icono: Icons.today,
+              filtro: 'hoy',
             ),
           ),
           const SizedBox(width: 8),
@@ -448,6 +427,7 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
               valor: stats['pasadas'].toString(),
               color: Colors.grey,
               icono: Icons.history,
+              filtro: 'pasadas',
             ),
           ),
           const SizedBox(width: 8),
@@ -457,6 +437,7 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
               valor: stats['total'].toString(),
               color: Colors.orange,
               icono: Icons.list,
+              filtro: 'todos',
             ),
           ),
         ],
@@ -469,36 +450,63 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
     required String valor,
     required Color color,
     required IconData icono,
+    required String filtro,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icono, color: color, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            valor,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+    final isActivo = _filtroActivo == filtro;
+    
+    return GestureDetector(
+      onTap: () => _aplicarFiltro(filtro),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isActivo ? color.withOpacity(0.2) : color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isActivo ? color : color.withOpacity(0.3),
+            width: isActivo ? 2 : 1,
           ),
-          Text(
-            titulo,
-            style: TextStyle(
-              fontSize: 10,
-              color: color.withOpacity(0.8),
-              fontWeight: FontWeight.w500,
+          boxShadow: isActivo ? [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ] : null,
+        ),
+        child: Column(
+          children: [
+            Icon(icono, color: color, size: 24),
+            const SizedBox(height: 4),
+            Text(
+              valor,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              titulo,
+              style: TextStyle(
+                fontSize: 10,
+                color: color.withOpacity(0.8),
+                fontWeight: isActivo ? FontWeight.w600 : FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (isActivo) ...[
+              const SizedBox(height: 4),
+              Container(
+                width: 20,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -812,125 +820,4 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
   }
 }
 
-class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget {
-  final TabController tabController;
 
-  const _TabBarWithCounters({required this.tabController});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(48.0);
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<HorasExtrasOtrosCecosProvider>(
-      builder: (context, provider, child) {
-        final stats = provider.estadisticas;
-        
-        return TabBar(
-          controller: tabController,
-          indicatorColor: AppTheme.primaryColor,
-          labelColor: AppTheme.accentColor,
-          unselectedLabelColor: Colors.white,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Todos'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['total']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Futuras'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['futuras']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Hoy'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['hoy']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Pasadas'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.grey,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['pasadas']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}

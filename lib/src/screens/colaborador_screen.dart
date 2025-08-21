@@ -326,7 +326,7 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
     final isActivo = _filtroActivo == filtro;
     
     return GestureDetector(
-      onTap: tieneDatos ? () => _aplicarFiltro(filtro) : null,
+      onTap: () => _aplicarFiltro(filtro),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(

@@ -13,49 +13,35 @@ class HorasExtrasScreen extends StatefulWidget {
   State<HorasExtrasScreen> createState() => _HorasExtrasScreenState();
 }
 
-class _HorasExtrasScreenState extends State<HorasExtrasScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  int _selectedTab = 0;
+class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
   String _searchQuery = '';
   bool _showFiltros = false;
+  String _filtroActivo = 'todos'; // 'todos', 'mas_horas', 'menos_horas', 'exactas'
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(_onTabChanged);
     _cargarDatosIniciales();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  void _onTabChanged() {
+  void _aplicarFiltro(String filtro) {
     setState(() {
-      _selectedTab = _tabController.index;
+      _filtroActivo = filtro;
     });
-    _actualizarFiltrosPorTab();
-  }
-
-  void _actualizarFiltrosPorTab() {
-    final provider = Provider.of<HorasExtrasProvider>(context, listen: false);
     
-    switch (_selectedTab) {
-      case 0: // Todos
-        provider.setFiltroEstado('');
-        break;
-      case 1: // Más horas
+    final provider = Provider.of<HorasExtrasProvider>(context, listen: false);
+    switch (filtro) {
+      case 'mas_horas':
         provider.setFiltroEstado('MÁS');
         break;
-      case 2: // Menos horas
+      case 'menos_horas':
         provider.setFiltroEstado('MENOS');
         break;
-      case 3: // Exactas
+      case 'exactas':
         provider.setFiltroEstado('EXACTO');
+        break;
+      default: // 'todos'
+        provider.setFiltroEstado('');
         break;
     }
   }
@@ -85,7 +71,6 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen>
         return MainScaffold(
           title: 'Horas Extras',
           onRefresh: _refrescarDatos,
-          bottom: _TabBarWithCounters(tabController: _tabController),
           body: Column(
             children: [
               // Barra de búsqueda y filtros
@@ -94,17 +79,9 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen>
               // Estadísticas
               _buildEstadisticas(provider),
               
-              // Contenido de los tabs
+              // Lista de horas extras
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildListaRendimientos(provider.rendimientosFiltrados),
-                    _buildListaRendimientos(provider.rendimientosFiltrados),
-                    _buildListaRendimientos(provider.rendimientosFiltrados),
-                    _buildListaRendimientos(provider.rendimientosFiltrados),
-                  ],
-                ),
+                child: _buildListaRendimientos(provider.rendimientosFiltrados),
               ),
             ],
           ),
@@ -430,6 +407,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen>
               valor: stats['mas_horas'].toString(),
               color: Colors.red,
               icono: Icons.arrow_upward,
+              filtro: 'mas_horas',
             ),
           ),
           const SizedBox(width: 8),
@@ -439,6 +417,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen>
               valor: stats['menos_horas'].toString(),
               color: Colors.red,
               icono: Icons.arrow_downward,
+              filtro: 'menos_horas',
             ),
           ),
           const SizedBox(width: 8),
@@ -448,6 +427,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen>
               valor: stats['exactas'].toString(),
               color: Colors.green,
               icono: Icons.check_circle,
+              filtro: 'exactas',
             ),
           ),
           const SizedBox(width: 8),
@@ -457,6 +437,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen>
               valor: stats['total'].toString(),
               color: Colors.orange,
               icono: Icons.list,
+              filtro: 'todos',
             ),
           ),
         ],
@@ -469,36 +450,63 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen>
     required String valor,
     required Color color,
     required IconData icono,
+    required String filtro,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icono, color: color, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            valor,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+    final isActivo = _filtroActivo == filtro;
+    
+    return GestureDetector(
+      onTap: () => _aplicarFiltro(filtro),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isActivo ? color.withOpacity(0.2) : color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isActivo ? color : color.withOpacity(0.3),
+            width: isActivo ? 2 : 1,
           ),
-          Text(
-            titulo,
-            style: TextStyle(
-              fontSize: 10,
-              color: color.withOpacity(0.8),
-              fontWeight: FontWeight.w500,
+          boxShadow: isActivo ? [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ] : null,
+        ),
+        child: Column(
+          children: [
+            Icon(icono, color: color, size: 24),
+            const SizedBox(height: 4),
+            Text(
+              valor,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              titulo,
+              style: TextStyle(
+                fontSize: 10,
+                color: color.withOpacity(0.8),
+                fontWeight: isActivo ? FontWeight.w600 : FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (isActivo) ...[
+              const SizedBox(height: 4),
+              Container(
+                width: 20,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -1026,125 +1034,4 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen>
   }
 }
 
-class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget {
-  final TabController tabController;
 
-  const _TabBarWithCounters({required this.tabController});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(48.0);
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<HorasExtrasProvider>(
-      builder: (context, provider, child) {
-        final stats = provider.estadisticas;
-        
-        return TabBar(
-          controller: tabController,
-          indicatorColor: AppTheme.primaryColor,
-          labelColor: AppTheme.accentColor,
-          unselectedLabelColor: Colors.white,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Todos'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['total']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Más Horas'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['mas_horas']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Menos Horas'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['menos_horas']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Exactas'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['exactas']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
