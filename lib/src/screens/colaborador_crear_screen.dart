@@ -20,17 +20,17 @@ class _ColaboradorCrearScreenState extends State<ColaboradorCrearScreen> {
   final _apellidoMaternoController = TextEditingController();
   final _rutController = TextEditingController();
   final _codigoVerificadorController = TextEditingController();
+  final _fechaNacimientoController = TextEditingController();
+  final _fechaIncorporacionController = TextEditingController();
+  final _fechaFiniquitoController = TextEditingController();
   
   // Para el cálculo automático del DV
   bool _calculandoDV = false;
-
-  String? _sucursalContratoSeleccionada;
   String? _cargoSeleccionado;
   String? _previsionSeleccionada;
   String? _afpSeleccionada;
   String? _estadoSeleccionado;
 
-  List<Map<String, dynamic>> _sucursales = [];
   List<Map<String, dynamic>> _cargos = [];
   List<Map<String, dynamic>> _previsiones = [];
   List<Map<String, dynamic>> _afps = [];
@@ -55,7 +55,28 @@ class _ColaboradorCrearScreenState extends State<ColaboradorCrearScreen> {
     _apellidoMaternoController.dispose();
     _rutController.dispose();
     _codigoVerificadorController.dispose();
+    _fechaNacimientoController.dispose();
+    _fechaIncorporacionController.dispose();
+    _fechaFiniquitoController.dispose();
     super.dispose();
+  }
+
+  Future<void> _seleccionarFecha(TextEditingController controller, String titulo) async {
+    final DateTime? fechaSeleccionada = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+      locale: const Locale('es', 'ES'),
+      helpText: titulo,
+      cancelText: 'Cancelar',
+      confirmText: 'Seleccionar',
+    );
+
+    if (fechaSeleccionada != null) {
+      final fechaFormateada = '${fechaSeleccionada.year}-${fechaSeleccionada.month.toString().padLeft(2, '0')}-${fechaSeleccionada.day.toString().padLeft(2, '0')}';
+      controller.text = fechaFormateada;
+    }
   }
 
   void _configurarListeners() {
@@ -83,7 +104,6 @@ class _ColaboradorCrearScreenState extends State<ColaboradorCrearScreen> {
       final opcionesData = await ApiService.obtenerOpcionesCrearColaborador();
       
       setState(() {
-        _sucursales = List<Map<String, dynamic>>.from(opcionesData['sucursales'] ?? []);
         _cargos = List<Map<String, dynamic>>.from(opcionesData['cargos'] ?? []);
         _previsiones = List<Map<String, dynamic>>.from(opcionesData['previsiones'] ?? []);
         _afps = List<Map<String, dynamic>>.from(opcionesData['afps'] ?? []);
@@ -121,6 +141,50 @@ class _ColaboradorCrearScreenState extends State<ColaboradorCrearScreen> {
     });
 
     try {
+      // Función helper para formatear fechas para MySQL
+      String? _formatearFechaParaMySQL(String? fechaStr) {
+        if (fechaStr == null || fechaStr.isEmpty) return null;
+        
+        try {
+          // Intentar parsear la fecha
+          DateTime fecha;
+          
+          // Si es un formato GMT, parsearlo
+          if (fechaStr.contains('GMT')) {
+            final regex = RegExp(r'(\w{3}), (\d{1,2}) (\w{3}) (\d{4}) (\d{2}):(\d{2}):(\d{2}) GMT');
+            final match = regex.firstMatch(fechaStr);
+            
+            if (match != null) {
+              final day = int.parse(match.group(2)!);
+              final monthStr = match.group(3)!;
+              final year = int.parse(match.group(4)!);
+              
+              final monthMap = {
+                'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+                'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+              };
+              
+              final month = monthMap[monthStr];
+              if (month != null) {
+                fecha = DateTime(year, month, day);
+              } else {
+                return null;
+              }
+            } else {
+              return null;
+            }
+          } else {
+            // Intentar parsear como ISO
+            fecha = DateTime.parse(fechaStr);
+          }
+          
+          // Formatear para MySQL (YYYY-MM-DD)
+          return '${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}';
+        } catch (e) {
+          return null;
+        }
+      }
+
       final colaboradorData = {
         'nombre': _nombreController.text.trim(),
         'apellido_paterno': _apellidoPaternoController.text.trim(),
@@ -129,7 +193,15 @@ class _ColaboradorCrearScreenState extends State<ColaboradorCrearScreen> {
         'codigo_verificador': _codigoVerificadorController.text.trim().isNotEmpty 
             ? _codigoVerificadorController.text.trim() 
             : null,
-        'id_sucursalcontrato': _sucursalContratoSeleccionada,
+        'fecha_nacimiento': _fechaNacimientoController.text.trim().isNotEmpty 
+            ? _formatearFechaParaMySQL(_fechaNacimientoController.text.trim())
+            : null,
+        'fecha_incorporacion': _fechaIncorporacionController.text.trim().isNotEmpty 
+            ? _formatearFechaParaMySQL(_fechaIncorporacionController.text.trim())
+            : null,
+        'fecha_finiquito': _fechaFiniquitoController.text.trim().isNotEmpty 
+            ? _formatearFechaParaMySQL(_fechaFiniquitoController.text.trim())
+            : null,
         'id_cargo': _cargoSeleccionado,
         'id_prevision': _previsionSeleccionada,
         'id_afp': _afpSeleccionada,
@@ -184,9 +256,11 @@ class _ColaboradorCrearScreenState extends State<ColaboradorCrearScreen> {
     _apellidoMaternoController.clear();
     _rutController.clear();
     _codigoVerificadorController.clear();
+    _fechaNacimientoController.clear();
+    _fechaIncorporacionController.clear();
+    _fechaFiniquitoController.clear();
     
     setState(() {
-      _sucursalContratoSeleccionada = null;
       _cargoSeleccionado = null;
       _previsionSeleccionada = null;
       _afpSeleccionada = null;
@@ -301,6 +375,62 @@ class _ColaboradorCrearScreenState extends State<ColaboradorCrearScreen> {
           counterText: '', // Ocultar contador de caracteres
         ),
       ),
+    );
+  }
+
+  Widget _buildCampoFecha({
+    required String label,
+    required TextEditingController controller,
+    required String titulo,
+    bool isRequired = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: TextSpan(
+            text: label,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+            children: [
+              if (isRequired)
+                const TextSpan(
+                  text: ' *',
+                  style: TextStyle(color: Colors.red),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          readOnly: true,
+          decoration: InputDecoration(
+            hintText: 'Seleccionar $label',
+            suffixIcon: const Icon(Icons.calendar_today),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+            ),
+          ),
+          onTap: () => _seleccionarFecha(controller, titulo),
+          validator: isRequired
+              ? (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Este campo es obligatorio';
+                  }
+                  return null;
+                }
+              : null,
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 
@@ -581,25 +711,6 @@ class _ColaboradorCrearScreenState extends State<ColaboradorCrearScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 _buildDropdown(
-                                  label: 'Sucursal de Contrato',
-                                  value: _sucursalContratoSeleccionada,
-                                  items: _sucursales,
-                                  displayField: 'nombre',
-                                  valueField: 'id',
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _sucursalContratoSeleccionada = value;
-                                    });
-                                  },
-                                  isRequired: true,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Debe seleccionar una sucursal de contrato';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                _buildDropdown(
                                   label: 'Cargo',
                                   value: _cargoSeleccionado,
                                   items: _cargos,
@@ -656,6 +767,47 @@ class _ColaboradorCrearScreenState extends State<ColaboradorCrearScreen> {
                                     }
                                     return null;
                                   },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Sección de Fechas
+                        Card(
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Fechas',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                _buildCampoFecha(
+                                  label: 'Fecha de Nacimiento',
+                                  controller: _fechaNacimientoController,
+                                  titulo: 'Seleccionar Fecha de Nacimiento',
+                                ),
+                                _buildCampoFecha(
+                                  label: 'Fecha de Incorporación',
+                                  controller: _fechaIncorporacionController,
+                                  titulo: 'Seleccionar Fecha de Incorporación',
+                                ),
+                                _buildCampoFecha(
+                                  label: 'Fecha de Finiquito',
+                                  controller: _fechaFiniquitoController,
+                                  titulo: 'Seleccionar Fecha de Finiquito',
                                 ),
                               ],
                             ),

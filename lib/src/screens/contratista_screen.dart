@@ -15,31 +15,34 @@ class ContratistaScreen extends StatefulWidget {
   State<ContratistaScreen> createState() => _ContratistaScreenState();
 }
 
-class _ContratistaScreenState extends State<ContratistaScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  int _selectedTab = 0;
+class _ContratistaScreenState extends State<ContratistaScreen> {
   String _searchQuery = '';
   bool _showFiltros = false;
+  String _filtroActivo = 'todos'; // 'todos', 'activos', 'inactivos', 'suspendidos'
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(_onTabChanged);
     _cargarDatosIniciales();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  void _onTabChanged() {
+  void _aplicarFiltro(String filtro) {
     setState(() {
-      _selectedTab = _tabController.index;
+      _filtroActivo = filtro;
     });
+    
+    final provider = Provider.of<ContratistaProvider>(context, listen: false);
+    switch (filtro) {
+      case 'activos':
+        provider.setFiltroEstado('ACTIVO');
+        break;
+      case 'inactivos':
+        provider.setFiltroEstado('INACTIVO');
+        break;
+      default: // 'todos'
+        provider.setFiltroEstado('');
+        break;
+    }
   }
 
   Future<void> _cargarDatosIniciales() async {
@@ -68,7 +71,6 @@ class _ContratistaScreenState extends State<ContratistaScreen>
         return MainScaffold(
           title: 'Contratistas',
           onRefresh: _refrescarDatos,
-          bottom: _TabBarWithCounters(tabController: _tabController),
           body: Column(
             children: [
               // Barra de búsqueda y filtros
@@ -77,17 +79,9 @@ class _ContratistaScreenState extends State<ContratistaScreen>
               // Estadísticas
               _buildEstadisticas(provider),
 
-              // Contenido de los tabs
+              // Lista de contratistas
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildListaContratistas(provider.contratistasFiltradas),
-                    _buildListaContratistas(provider.contratistasFiltradas.where((c) => c.esActivo).toList()),
-                    _buildListaContratistas(provider.contratistasFiltradas.where((c) => c.esInactivo).toList()),
-                    _buildListaContratistas(provider.contratistasFiltradas.where((c) => c.estado.toUpperCase() == 'SUSPENDIDO').toList()),
-                  ],
-                ),
+                child: _buildListaContratistas(provider.contratistasFiltradas),
               ),
             ],
           ),
@@ -312,10 +306,21 @@ class _ContratistaScreenState extends State<ContratistaScreen>
         children: [
           Expanded(
             child: _buildTarjetaEstadistica(
+              titulo: 'Total',
+              valor: stats['total'].toString(),
+              color: Colors.purple,
+              icono: Icons.people,
+              filtro: 'todos',
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildTarjetaEstadistica(
               titulo: 'Activos',
               valor: stats['activos'].toString(),
               color: Colors.green,
               icono: Icons.check_circle,
+              filtro: 'activos',
             ),
           ),
           const SizedBox(width: 8),
@@ -325,24 +330,7 @@ class _ContratistaScreenState extends State<ContratistaScreen>
               valor: stats['inactivos'].toString(),
               color: Colors.red,
               icono: Icons.cancel,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Suspendidos',
-              valor: stats['suspendidos'].toString(),
-              color: Colors.orange,
-              icono: Icons.pause_circle,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Total',
-              valor: stats['total'].toString(),
-              color: Colors.blue,
-              icono: Icons.people,
+              filtro: 'inactivos',
             ),
           ),
         ],
@@ -355,36 +343,63 @@ class _ContratistaScreenState extends State<ContratistaScreen>
     required String valor,
     required Color color,
     required IconData icono,
+    required String filtro,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icono, color: color, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            valor,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+    final isActivo = _filtroActivo == filtro;
+    
+    return GestureDetector(
+      onTap: () => _aplicarFiltro(filtro),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isActivo ? color.withOpacity(0.2) : color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isActivo ? color : color.withOpacity(0.3),
+            width: isActivo ? 2 : 1,
           ),
-          Text(
-            titulo,
-            style: TextStyle(
-              fontSize: 10,
-              color: color.withOpacity(0.8),
-              fontWeight: FontWeight.w500,
+          boxShadow: isActivo ? [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ] : null,
+        ),
+        child: Column(
+          children: [
+            Icon(icono, color: color, size: 24),
+            const SizedBox(height: 4),
+            Text(
+              valor,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              titulo,
+              style: TextStyle(
+                fontSize: 10,
+                color: color.withOpacity(0.8),
+                fontWeight: isActivo ? FontWeight.w600 : FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (isActivo) ...[
+              const SizedBox(height: 4),
+              Container(
+                width: 20,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -528,30 +543,42 @@ class _ContratistaScreenState extends State<ContratistaScreen>
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ContratistaEditarScreen(contratista: contratista),
-                                ),
-                              );
-                            },
-                            icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            onPressed: () => _confirmarEliminar(contratista),
-                            icon: Icon(Icons.delete, color: AppTheme.errorColor, size: 20),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                          ),
-                        ],
-                      ),
+                                             Row(
+                         children: [
+                           if (contratista.esActivo) ...[
+                             IconButton(
+                               onPressed: () => _confirmarDesactivarContratista(contratista),
+                               icon: Icon(Icons.person_off, color: Colors.orange, size: 20),
+                               padding: EdgeInsets.zero,
+                               constraints: const BoxConstraints(),
+                               tooltip: 'Desactivar contratista',
+                             ),
+                           ] else ...[
+                             IconButton(
+                               onPressed: () => _confirmarActivarContratista(contratista),
+                               icon: Icon(Icons.person_add, color: Colors.green, size: 20),
+                               padding: EdgeInsets.zero,
+                               constraints: const BoxConstraints(),
+                               tooltip: 'Activar contratista',
+                             ),
+                           ],
+                           const SizedBox(width: 8),
+                           IconButton(
+                             onPressed: () {
+                               Navigator.push(
+                                 context,
+                                 MaterialPageRoute(
+                                   builder: (_) => ContratistaEditarScreen(contratista: contratista),
+                                 ),
+                               );
+                             },
+                             icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
+                             padding: EdgeInsets.zero,
+                             constraints: const BoxConstraints(),
+                             tooltip: 'Editar contratista',
+                           ),
+                         ],
+                       ),
                     ],
                   ),
                 ],
@@ -685,204 +712,122 @@ class _ContratistaScreenState extends State<ContratistaScreen>
     );
   }
 
-  Widget _buildInfoRow(String label, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: Colors.grey[600],
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[700],
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+     Widget _buildInfoRow(String label, String value, IconData icon) {
+     return Padding(
+       padding: const EdgeInsets.symmetric(vertical: 8),
+       child: Row(
+         children: [
+           Icon(
+             icon,
+             size: 16,
+             color: Colors.grey[600],
+           ),
+           const SizedBox(width: 8),
+           SizedBox(
+             width: 120,
+             child: Text(
+               '$label:',
+               style: TextStyle(
+                 fontWeight: FontWeight.w500,
+                 color: Colors.grey[700],
+               ),
+             ),
+           ),
+           Expanded(
+             child: Text(
+               value,
+               style: const TextStyle(
+                 fontWeight: FontWeight.w500,
+               ),
+             ),
+           ),
+         ],
+       ),
+     );
+   }
 
-  void _confirmarEliminar(Contratista contratista) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar eliminación'),
-        content: Text('¿Estás seguro de que deseas eliminar al contratista "${contratista.nombreCompleto}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              final provider = Provider.of<ContratistaProvider>(context, listen: false);
-              final success = await provider.eliminarContratista(contratista.id);
-              
-              if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Contratista eliminado exitosamente'),
-                    backgroundColor: AppTheme.successColor,
-                  ),
-                );
-              } else if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(provider.error),
-                    backgroundColor: AppTheme.errorColor,
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
-    );
-  }
-}
+   void _confirmarDesactivarContratista(Contratista contratista) {
+     showDialog(
+       context: context,
+       builder: (context) => AlertDialog(
+         title: const Text('Confirmar Desactivación'),
+         content: Text(
+           '¿Estás seguro de que quieres desactivar a ${contratista.nombreCompleto}?',
+         ),
+         actions: [
+           TextButton(
+             onPressed: () => Navigator.pop(context),
+             child: const Text('Cancelar'),
+           ),
+           ElevatedButton(
+             onPressed: () async {
+               Navigator.pop(context);
+               final provider = Provider.of<ContratistaProvider>(context, listen: false);
+               final success = await provider.desactivarContratista(contratista.id);
+               if (success) {
+                 ScaffoldMessenger.of(context).showSnackBar(
+                   const SnackBar(
+                     content: Text('Contratista desactivado correctamente'),
+                     backgroundColor: Colors.orange,
+                   ),
+                 );
+               } else {
+                 ScaffoldMessenger.of(context).showSnackBar(
+                   SnackBar(
+                     content: Text('Error al desactivar: ${provider.error}'),
+                     backgroundColor: Colors.red,
+                   ),
+                 );
+               }
+             },
+             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+             child: const Text('Desactivar'),
+           ),
+         ],
+       ),
+     );
+   }
 
-class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget {
-  final TabController tabController;
+   void _confirmarActivarContratista(Contratista contratista) {
+     showDialog(
+       context: context,
+       builder: (context) => AlertDialog(
+         title: const Text('Confirmar Activación'),
+         content: Text(
+           '¿Estás seguro de que quieres activar a ${contratista.nombreCompleto}?',
+         ),
+         actions: [
+           TextButton(
+             onPressed: () => Navigator.pop(context),
+             child: const Text('Cancelar'),
+           ),
+           ElevatedButton(
+             onPressed: () async {
+               Navigator.pop(context);
+               final provider = Provider.of<ContratistaProvider>(context, listen: false);
+               final success = await provider.activarContratista(contratista.id);
+               if (success) {
+                 ScaffoldMessenger.of(context).showSnackBar(
+                   const SnackBar(
+                     content: Text('Contratista activado correctamente'),
+                     backgroundColor: Colors.green,
+                   ),
+                 );
+               } else {
+                 ScaffoldMessenger.of(context).showSnackBar(
+                   SnackBar(
+                     content: Text('Error al activar: ${provider.error}'),
+                     backgroundColor: Colors.red,
+                   ),
+                 );
+               }
+             },
+             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+             child: const Text('Activar'),
+           ),
+         ],
+       ),
+     );
+   }
 
-  const _TabBarWithCounters({required this.tabController});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(48.0);
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<ContratistaProvider>(
-      builder: (context, provider, child) {
-        final stats = provider.estadisticas;
-
-        return TabBar(
-          controller: tabController,
-          indicatorColor: AppTheme.primaryColor,
-          labelColor: AppTheme.accentColor,
-          unselectedLabelColor: Colors.white,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Todos'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['total']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Activos'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['activos']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Inactivos'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['inactivos']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Suspendidos'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${stats['suspendidos']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
+ }

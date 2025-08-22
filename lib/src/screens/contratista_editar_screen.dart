@@ -4,6 +4,7 @@ import '../providers/contratista_provider.dart';
 import '../models/contratista.dart';
 import '../widgets/main_scaffold.dart';
 import '../theme/app_theme.dart';
+import '../services/api_service.dart';
 
 class ContratistaEditarScreen extends StatefulWidget {
   final Contratista contratista;
@@ -19,58 +20,154 @@ class ContratistaEditarScreen extends StatefulWidget {
 
 class _ContratistaEditarScreenState extends State<ContratistaEditarScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _rutController;
-  late final TextEditingController _nombreController;
-  late final TextEditingController _apellidoPaternoController;
-  late final TextEditingController _apellidoMaternoController;
-  late final TextEditingController _emailController;
-  late final TextEditingController _telefonoController;
-  late final TextEditingController _direccionController;
-  late final TextEditingController _observacionesController;
+  final _rutController = TextEditingController();
+  final _codigoVerificadorController = TextEditingController();
+  final _nombreController = TextEditingController();
 
-  late String _estadoSeleccionado;
-  DateTime? _fechaNacimiento;
-  DateTime? _fechaIncorporacion;
+  String _estadoSeleccionado = 'ACTIVO';
   bool _isLoading = false;
+  bool _isSaving = false;
+  bool _calculandoDV = false;
 
   @override
   void initState() {
     super.initState();
-    _inicializarControladores();
+    _inicializarDatos();
     _cargarOpciones();
-  }
-
-  void _inicializarControladores() {
-    _rutController = TextEditingController(text: widget.contratista.rut);
-    _nombreController = TextEditingController(text: widget.contratista.nombre);
-    _apellidoPaternoController = TextEditingController(text: widget.contratista.apellidoPaterno);
-    _apellidoMaternoController = TextEditingController(text: widget.contratista.apellidoMaterno);
-    _emailController = TextEditingController(text: widget.contratista.email ?? '');
-    _telefonoController = TextEditingController(text: widget.contratista.telefono ?? '');
-    _direccionController = TextEditingController(text: widget.contratista.direccion ?? '');
-    _observacionesController = TextEditingController(text: widget.contratista.observaciones ?? '');
-    
-    _estadoSeleccionado = widget.contratista.estado;
-    _fechaNacimiento = widget.contratista.fechaNacimiento;
-    _fechaIncorporacion = widget.contratista.fechaIncorporacion;
+    _configurarListeners();
   }
 
   @override
   void dispose() {
     _rutController.dispose();
+    _codigoVerificadorController.dispose();
     _nombreController.dispose();
-    _apellidoPaternoController.dispose();
-    _apellidoMaternoController.dispose();
-    _emailController.dispose();
-    _telefonoController.dispose();
-    _direccionController.dispose();
-    _observacionesController.dispose();
     super.dispose();
+  }
+
+  void _inicializarDatos() {
+    // Extraer el número del RUT (sin DV)
+    final rutCompleto = widget.contratista.rut;
+    if (rutCompleto.contains('-')) {
+      final partes = rutCompleto.split('-');
+      _rutController.text = partes[0];
+      _codigoVerificadorController.text = partes[1];
+    } else {
+      // Si no tiene formato con guión, asumir que es solo el número
+      _rutController.text = rutCompleto.replaceAll(RegExp(r'[^0-9]'), '');
+    }
+    
+    _nombreController.text = widget.contratista.nombre;
+    _estadoSeleccionado = widget.contratista.estado;
+  }
+
+  void _configurarListeners() {
+    // Listener para calcular automáticamente el DV cuando cambie el RUT
+    _rutController.addListener(() {
+      // Solo calcular si el RUT tiene la longitud correcta
+      final rut = _rutController.text.trim();
+      if (rut.length >= 7 && rut.length <= 8 && int.tryParse(rut) != null) {
+        _calcularDigitoVerificador();
+      } else if (rut.isEmpty) {
+        // Si el RUT está vacío, limpiar el DV
+        _codigoVerificadorController.clear();
+      }
+    });
   }
 
   Future<void> _cargarOpciones() async {
     final provider = Provider.of<ContratistaProvider>(context, listen: false);
     await provider.cargarOpciones();
+  }
+
+  int _getEstadoId(String estado) {
+    switch (estado.toUpperCase()) {
+      case 'ACTIVO':
+        return 1;
+      case 'INACTIVO':
+        return 2;
+      case 'SUSPENDIDO':
+        return 3;
+      default:
+        return 1;
+    }
+  }
+
+  // Calcular automáticamente el dígito verificador
+  Future<void> _calcularDigitoVerificador() async {
+    final rut = _rutController.text.trim();
+    
+    // Validar que el RUT tenga entre 7 y 8 dígitos
+    if (rut.length >= 7 && rut.length <= 8 && int.tryParse(rut) != null) {
+      setState(() {
+        _calculandoDV = true;
+      });
+
+      // Pequeño delay para evitar demasiadas llamadas
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      // Verificar que el RUT no haya cambiado durante el delay
+      if (_rutController.text.trim() != rut) {
+        setState(() {
+          _calculandoDV = false;
+        });
+        return;
+      }
+
+      try {
+        // Intentar obtener el DV del backend primero
+        final dv = await ApiService.calcularDigitoVerificador(rut);
+        if (mounted && _rutController.text.trim() == rut) {
+          _codigoVerificadorController.text = dv;
+        }
+      } catch (e) {
+        // Si falla el backend, calcular localmente
+        if (mounted && _rutController.text.trim() == rut) {
+          final dvLocal = _calcularDVLocal(rut);
+          _codigoVerificadorController.text = dvLocal;
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _calculandoDV = false;
+          });
+        }
+      }
+    } else {
+      // Si el RUT no es válido, limpiar el DV
+      _codigoVerificadorController.clear();
+    }
+  }
+
+  // Calcular DV localmente como fallback
+  String _calcularDVLocal(String rut) {
+    if (rut.isEmpty || rut.length < 7 || rut.length > 8) {
+      return '';
+    }
+
+    int suma = 0;
+    int multiplicador = 2;
+
+    // Calcular suma ponderada
+    for (int i = rut.length - 1; i >= 0; i--) {
+      suma += int.parse(rut[i]) * multiplicador;
+      multiplicador++;
+      if (multiplicador > 7) {
+        multiplicador = 2;
+      }
+    }
+
+    // Calcular dígito verificador
+    int resto = suma % 11;
+    int dv = 11 - resto;
+
+    if (dv == 11) {
+      return '0';
+    } else if (dv == 10) {
+      return 'K';
+    } else {
+      return dv.toString();
+    }
   }
 
   Future<void> _actualizarContratista() async {
@@ -79,41 +176,33 @@ class _ContratistaEditarScreenState extends State<ContratistaEditarScreen> {
     }
 
     setState(() {
-      _isLoading = true;
+      _isSaving = true;
     });
 
     try {
       final provider = Provider.of<ContratistaProvider>(context, listen: false);
       
       final datos = {
-        'rut': _rutController.text.trim(),
+        'rut': int.tryParse(_rutController.text.trim()) ?? 0,
         'nombre': _nombreController.text.trim(),
-        'apellido_paterno': _apellidoPaternoController.text.trim(),
-        'apellido_materno': _apellidoMaternoController.text.trim(),
-        'email': _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-        'telefono': _telefonoController.text.trim().isEmpty ? null : _telefonoController.text.trim(),
-        'direccion': _direccionController.text.trim().isEmpty ? null : _direccionController.text.trim(),
-        'fecha_nacimiento': _fechaNacimiento?.toIso8601String().split('T')[0],
-        'fecha_incorporacion': _fechaIncorporacion?.toIso8601String().split('T')[0],
-        'estado': _estadoSeleccionado,
-        'observaciones': _observacionesController.text.trim().isEmpty ? null : _observacionesController.text.trim(),
+        'id_estado': _getEstadoId(_estadoSeleccionado),
       };
 
       final success = await provider.editarContratista(widget.contratista.id, datos);
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Contratista actualizado exitosamente'),
-            backgroundColor: AppTheme.successColor,
+          const SnackBar(
+            content: Text('Contratista actualizado exitosamente'),
+            backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true); // Retornar true para indicar éxito
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(provider.error),
-            backgroundColor: AppTheme.errorColor,
+            backgroundColor: Colors.red,
           ),
         );
       }
@@ -122,66 +211,215 @@ class _ContratistaEditarScreenState extends State<ContratistaEditarScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error al actualizar contratista: $e'),
-            backgroundColor: AppTheme.errorColor,
+            backgroundColor: Colors.red,
           ),
         );
       }
     } finally {
       if (mounted) {
         setState(() {
-          _isLoading = false;
+          _isSaving = false;
         });
       }
     }
   }
 
-  Future<void> _seleccionarFecha(BuildContext context, bool esFechaNacimiento) async {
-    final DateTime? fechaSeleccionada = await showDatePicker(
-      context: context,
-      initialDate: esFechaNacimiento 
-          ? (_fechaNacimiento ?? DateTime.now().subtract(const Duration(days: 6570)))
-          : (_fechaIncorporacion ?? DateTime.now()),
-      firstDate: esFechaNacimiento ? DateTime.now().subtract(const Duration(days: 36500)) : DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: esFechaNacimiento ? DateTime.now().subtract(const Duration(days: 6570)) : DateTime.now().add(const Duration(days: 365)),
-      locale: const Locale('es', 'ES'),
+  Widget _buildCampoTexto({
+    required String label,
+    required TextEditingController controller,
+    required String? Function(String?) validator,
+    TextInputType? keyboardType,
+    int? maxLines = 1,
+    String? hintText,
+    int? maxLength,
+    bool readOnly = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        validator: validator,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        maxLength: maxLength,
+        readOnly: readOnly,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hintText,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+          counterText: '', // Ocultar contador de caracteres
+        ),
+      ),
     );
+  }
 
-    if (fechaSeleccionada != null) {
-      setState(() {
-        if (esFechaNacimiento) {
-          _fechaNacimiento = fechaSeleccionada;
-        } else {
-          _fechaIncorporacion = fechaSeleccionada;
-        }
-      });
-    }
+  Widget _buildDropdown({
+    required String label,
+    required String value,
+    required List<String> items,
+    required void Function(String?) onChanged,
+    String? Function(String?)? validator,
+    bool isRequired = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField<String>(
+        value: items.contains(value) ? value : (items.isNotEmpty ? items.first : null),
+        decoration: InputDecoration(
+          labelText: isRequired ? '$label *' : label,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+        ),
+        items: items.map((item) {
+          return DropdownMenuItem<String>(
+            value: item,
+            child: Text(item),
+          );
+        }).toList(),
+        onChanged: onChanged,
+        validator: validator,
+      ),
+    );
+  }
+
+  Widget _buildSeccionRut() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'RUT',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: _buildCampoTexto(
+                label: 'Número *',
+                controller: _rutController,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'El RUT es requerido';
+                  }
+                  if (int.tryParse(value.trim()) == null) {
+                    return 'El RUT debe ser solo números';
+                  }
+                  if (value.trim().length < 7 || value.trim().length > 8) {
+                    return 'El RUT debe tener entre 7 y 8 dígitos';
+                  }
+                  return null;
+                },
+                keyboardType: TextInputType.number,
+                hintText: 'Ej: 12345678',
+                maxLength: 8,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 1,
+              child: _buildCampoTexto(
+                label: 'DV',
+                controller: _codigoVerificadorController,
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    if (value.length != 1) {
+                      return 'El dígito verificador debe ser un carácter';
+                    }
+                    // Validar que sea un dígito o 'K'
+                    if (!RegExp(r'^[0-9K]$').hasMatch(value.toUpperCase())) {
+                      return 'DV debe ser un número o K';
+                    }
+                  }
+                  return null;
+                },
+                keyboardType: TextInputType.text,
+                hintText: _calculandoDV ? 'Calculando...' : 'K',
+                readOnly: true, // Solo lectura ya que se calcula automáticamente
+              ),
+            ),
+          ],
+        ),
+        if (_calculandoDV)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Calculando dígito verificador...',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.primaryColor,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Editar Contratista',
+      actions: [
+        if (_isSaving)
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+          ),
+      ],
       body: Consumer<ContratistaProvider>(
         builder: (context, provider, child) {
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16.0),
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Información del Contratista
                   Card(
-                    elevation: 4,
+                    elevation: 2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Información Personal',
+                            'Información del Contratista',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -189,305 +427,75 @@ class _ContratistaEditarScreenState extends State<ContratistaEditarScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _rutController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'RUT *',
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(Icons.badge),
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'El RUT es obligatorio';
-                                    }
-                                    if (value.trim().length < 8) {
-                                      return 'El RUT debe tener al menos 8 caracteres';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
+                          _buildSeccionRut(),
                           const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _nombreController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Nombre *',
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(Icons.person),
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'El nombre es obligatorio';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _apellidoPaternoController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Apellido Paterno *',
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(Icons.person_outline),
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'El apellido paterno es obligatorio';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                            ],
+                          _buildCampoTexto(
+                            label: 'Nombre *',
+                            controller: _nombreController,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'El nombre es requerido';
+                              }
+                              return null;
+                            },
+                            hintText: 'Ej: CONTRATISTA SANTA VICTORIA',
                           ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _apellidoMaternoController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Apellido Materno *',
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(Icons.person_outline),
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'El apellido materno es obligatorio';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: DropdownButtonFormField<String>(
-                                  value: _estadoSeleccionado,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Estado *',
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(Icons.info_outline),
-                                  ),
-                                  items: provider.estadosDisponibles.map((estado) {
-                                    return DropdownMenuItem<String>(
-                                      value: estado,
-                                      child: Text(estado),
-                                    );
-                                  }).toList(),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _estadoSeleccionado = value!;
-                                    });
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Información de Contacto',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _emailController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Email',
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(Icons.email),
-                                  ),
-                                  keyboardType: TextInputType.emailAddress,
-                                  validator: (value) {
-                                    if (value != null && value.trim().isNotEmpty) {
-                                      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                                      if (!emailRegex.hasMatch(value.trim())) {
-                                        return 'Ingrese un email válido';
-                                      }
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _telefonoController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Teléfono',
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(Icons.phone),
-                                  ),
-                                  keyboardType: TextInputType.phone,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _direccionController,
-                            decoration: const InputDecoration(
-                              labelText: 'Dirección',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.location_on),
-                            ),
-                            maxLines: 2,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Fechas',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () => _seleccionarFecha(context, true),
-                                  child: InputDecorator(
-                                    decoration: const InputDecoration(
-                                      labelText: 'Fecha de Nacimiento',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.cake),
-                                    ),
-                                    child: Text(
-                                      _fechaNacimiento != null
-                                          ? '${_fechaNacimiento!.day.toString().padLeft(2, '0')}/${_fechaNacimiento!.month.toString().padLeft(2, '0')}/${_fechaNacimiento!.year}'
-                                          : 'Seleccionar fecha',
-                                      style: TextStyle(
-                                        color: _fechaNacimiento != null ? Colors.black : Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () => _seleccionarFecha(context, false),
-                                  child: InputDecorator(
-                                    decoration: const InputDecoration(
-                                      labelText: 'Fecha de Incorporación',
-                                      border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.work),
-                                    ),
-                                    child: Text(
-                                      _fechaIncorporacion != null
-                                          ? '${_fechaIncorporacion!.day.toString().padLeft(2, '0')}/${_fechaIncorporacion!.month.toString().padLeft(2, '0')}/${_fechaIncorporacion!.year}'
-                                          : 'Seleccionar fecha',
-                                      style: TextStyle(
-                                        color: _fechaIncorporacion != null ? Colors.black : Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Observaciones',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _observacionesController,
-                            decoration: const InputDecoration(
-                              labelText: 'Observaciones',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.note),
-                            ),
-                            maxLines: 3,
+                          _buildDropdown(
+                            label: 'Estado',
+                            value: _estadoSeleccionado,
+                            items: provider.estadosDisponibles,
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _estadoSeleccionado = value;
+                                });
+                              }
+                            },
+                            isRequired: true,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Debe seleccionar un estado';
+                              }
+                              return null;
+                            },
                           ),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  // Botones de acción
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton(
-                          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                        child: OutlinedButton.icon(
+                          onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.cancel),
+                          label: const Text('Cancelar'),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Cancelar'),
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _actualizarContratista,
+                        child: ElevatedButton.icon(
+                          onPressed: _isSaving ? null : _actualizarContratista,
+                          icon: _isSaving
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Icon(Icons.save),
+                          label: Text(_isSaving ? 'Actualizando...' : 'Actualizar'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryColor,
                             foregroundColor: Colors.white,
@@ -496,16 +504,6 @@ class _ContratistaEditarScreenState extends State<ContratistaEditarScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                )
-                              : const Text('Actualizar'),
                         ),
                       ),
                     ],

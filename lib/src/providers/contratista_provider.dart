@@ -137,20 +137,7 @@ class ContratistaProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> eliminarContratista(String id) async {
-    _setLoading(true);
-    try {
-      await ApiService.eliminarContratista(id);
-      await cargarContratistas();
-      _error = '';
-      return true;
-    } catch (e) {
-      _error = 'Error al eliminar contratista: $e';
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
+
 
   Future<Contratista?> obtenerContratistaPorId(String id) async {
     try {
@@ -159,6 +146,38 @@ class ContratistaProvider extends ChangeNotifier {
     } catch (e) {
       _error = 'Error al obtener contratista: $e';
       return null;
+    }
+  }
+
+  // Desactivar contratista
+  Future<bool> desactivarContratista(String id) async {
+    _setLoading(true);
+    try {
+      await ApiService.desactivarContratista(id);
+      await cargarContratistas();
+      _error = '';
+      return true;
+    } catch (e) {
+      _error = 'Error al desactivar contratista: $e';
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Activar contratista
+  Future<bool> activarContratista(String id) async {
+    _setLoading(true);
+    try {
+      await ApiService.activarContratista(id);
+      await cargarContratistas();
+      _error = '';
+      return true;
+    } catch (e) {
+      _error = 'Error al activar contratista: $e';
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 

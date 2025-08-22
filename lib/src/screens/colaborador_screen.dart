@@ -517,6 +517,19 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
                       ),
                     ),
                     const Spacer(),
+                    if (colaborador.idEstado == '1') ...[
+                      IconButton(
+                        onPressed: () => _confirmarDesactivarColaborador(colaborador),
+                        icon: Icon(Icons.person_off, color: Colors.orange, size: 20),
+                        tooltip: 'Desactivar colaborador',
+                      ),
+                    ] else ...[
+                      IconButton(
+                        onPressed: () => _confirmarActivarColaborador(colaborador),
+                        icon: Icon(Icons.person_add, color: Colors.green, size: 20),
+                        tooltip: 'Activar colaborador',
+                      ),
+                    ],
                     IconButton(
                       onPressed: () => _mostrarDialogoEditarColaborador(colaborador),
                       icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
@@ -528,6 +541,19 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
                 Row(
                   children: [
                     const Spacer(),
+                    if (colaborador.idEstado == '1') ...[
+                      IconButton(
+                        onPressed: () => _confirmarDesactivarColaborador(colaborador),
+                        icon: Icon(Icons.person_off, color: Colors.orange, size: 20),
+                        tooltip: 'Desactivar colaborador',
+                      ),
+                    ] else ...[
+                      IconButton(
+                        onPressed: () => _confirmarActivarColaborador(colaborador),
+                        icon: Icon(Icons.person_add, color: Colors.green, size: 20),
+                        tooltip: 'Activar colaborador',
+                      ),
+                    ],
                     IconButton(
                       onPressed: () => _mostrarDialogoEditarColaborador(colaborador),
                       icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
@@ -556,9 +582,8 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
               _buildInfoRow('Nombre', colaborador.nombreCompleto),
               _buildInfoRow('RUT', colaborador.rutCompleto),
               _buildInfoRow('Estado', colaborador.estadoText),
-              _buildInfoRow('Sucursal', colaborador.sucursalText),
-              if (colaborador.sucursalContratoText != 'Sin sucursal de contrato')
-                _buildInfoRow('Sucursal Contrato', colaborador.sucursalContratoText),
+              if (colaborador.sucursalText != 'Sin sucursal')
+                _buildInfoRow('Sucursal', colaborador.sucursalText),
               if (colaborador.cargoText != 'Sin cargo')
                 _buildInfoRow('Cargo', colaborador.cargoText),
               if (colaborador.fechaNacimiento != null)
@@ -615,6 +640,92 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
       ),
     );
   }
+
+  void _confirmarDesactivarColaborador(Colaborador colaborador) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Desactivación'),
+        content: Text(
+          '¿Estás seguro de que quieres desactivar a ${colaborador.nombreCompleto}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final colaboradorProvider = context.read<ColaboradorProvider>();
+              final success = await colaboradorProvider.desactivarColaborador(colaborador.id);
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Colaborador desactivado correctamente'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error al desactivar: ${colaboradorProvider.error}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text('Desactivar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmarActivarColaborador(Colaborador colaborador) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Activación'),
+        content: Text(
+          '¿Estás seguro de que quieres activar a ${colaborador.nombreCompleto}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final colaboradorProvider = context.read<ColaboradorProvider>();
+              final success = await colaboradorProvider.activarColaborador(colaborador.id);
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Colaborador activado correctamente'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error al activar: ${colaboradorProvider.error}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            child: const Text('Activar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
 
   void _mostrarDialogoEditarColaborador(Colaborador colaborador) async {
     final result = await Navigator.push(

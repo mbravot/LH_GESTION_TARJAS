@@ -25,7 +25,7 @@ class TrabajadorProvider extends ChangeNotifier {
 
     // Filtrar por contratista
     if (_filtroContratista != null && _filtroContratista!.isNotEmpty) {
-      filtrados = filtrados.where((t) => t.idContratista == _filtroContratista).toList();
+      filtrados = filtrados.where((t) => t.nombreContratista == _filtroContratista).toList();
     }
 
     // Filtrar por estado
@@ -165,14 +165,36 @@ class TrabajadorProvider extends ChangeNotifier {
     }
   }
 
-  // Eliminar trabajador
-  Future<bool> eliminarTrabajador(String id) async {
+
+
+  // Desactivar trabajador
+  Future<bool> desactivarTrabajador(String id) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      await ApiService.eliminarTrabajador(id);
+      await ApiService.desactivarTrabajador(id);
+      await cargarTrabajadores(); // Recargar la lista
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Activar trabajador
+  Future<bool> activarTrabajador(String id) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await ApiService.activarTrabajador(id);
       await cargarTrabajadores(); // Recargar la lista
       return true;
     } catch (e) {

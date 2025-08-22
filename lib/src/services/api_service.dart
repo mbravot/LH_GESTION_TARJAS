@@ -665,32 +665,7 @@ class ApiService {
     }
   }
 
-  // Eliminar trabajador
-  static Future<Map<String, dynamic>> eliminarTrabajador(String trabajadorId) async {
-    try {
-      final token = await _authService.getToken();
-      if (token == null) {
-        throw Exception('Token no encontrado');
-      }
 
-      final response = await http.delete(
-        Uri.parse('$baseUrl/trabajadores/$trabajadorId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return Map<String, dynamic>.from(json.decode(response.body));
-      } else {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['error'] ?? 'Error al eliminar trabajador');
-      }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
-    }
-  }
 
   // ===== MÉTODOS DE COLABORADORES =====
   static Future<List<Map<String, dynamic>>> obtenerColaboradores() async {
@@ -2127,24 +2102,7 @@ class ApiService {
     }
   }
 
-  static Future<void> eliminarContratista(String id) async {
-    final token = await _authService.getToken();
-    if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/contratistas/$id');
-
-    final response = await http.delete(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Error al eliminar contratista: ${response.statusCode}');
-    }
-  }
 
   static Future<Map<String, dynamic>> obtenerOpcionesContratistas() async {
     final token = await _authService.getToken();
@@ -2164,6 +2122,192 @@ class ApiService {
       return json.decode(response.body);
     } else {
       throw Exception('Error al obtener opciones de contratistas: ${response.statusCode}');
+    }
+  }
+
+
+
+  // Desactivar colaborador (cambiar estado a inactivo)
+  static Future<void> desactivarColaborador(String colaboradorId) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('Token no encontrado');
+      }
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/colaboradores/$colaboradorId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'id_estado': '2', // Estado inactivo
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return;
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al desactivar colaborador');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Activar colaborador (cambiar estado a activo)
+  static Future<void> activarColaborador(String colaboradorId) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('Token no encontrado');
+      }
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/colaboradores/$colaboradorId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'id_estado': '1', // Estado activo
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return;
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al activar colaborador');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // ===== MÉTODOS DE CONTRATISTAS =====
+
+  // Desactivar contratista (cambiar estado a inactivo)
+  static Future<void> desactivarContratista(String contratistaId) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('Token no encontrado');
+      }
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/contratistas/$contratistaId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'id_estado': '2', // Estado inactivo
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return;
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al desactivar contratista');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Activar contratista (cambiar estado a activo)
+  static Future<void> activarContratista(String contratistaId) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('Token no encontrado');
+      }
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/contratistas/$contratistaId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'id_estado': '1', // Estado activo
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return;
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al activar contratista');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // ===== MÉTODOS ADICIONALES DE TRABAJADORES =====
+
+  // Desactivar trabajador (cambiar estado a inactivo)
+  static Future<void> desactivarTrabajador(String trabajadorId) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('Token no encontrado');
+      }
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/trabajadores/$trabajadorId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'id_estado': '2', // Estado inactivo
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return;
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al desactivar trabajador');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Activar trabajador (cambiar estado a activo)
+  static Future<void> activarTrabajador(String trabajadorId) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('Token no encontrado');
+      }
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/trabajadores/$trabajadorId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'id_estado': '1', // Estado activo
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return;
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al activar trabajador');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
     }
   }
 } 

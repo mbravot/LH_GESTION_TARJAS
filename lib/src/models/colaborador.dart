@@ -6,7 +6,6 @@ class Colaborador {
   final String apellidoPaterno;
   final String? apellidoMaterno;
   final String idSucursal;
-  final String? idSucursalContrato;
   final String? idCargo;
   final String? fechaNacimiento;
   final String? fechaIncorporacion;
@@ -19,8 +18,8 @@ class Colaborador {
   final String? nombreAfp;
   final String? nombrePrevision;
   final String? nombreSucursal;
-  final String? nombreSucursalContrato;
   final String? nombreEstado;
+  final String? fechaFiniquito;
 
   Colaborador({
     required this.id,
@@ -30,7 +29,6 @@ class Colaborador {
     required this.apellidoPaterno,
     this.apellidoMaterno,
     required this.idSucursal,
-    this.idSucursalContrato,
     this.idCargo,
     this.fechaNacimiento,
     this.fechaIncorporacion,
@@ -41,8 +39,8 @@ class Colaborador {
     this.nombreAfp,
     this.nombrePrevision,
     this.nombreSucursal,
-    this.nombreSucursalContrato,
     this.nombreEstado,
+    this.fechaFiniquito,
   });
 
   factory Colaborador.fromJson(Map<String, dynamic> json) {
@@ -54,7 +52,6 @@ class Colaborador {
       apellidoPaterno: json['apellido_paterno']?.toString() ?? '',
       apellidoMaterno: json['apellido_materno']?.toString(),
       idSucursal: json['id_sucursal']?.toString() ?? '',
-      idSucursalContrato: json['id_sucursalcontrato']?.toString(),
       idCargo: json['id_cargo']?.toString(),
       fechaNacimiento: json['fecha_nacimiento']?.toString(),
       fechaIncorporacion: json['fecha_incorporacion']?.toString(),
@@ -65,8 +62,8 @@ class Colaborador {
       nombreAfp: json['nombre_afp']?.toString(),
       nombrePrevision: json['nombre_prevision']?.toString(),
       nombreSucursal: json['nombre_sucursal']?.toString(),
-      nombreSucursalContrato: json['nombre_sucursal_contrato']?.toString(),
       nombreEstado: json['nombre_estado']?.toString(),
+      fechaFiniquito: json['fecha_finiquito']?.toString(),
     );
   }
 
@@ -79,7 +76,6 @@ class Colaborador {
       'apellido_paterno': apellidoPaterno,
       'apellido_materno': apellidoMaterno,
       'id_sucursal': idSucursal,
-      'id_sucursalcontrato': idSucursalContrato,
       'id_cargo': idCargo,
       'fecha_nacimiento': fechaNacimiento,
       'fecha_incorporacion': fechaIncorporacion,
@@ -90,8 +86,8 @@ class Colaborador {
       'nombre_afp': nombreAfp,
       'nombre_prevision': nombrePrevision,
       'nombre_sucursal': nombreSucursal,
-      'nombre_sucursal_contrato': nombreSucursalContrato,
       'nombre_estado': nombreEstado,
+      'fecha_finiquito': fechaFiniquito,
     };
   }
 
@@ -164,15 +160,7 @@ class Colaborador {
     if (nombreSucursal != null && nombreSucursal!.isNotEmpty) {
       return nombreSucursal!;
     }
-    return 'Sucursal $idSucursal';
-  }
-
-  // Método para obtener la sucursal del contrato (usar nombre descriptivo si está disponible)
-  String get sucursalContratoText {
-    if (nombreSucursalContrato != null && nombreSucursalContrato!.isNotEmpty) {
-      return nombreSucursalContrato!;
-    }
-    return idSucursalContrato ?? 'Sin sucursal de contrato';
+    return idSucursal.isNotEmpty ? 'Sucursal $idSucursal' : 'Sin sucursal';
   }
 
   // Método para parsear fechas en formato "Mon, 18 Aug 2025 00:00:00 GMT"
@@ -276,7 +264,6 @@ class Colaborador {
     String? apellidoPaterno,
     String? apellidoMaterno,
     String? idSucursal,
-    String? idSucursalContrato,
     String? idCargo,
     String? fechaNacimiento,
     String? fechaIncorporacion,
@@ -287,8 +274,8 @@ class Colaborador {
     String? nombreAfp,
     String? nombrePrevision,
     String? nombreSucursal,
-    String? nombreSucursalContrato,
     String? nombreEstado,
+    String? fechaFiniquito,
   }) {
     return Colaborador(
       id: id ?? this.id,
@@ -298,7 +285,6 @@ class Colaborador {
       apellidoPaterno: apellidoPaterno ?? this.apellidoPaterno,
       apellidoMaterno: apellidoMaterno ?? this.apellidoMaterno,
       idSucursal: idSucursal ?? this.idSucursal,
-      idSucursalContrato: idSucursalContrato ?? this.idSucursalContrato,
       idCargo: idCargo ?? this.idCargo,
       fechaNacimiento: fechaNacimiento ?? this.fechaNacimiento,
       fechaIncorporacion: fechaIncorporacion ?? this.fechaIncorporacion,
@@ -309,8 +295,8 @@ class Colaborador {
       nombreAfp: nombreAfp ?? this.nombreAfp,
       nombrePrevision: nombrePrevision ?? this.nombrePrevision,
       nombreSucursal: nombreSucursal ?? this.nombreSucursal,
-      nombreSucursalContrato: nombreSucursalContrato ?? this.nombreSucursalContrato,
       nombreEstado: nombreEstado ?? this.nombreEstado,
+      fechaFiniquito: fechaFiniquito ?? this.fechaFiniquito,
     );
   }
 }

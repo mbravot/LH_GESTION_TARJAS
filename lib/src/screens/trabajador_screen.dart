@@ -16,20 +16,35 @@ class TrabajadorScreen extends StatefulWidget {
   State<TrabajadorScreen> createState() => _TrabajadorScreenState();
 }
 
-class _TrabajadorScreenState extends State<TrabajadorScreen> 
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  int _selectedTab = 0;
+class _TrabajadorScreenState extends State<TrabajadorScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _showFiltros = false;
+  String _filtroActivo = 'todos'; // 'todos', 'activos', 'inactivos'
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _tabController.addListener(_onTabChanged);
     _cargarDatosIniciales();
+  }
+
+  void _aplicarFiltro(String filtro) {
+    setState(() {
+      _filtroActivo = filtro;
+    });
+    
+    final trabajadorProvider = context.read<TrabajadorProvider>();
+    switch (filtro) {
+      case 'activos':
+        trabajadorProvider.setFiltroEstado('1');
+        break;
+      case 'inactivos':
+        trabajadorProvider.setFiltroEstado('2');
+        break;
+      default: // 'todos'
+        trabajadorProvider.setFiltroEstado('todos');
+        break;
+    }
   }
 
   void _cargarDatosIniciales() {
@@ -51,31 +66,8 @@ class _TrabajadorScreenState extends State<TrabajadorScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _onTabChanged() {
-    setState(() {
-      _selectedTab = _tabController.index;
-      _actualizarFiltrosPorTab();
-    });
-  }
-
-  void _actualizarFiltrosPorTab() {
-    final trabajadorProvider = context.read<TrabajadorProvider>();
-    switch (_selectedTab) {
-      case 1: // Activos
-        trabajadorProvider.setFiltroEstado('1');
-        break;
-      case 2: // Inactivos
-        trabajadorProvider.setFiltroEstado('2');
-        break;
-      default: // Todos
-        trabajadorProvider.setFiltroEstado('todos');
-        break;
-    }
   }
 
   void _onSearchChanged(String query) {
@@ -243,36 +235,6 @@ class _TrabajadorScreenState extends State<TrabajadorScreen>
                       },
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: trabajadorProvider.filtroEstado,
-                      decoration: const InputDecoration(
-                        labelText: 'Estado',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      ),
-                      items: const [
-                        DropdownMenuItem<String>(
-                          value: 'todos',
-                          child: Text('Todos'),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: '1',
-                          child: Text('Activo'),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: '2',
-                          child: Text('Inactivo'),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) {
-                          trabajadorProvider.setFiltroEstado(value);
-                        }
-                      },
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -311,14 +273,15 @@ class _TrabajadorScreenState extends State<TrabajadorScreen>
           margin: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Expanded(
-                child: _buildTarjetaEstadistica(
-                  'Total',
-                  trabajadorProvider.totalTrabajadores.toString(),
-                  Icons.people,
-                  AppTheme.primaryColor,
-                ),
-              ),
+                             Expanded(
+                 child: _buildTarjetaEstadistica(
+                   'Total',
+                   trabajadorProvider.totalTrabajadores.toString(),
+                   Icons.people,
+                   Colors.purple,
+                   'todos',
+                 ),
+               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildTarjetaEstadistica(
@@ -326,6 +289,7 @@ class _TrabajadorScreenState extends State<TrabajadorScreen>
                   trabajadorProvider.trabajadoresActivos.toString(),
                   Icons.check_circle,
                   Colors.green,
+                  'activos',
                 ),
               ),
               const SizedBox(width: 12),
@@ -335,6 +299,7 @@ class _TrabajadorScreenState extends State<TrabajadorScreen>
                   trabajadorProvider.trabajadoresInactivos.toString(),
                   Icons.cancel,
                   Colors.red,
+                  'inactivos',
                 ),
               ),
             ],
@@ -344,35 +309,61 @@ class _TrabajadorScreenState extends State<TrabajadorScreen>
     );
   }
 
-  Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icono, color: color, size: 32),
-          const SizedBox(height: 8),
-          Text(
-            valor,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+  Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color, String filtro) {
+    final isActivo = _filtroActivo == filtro;
+    
+    return GestureDetector(
+      onTap: () => _aplicarFiltro(filtro),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isActivo ? color.withOpacity(0.2) : color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isActivo ? color : color.withOpacity(0.3),
+            width: isActivo ? 2 : 1,
           ),
-          Text(
-            titulo,
-            style: TextStyle(
-              fontSize: 12,
-              color: color.withOpacity(0.8),
-              fontWeight: FontWeight.w500,
+          boxShadow: isActivo ? [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-          ),
-        ],
+          ] : null,
+        ),
+        child: Column(
+          children: [
+            Icon(icono, color: color, size: 32),
+            const SizedBox(height: 8),
+            Text(
+              valor,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              titulo,
+              style: TextStyle(
+                fontSize: 12,
+                color: color.withOpacity(0.8),
+                fontWeight: isActivo ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+            if (isActivo) ...[
+              const SizedBox(height: 4),
+              Container(
+                width: 20,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -488,16 +479,24 @@ class _TrabajadorScreenState extends State<TrabajadorScreen>
                     ),
                   ),
                                      const Spacer(),
-                   IconButton(
-                     onPressed: () => _mostrarDialogoEditarTrabajador(trabajador),
-                     icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
-                     tooltip: 'Editar trabajador',
-                   ),
-                   IconButton(
-                     onPressed: () => _mostrarDialogoEliminarTrabajador(trabajador),
-                     icon: Icon(Icons.delete, color: Colors.red, size: 20),
-                     tooltip: 'Eliminar trabajador',
-                   ),
+                   if (trabajador.idEstado == '1') ...[
+                     IconButton(
+                       onPressed: () => _confirmarDesactivarTrabajador(trabajador),
+                       icon: Icon(Icons.person_off, color: Colors.orange, size: 20),
+                       tooltip: 'Desactivar trabajador',
+                     ),
+                   ] else ...[
+                     IconButton(
+                       onPressed: () => _confirmarActivarTrabajador(trabajador),
+                       icon: Icon(Icons.person_add, color: Colors.green, size: 20),
+                       tooltip: 'Activar trabajador',
+                     ),
+                   ],
+                                       IconButton(
+                      onPressed: () => _mostrarDialogoEditarTrabajador(trabajador),
+                      icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
+                      tooltip: 'Editar trabajador',
+                    ),
                 ],
               ),
             ],
@@ -547,17 +546,6 @@ class _TrabajadorScreenState extends State<TrabajadorScreen>
                _mostrarDialogoEditarTrabajador(trabajador);
              },
              child: const Text('Editar'),
-           ),
-           ElevatedButton(
-             onPressed: () {
-               Navigator.of(context).pop();
-               _mostrarDialogoEliminarTrabajador(trabajador);
-             },
-             style: ElevatedButton.styleFrom(
-               backgroundColor: Colors.red,
-               foregroundColor: Colors.white,
-             ),
-             child: const Text('Eliminar'),
            ),
          ],
       ),
@@ -623,143 +611,97 @@ class _TrabajadorScreenState extends State<TrabajadorScreen>
     });
   }
 
-  void _mostrarDialogoEliminarTrabajador(Trabajador trabajador) {
+  void _confirmarDesactivarTrabajador(Trabajador trabajador) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.warning, color: Colors.red),
-            const SizedBox(width: 8),
-            const Text('Confirmar Eliminación'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '¿Estás seguro de que quieres eliminar al trabajador:',
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.red[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red[200]!),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    trabajador.nombreCompleto,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.red[800],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'RUT: ${trabajador.rutCompleto}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.red[700],
-                    ),
-                  ),
-                  if (trabajador.nombreContratista != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'Contratista: ${trabajador.nombreContratista}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.red[700],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Esta acción no se puede deshacer.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.red[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+        title: const Text('Confirmar Desactivación'),
+        content: Text(
+          '¿Estás seguro de que quieres desactivar a ${trabajador.nombreCompleto}?',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.pop(context),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.of(context).pop();
-              await _eliminarTrabajador(trabajador);
+              Navigator.pop(context);
+              final trabajadorProvider = context.read<TrabajadorProvider>();
+              final success = await trabajadorProvider.desactivarTrabajador(trabajador.id);
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Trabajador desactivado correctamente'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error al desactivar: ${trabajadorProvider.error}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Eliminar'),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text('Desactivar'),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _eliminarTrabajador(Trabajador trabajador) async {
-    final trabajadorProvider = context.read<TrabajadorProvider>();
-    
-    try {
-      final success = await trabajadorProvider.eliminarTrabajador(trabajador.id);
-      
-      if (success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Trabajador "${trabajador.nombreCompleto}" eliminado correctamente'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error al eliminar trabajador: ${trabajadorProvider.error}'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 4),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error inesperado: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
+  void _confirmarActivarTrabajador(Trabajador trabajador) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Activación'),
+        content: Text(
+          '¿Estás seguro de que quieres activar a ${trabajador.nombreCompleto}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
           ),
-        );
-      }
-    }
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final trabajadorProvider = context.read<TrabajadorProvider>();
+              final success = await trabajadorProvider.activarTrabajador(trabajador.id);
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Trabajador activado correctamente'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error al activar: ${trabajadorProvider.error}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            child: const Text('Activar'),
+          ),
+        ],
+      ),
+    );
   }
+
+
 
   @override
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Gestión de Trabajadores',
       onRefresh: _refrescarDatos,
-      bottom: _TabBarWithCounters(tabController: _tabController),
       body: Column(
         children: [
           _buildSearchBar(),
@@ -864,99 +806,4 @@ class _TrabajadorScreenState extends State<TrabajadorScreen>
   }
 }
 
-class _TabBarWithCounters extends StatelessWidget implements PreferredSizeWidget {
-  final TabController tabController;
 
-  const _TabBarWithCounters({required this.tabController});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(48.0);
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<TrabajadorProvider>(
-      builder: (context, trabajadorProvider, child) {
-        return TabBar(
-          controller: tabController,
-          indicatorColor: AppTheme.primaryColor,
-          labelColor: AppTheme.accentColor,
-          unselectedLabelColor: Colors.white,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Todos'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${trabajadorProvider.totalTrabajadores}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Activos'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${trabajadorProvider.trabajadoresActivos}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Inactivos'),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${trabajadorProvider.trabajadoresInactivos}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}

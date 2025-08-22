@@ -160,6 +160,48 @@ class ColaboradorProvider extends ChangeNotifier {
     return _colaboradores.where((c) => c.idEstado == '2').toList();
   }
 
+
+
+  // Desactivar colaborador
+  Future<bool> desactivarColaborador(String colaboradorId) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await ApiService.desactivarColaborador(colaboradorId);
+      await cargarColaboradores(); // Recargar la lista
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Activar colaborador
+  Future<bool> activarColaborador(String colaboradorId) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await ApiService.activarColaborador(colaboradorId);
+      await cargarColaboradores(); // Recargar la lista
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   @override
   void dispose() {
     _authProvider?.removeListener(_onAuthChanged);
