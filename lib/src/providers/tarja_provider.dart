@@ -2,14 +2,17 @@ import 'package:flutter/foundation.dart';
 import '../models/tarja.dart';
 import '../services/api_service.dart';
 import 'auth_provider.dart';
+import 'session_handler_mixin.dart';
+import 'notification_provider.dart';
 
-class TarjaProvider extends ChangeNotifier {
+class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
   List<Tarja> _tarjas = [];
   List<Tarja> _tarjasFiltradas = [];
   bool _isLoading = false;
   String? _error;
   String? _idSucursal;
   AuthProvider? _authProvider;
+  NotificationProvider? _notificationProvider;
 
   // Filtros
   String _filtroContratista = '';
@@ -57,6 +60,11 @@ class TarjaProvider extends ChangeNotifier {
     _checkAndUpdateSucursal();
   }
 
+  // Método para configurar el NotificationProvider
+  void setNotificationProvider(NotificationProvider notificationProvider) {
+    _notificationProvider = notificationProvider;
+  }
+
   // Escuchar cambios en el AuthProvider
   void _onAuthChanged() {
     _checkAndUpdateSucursal();
@@ -92,9 +100,20 @@ class TarjaProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _tarjas = await ApiService().getTarjasByDate(DateTime.now(), _idSucursal!);
-      _aplicarFiltros();
-      _error = null;
+      final result = await handleApiError(
+        () => ApiService().getTarjasByDate(DateTime.now(), _idSucursal!),
+        _authProvider!,
+        _notificationProvider,
+      );
+      
+      if (result != null) {
+        _tarjas = result;
+        _aplicarFiltros();
+        _error = null;
+      } else {
+        // Sesión expirada, no hacer nada más aquí
+        return;
+      }
     } catch (e) {
       _error = e.toString();
       _tarjas = [];
@@ -159,7 +178,16 @@ class TarjaProvider extends ChangeNotifier {
   // Actualizar tarja
   Future<void> actualizarTarja(String id, Map<String, dynamic> datos) async {
     try {
-      await ApiService().actualizarTarja(id, datos);
+      await handleApiError(
+        () async {
+          await ApiService().actualizarTarja(id, datos);
+          return true; // Retornar un valor para indicar éxito
+        },
+        _authProvider!,
+        _notificationProvider,
+      );
+      
+      // Si llegamos aquí, la operación fue exitosa
       await cargarTarjas();
     } catch (e) {
       _error = e.toString();

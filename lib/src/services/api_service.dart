@@ -59,6 +59,37 @@ class ApiService {
   }
   static final AuthService _authService = AuthService();
 
+  // Método helper para manejar respuestas HTTP y detectar errores de autenticación
+  static Future<http.Response> _handleHttpResponse(http.Response response) async {
+    // Si el token no es válido (401) o está prohibido (403), cerrar sesión automáticamente
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      developer.log('🔐 Token inválido detectado (${response.statusCode}). Cerrando sesión automáticamente...');
+      
+      // Cerrar sesión automáticamente
+      await _authService.logout();
+      
+      // Lanzar una excepción específica para que los providers puedan manejarla
+      throw Exception('SESION_EXPIRADA');
+    }
+    
+    return response;
+  }
+
+  // Método helper para hacer peticiones HTTP con manejo automático de autenticación
+  static Future<http.Response> _makeHttpRequest(
+    Future<http.Response> Function() requestFunction,
+  ) async {
+    try {
+      final response = await requestFunction();
+      return await _handleHttpResponse(response);
+    } catch (e) {
+      if (e.toString().contains('SESION_EXPIRADA')) {
+        rethrow; // Re-lanzar la excepción de sesión expirada
+      }
+      throw e; // Re-lanzar otros errores
+    }
+  }
+
 //Obtener las actividades de una fecha y una sucursal
   Future<List<Tarja>> getTarjasByDate(DateTime fecha, String idSucursal) async {
     try {
@@ -76,19 +107,21 @@ class ApiService {
 
       try {
         developer.log('Realizando petición HTTP...');
-        final response = await http.get(
-          Uri.parse(url),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-          },
-        ).timeout(
-          const Duration(seconds: 10),
-          onTimeout: () {
-            developer.log('⚠️ Tiempo de espera agotado al intentar conectar a $url');
-            throw Exception('Tiempo de espera agotado');
-          },
-        );
+        final response = await _makeHttpRequest(() async {
+          return await http.get(
+            Uri.parse(url),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+          ).timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              developer.log('⚠️ Tiempo de espera agotado al intentar conectar a $url');
+              throw Exception('Tiempo de espera agotado');
+            },
+          );
+        });
 
         developer.log('Respuesta recibida');
         developer.log('Código de estado: ${response.statusCode}');
@@ -130,12 +163,14 @@ class ApiService {
       final token = await _authService.getToken();
       if (token == null) throw Exception('No autorizado');
 
-      final response = await http.put(
-        Uri.parse('$baseUrl/tarjas/$id/aprobar'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await _makeHttpRequest(() async {
+        return await http.put(
+          Uri.parse('$baseUrl/tarjas/$id/aprobar'),
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        );
+      });
 
       if (response.statusCode != 200) {
         throw Exception('Error al aprobar la tarja: ${response.statusCode}');
@@ -151,14 +186,16 @@ class ApiService {
       final token = await _authService.getToken();
       if (token == null) throw Exception('No autorizado');
 
-      final response = await http.put(
-        Uri.parse('$baseUrl/tarjas/$id/rechazar'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({'motivo': motivo}),
-      );
+      final response = await _makeHttpRequest(() async {
+        return await http.put(
+          Uri.parse('$baseUrl/tarjas/$id/rechazar'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: json.encode({'motivo': motivo}),
+        );
+      });
 
       if (response.statusCode != 200) {
         throw Exception('Error al rechazar la tarja: ${response.statusCode}');
@@ -180,14 +217,16 @@ class ApiService {
       final url = '$baseUrl/actividades/$id';
       developer.log('URL de actualización: $url');
 
-      final response = await http.put(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode(datos),
-      );
+      final response = await _makeHttpRequest(() async {
+        return await http.put(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: json.encode(datos),
+        );
+      });
 
       developer.log('Respuesta de actualización - Status: ${response.statusCode}');
       developer.log('Respuesta de actualización - Body: ${response.body}');
@@ -213,14 +252,16 @@ class ApiService {
       final url = '$baseUrl/actividades/$id/estado';
       developer.log('URL de cambio de estado: $url');
 
-      final response = await http.put(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({'id_estadoactividad': nuevoEstado}),
-      );
+      final response = await _makeHttpRequest(() async {
+        return await http.put(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: json.encode({'id_estadoactividad': nuevoEstado}),
+        );
+      });
 
       developer.log('Respuesta de cambio de estado - Status: ${response.statusCode}');
       developer.log('Respuesta de cambio de estado - Body: ${response.body}');

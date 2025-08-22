@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:developer' as developer;
 import '../services/auth_service.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -90,6 +91,22 @@ class AuthProvider extends ChangeNotifier {
 
   Future<String?> getToken() async {
     return await _authService.getToken();
+  }
+
+  // Método para manejar sesión expirada
+  Future<void> handleSessionExpired() async {
+    developer.log('🔄 Manejando sesión expirada...');
+    
+    // Limpiar el estado de autenticación
+    _isAuthenticated = false;
+    _userData = null;
+    _error = null;
+    
+    // Notificar a los listeners
+    notifyListeners();
+    
+    // El logout ya se realizó en el ApiService, solo necesitamos limpiar el estado local
+    developer.log('✅ Sesión expirada manejada correctamente');
   }
 
   // Obtener las sucursales disponibles del usuario

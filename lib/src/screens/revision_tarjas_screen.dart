@@ -290,18 +290,28 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.colorScheme.surface;
-    final borderColor = isDark ? Colors.grey[800]! : Colors.green[400]!;
+    // Cambiar el color del borde según si tiene rendimientos o no
+    final borderColor = tarja.tieneRendimiento 
+        ? (isDark ? Colors.green[600]! : Colors.green[400]!)
+        : (isDark ? Colors.red[600]! : Colors.red[400]!);
     final textColor = theme.colorScheme.onSurface;
     final tarjaId = tarja.id;
     final isRendimientosExpanded = _rendimientosExpansionState[tarjaId] ?? false;
     final rendimientos = _rendimientosCache[tarjaId] ?? [];
     final isLoadingRendimientos = _rendimientosLoadingState[tarjaId] ?? false;
 
+    // Cargar rendimientos automáticamente si tiene rendimientos y no están cargados
+    if (tarja.tieneRendimiento && !_rendimientosCache.containsKey(tarjaId) && !isLoadingRendimientos) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _cargarRendimientos(tarja);
+      });
+    }
+
     return Card(
         color: cardColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
-        side: BorderSide(color: isDark ? Colors.grey[600]! : Colors.green[400]!, width: 1.5),
+        side: BorderSide(color: borderColor, width: 1.5),
         ),
         elevation: 0,
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -380,7 +390,11 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              tarja.tieneRendimiento ? 'Con rendimientos' : 'Sin rendimientos',
+                              tarja.tieneRendimiento 
+                                  ? (isLoadingRendimientos 
+                                      ? 'Con rendimientos (cargando...)' 
+                                      : 'Con rendimientos (${rendimientos.length})')
+                                  : 'Sin rendimientos',
                               style: TextStyle(
                                 color: tarja.tieneRendimiento ? Colors.green[800] : Colors.red[800],
                                 fontSize: 11,

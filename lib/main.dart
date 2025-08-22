@@ -16,8 +16,11 @@ import 'src/providers/horas_extras_provider.dart';
 import 'src/providers/horas_extras_otroscecos_provider.dart';
 import 'src/providers/bono_especial_provider.dart';
 import 'src/providers/contratista_provider.dart';
+import 'src/providers/notification_provider.dart';
 import 'src/screens/splash_screen.dart';
 import 'src/theme/app_theme.dart';
+import 'src/widgets/session_handler_wrapper.dart';
+import 'src/widgets/global_notification.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +42,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => HorasExtrasOtrosCecosProvider()),
         ChangeNotifierProvider(create: (_) => BonoEspecialProvider()),
         ChangeNotifierProvider(create: (_) => ContratistaProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: const MyApp(),
     ),
@@ -57,7 +61,11 @@ class MyApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-          home: const SplashScreen(),
+          home: const GlobalNotification(
+            child: SessionHandlerWrapper(
+              child: SplashScreen(),
+            ),
+          ),
           debugShowCheckedModeBanner: false,
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
