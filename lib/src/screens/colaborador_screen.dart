@@ -192,12 +192,17 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
   Widget _buildFiltrosAvanzados() {
     return Consumer<ColaboradorProvider>(
       builder: (context, colaboradorProvider, child) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: isDark ? Colors.grey[800] : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -572,68 +577,349 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
   void _mostrarDetallesColaborador(Colaborador colaborador) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Detalles de ${colaborador.nombreCompleto}'),
-        content: SingleChildScrollView(
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          constraints: const BoxConstraints(maxWidth: 500),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surface.withOpacity(0.95),
+              ],
+            ),
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildInfoRow('Nombre', colaborador.nombreCompleto),
-              _buildInfoRow('RUT', colaborador.rutCompleto),
-              _buildInfoRow('Estado', colaborador.estadoText),
-              if (colaborador.sucursalText != 'Sin sucursal')
-                _buildInfoRow('Sucursal', colaborador.sucursalText),
-              if (colaborador.cargoText != 'Sin cargo')
-                _buildInfoRow('Cargo', colaborador.cargoText),
-              if (colaborador.fechaNacimiento != null)
-                _buildInfoRow('Fecha Nacimiento', colaborador.fechaNacimientoFormateadaEspanol),
-              if (colaborador.fechaIncorporacion != null)
-                _buildInfoRow('Fecha Incorporación', colaborador.fechaIncorporacionFormateadaEspanol),
-              if (colaborador.previsionText != 'Sin previsión')
-                _buildInfoRow('Previsión', colaborador.previsionText),
-              if (colaborador.afpText != 'Sin AFP')
-                _buildInfoRow('AFP', colaborador.afpText),
+              // Header con avatar y nombre
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.primaryColor.withOpacity(0.05),
+                    ],
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.7)],
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            colaborador.nombreCompleto,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: colaborador.estadoText == 'ACTIVO' 
+                                ? Colors.green.withOpacity(0.2) 
+                                : Colors.orange.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: colaborador.estadoText == 'ACTIVO' 
+                                  ? Colors.green 
+                                  : Colors.orange,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              colaborador.estadoText,
+                              style: TextStyle(
+                                color: colaborador.estadoText == 'ACTIVO' 
+                                  ? Colors.green[700] 
+                                  : Colors.orange[700],
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Contenido con información
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      // Información personal
+                      _buildInfoSection(
+                        'Información Personal',
+                        Icons.person_outline,
+                        [
+                          _buildModernInfoRow('RUT', colaborador.rutCompleto, Icons.badge),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Información laboral
+                      _buildInfoSection(
+                        'Información Laboral',
+                        Icons.work_outline,
+                        [
+                          if (colaborador.sucursalText != 'Sin sucursal')
+                            _buildModernInfoRow('Sucursal', colaborador.sucursalText, Icons.business),
+                          if (colaborador.cargoText != 'Sin cargo')
+                            _buildModernInfoRow('Cargo', colaborador.cargoText, Icons.work),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Fechas
+                      _buildInfoSection(
+                        'Fechas',
+                        Icons.calendar_today,
+                        [
+                          if (colaborador.fechaNacimiento != null)
+                            _buildModernInfoRow('Fecha Nacimiento', colaborador.fechaNacimientoFormateadaEspanol, Icons.cake),
+                          if (colaborador.fechaIncorporacion != null)
+                            _buildModernInfoRow('Fecha Incorporación', colaborador.fechaIncorporacionFormateadaEspanol, Icons.event_available),
+                          _buildModernInfoRow('Fecha Finiquito', colaborador.fechaFiniquitoFormateadaEspanol, Icons.event_busy),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Información de previsión
+                      _buildInfoSection(
+                        'Previsión',
+                        Icons.health_and_safety,
+                        [
+                          if (colaborador.previsionText != 'Sin previsión')
+                            _buildModernInfoRow('Previsión', colaborador.previsionText, Icons.local_hospital),
+                          if (colaborador.afpText != 'Sin AFP')
+                            _buildModernInfoRow('AFP', colaborador.afpText, Icons.account_balance),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Botones de acción
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                        label: const Text('Cerrar'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _mostrarDialogoEditarColaborador(colaborador);
+                        },
+                        icon: const Icon(Icons.edit),
+                        label: const Text('Editar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
+      ),
+    );
+  }
+
+  Widget _buildInfoSection(String title, IconData icon, List<Widget> children) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _mostrarDialogoEditarColaborador(colaborador);
-            },
-            child: const Text('Editar'),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 16),
+          ...children,
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildModernInfoRow(String label, String value, IconData icon) {
+    Color iconColor;
+    Color backgroundColor;
+    
+    if (icon == Icons.badge) {
+      iconColor = Colors.blue;
+      backgroundColor = Colors.blue.withOpacity(0.1);
+    } else if (icon == Icons.business) {
+      iconColor = Colors.green;
+      backgroundColor = Colors.green.withOpacity(0.1);
+    } else if (icon == Icons.work) {
+      iconColor = Colors.orange;
+      backgroundColor = Colors.orange.withOpacity(0.1);
+    } else if (icon == Icons.cake) {
+      iconColor = Colors.pink;
+      backgroundColor = Colors.pink.withOpacity(0.1);
+    } else if (icon == Icons.event_available) {
+      iconColor = Colors.green;
+      backgroundColor = Colors.green.withOpacity(0.1);
+    } else if (icon == Icons.event_busy) {
+      iconColor = Colors.red;
+      backgroundColor = Colors.red.withOpacity(0.1);
+    } else if (icon == Icons.local_hospital) {
+      iconColor = Colors.teal;
+      backgroundColor = Colors.teal.withOpacity(0.1);
+    } else if (icon == Icons.account_balance) {
+      iconColor = Colors.indigo;
+      backgroundColor = Colors.indigo.withOpacity(0.1);
+    } else {
+      iconColor = AppTheme.primaryColor;
+      backgroundColor = AppTheme.primaryColor.withOpacity(0.1);
+    }
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: iconColor,
             ),
           ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

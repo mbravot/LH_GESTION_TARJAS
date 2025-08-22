@@ -127,6 +127,57 @@ class _TrabajadorEditarScreenState extends State<TrabajadorEditarScreen> {
       return;
     }
 
+    // Validar campos requeridos
+    if (_nombreController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('El nombre es obligatorio'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_apellidoPaternoController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('El apellido paterno es obligatorio'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_contratistaSeleccionado == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debe seleccionar un contratista'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_porcentajeSeleccionado == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debe seleccionar un porcentaje'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_estadoSeleccionado == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debe seleccionar un estado'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isSaving = true;
     });

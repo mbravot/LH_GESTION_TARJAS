@@ -22,11 +22,24 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
   Key _expansionKey = UniqueKey();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _showFiltros = false;
   
   // Nuevo estado para manejar la expansión de rendimientos por tarja
   Map<String, bool> _rendimientosExpansionState = {};
   Map<String, List<Map<String, dynamic>>> _rendimientosCache = {};
   Map<String, bool> _rendimientosLoadingState = {};
+
+  // Helper para obtener colores adaptativos al tema
+  Color _getAdaptiveColor(BuildContext context, {Color? lightColor, Color? darkColor}) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    if (isDark) {
+      return darkColor ?? theme.colorScheme.onSurface.withOpacity(0.7);
+    } else {
+      return lightColor ?? theme.colorScheme.onSurface;
+    }
+  }
 
   @override
   void initState() {
@@ -87,27 +100,33 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
   }
 
   List<Tarja> _filtrarTarjas(List<Tarja> tarjas) {
+    // Usar las tarjas filtradas del provider si hay filtros avanzados aplicados
+    final tarjaProvider = context.read<TarjaProvider>();
+    List<Tarja> tarjasBase = tarjaProvider.filtroContratista.isNotEmpty || tarjaProvider.filtroTipoRendimiento.isNotEmpty
+        ? tarjaProvider.tarjasFiltradas
+        : tarjas;
+    
     // Primero filtrar por filtro activo
     List<Tarja> tarjasFiltradasPorFiltro;
     switch (_filtroActivo) {
       case 'creadas':
-        tarjasFiltradasPorFiltro = tarjas.where((t) => t.idEstadoactividad == '1').toList();
+        tarjasFiltradasPorFiltro = tarjasBase.where((t) => t.idEstadoactividad == '1').toList();
         break;
       case 'revisadas':
-        tarjasFiltradasPorFiltro = tarjas.where((t) => t.idEstadoactividad == '2').toList();
+        tarjasFiltradasPorFiltro = tarjasBase.where((t) => t.idEstadoactividad == '2').toList();
         break;
       case 'propio':
-        tarjasFiltradasPorFiltro = tarjas.where((t) => 
+        tarjasFiltradasPorFiltro = tarjasBase.where((t) => 
           t.idTipotrabajador == '1' && (t.idEstadoactividad == '1' || t.idEstadoactividad == '2')
         ).toList();
         break;
       case 'contratista':
-        tarjasFiltradasPorFiltro = tarjas.where((t) => 
+        tarjasFiltradasPorFiltro = tarjasBase.where((t) => 
           t.idTipotrabajador == '2' && (t.idEstadoactividad == '1' || t.idEstadoactividad == '2')
         ).toList();
         break;
       default: // Todas (solo estado 1 y 2)
-        tarjasFiltradasPorFiltro = tarjas.where((t) => 
+        tarjasFiltradasPorFiltro = tarjasBase.where((t) => 
           t.idEstadoactividad == '1' || t.idEstadoactividad == '2'
         ).toList();
     }
@@ -523,7 +542,9 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
           if (isRendimientosExpanded)
             Container(
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: Theme.of(context).brightness == Brightness.dark 
+                  ? Colors.grey[850] 
+                  : Colors.grey[50],
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(15),
                   bottomRight: Radius.circular(15),
@@ -565,14 +586,14 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                               Icon(
                                 Icons.assessment_outlined,
                                 size: 48,
-                                color: Colors.grey[400],
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 'No hay rendimientos registrados',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey[600],
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                 ),
                               ),
                             ],
@@ -818,7 +839,9 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Colors.green[50],
+                color: Theme.of(context).brightness == Brightness.dark 
+                  ? Colors.green[800]!.withOpacity(0.3) 
+                  : Colors.green[50],
                 borderRadius: BorderRadius.circular(8),
               ),
               padding: const EdgeInsets.all(8),
@@ -844,7 +867,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                   Text(
                     'Rendimiento: ${rendimiento['rendimiento']?.toString() ?? rendimiento['cantidad']?.toString() ?? '0'}',
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: _getAdaptiveColor(context),
                       fontSize: 12,
                     ),
                   ),
@@ -928,7 +951,9 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.green[50],
+                  color: Theme.of(context).brightness == Brightness.dark 
+                  ? Colors.green[800]!.withOpacity(0.3) 
+                  : Colors.green[50],
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -957,8 +982,8 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                       children: [
                         Icon(Icons.groups, color: Colors.amber, size: 16),
                         const SizedBox(width: 4),
-                        Text('Cantidad trabajadores: ', style: TextStyle(color: Colors.black87)),
-                        Text(cantidadTrab, style: TextStyle(color: Colors.black87)),
+                        Text('Cantidad trabajadores: ', style: TextStyle(color: _getAdaptiveColor(context))),
+                        Text(cantidadTrab, style: TextStyle(color: _getAdaptiveColor(context))),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -966,8 +991,8 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                       children: [
                         Icon(Icons.percent, color: Colors.blue, size: 16),
                         const SizedBox(width: 4),
-                        Text('Porcentaje: ', style: TextStyle(color: Colors.black87)),
-                        Text('${porcentajeStr != 'N/A' ? porcentajeStr + '%' : 'N/A'}', style: TextStyle(color: Colors.black87)),
+                        Text('Porcentaje: ', style: TextStyle(color: _getAdaptiveColor(context))),
+                        Text('${porcentajeStr != 'N/A' ? porcentajeStr + '%' : 'N/A'}', style: TextStyle(color: _getAdaptiveColor(context))),
                       ],
                     ),
                   ],
@@ -985,9 +1010,9 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('Rendimiento total', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
-                          Text(rendimientoTotal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-                          Text(tarja.nombreUnidad ?? 'Unidad', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                          Text('Rendimiento total', style: TextStyle(fontWeight: FontWeight.w600, color: _getAdaptiveColor(context))),
+                          Text(rendimientoTotal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getAdaptiveColor(context))),
+                          Text(tarja.nombreUnidad ?? 'Unidad', style: TextStyle(fontSize: 12, color: _getAdaptiveColor(context))),
                         ],
                       ),
                     ],
@@ -1002,7 +1027,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('Pago estimado por trabajador', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87, fontSize: 12)),
+                          Text('Pago estimado por trabajador', style: TextStyle(fontWeight: FontWeight.w600, color: _getAdaptiveColor(context), fontSize: 12)),
                           Text(
                             '\$${_calcularTotalEstimadoPorTrabajador(rendimientoTotal, cantidadTrab, tarja.tarifa, r)}',
                             style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orange[700]),
@@ -1046,7 +1071,9 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.green[50],
+                  color: Theme.of(context).brightness == Brightness.dark 
+                  ? Colors.green[800]!.withOpacity(0.3) 
+                  : Colors.green[50],
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -1065,7 +1092,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                           Icon(Icons.work, color: Colors.purple, size: 16),
                           const SizedBox(width: 4),
                           Expanded(
-                            child: Text(labor, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                            child: Text(labor, style: TextStyle(color: _getAdaptiveColor(context), fontSize: 13)),
                           ),
                         ],
                       ),
@@ -1076,7 +1103,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                         Icon(Icons.person, color: Colors.amber, size: 16),
                         const SizedBox(width: 4),
                         Expanded(
-                          child: Text(nombre, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                          child: Text(nombre, style: TextStyle(color: _getAdaptiveColor(context), fontSize: 13)),
                         ),
                       ],
                     ),
@@ -1086,8 +1113,8 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                         children: [
                           Icon(Icons.percent, color: Colors.blue, size: 16),
                           const SizedBox(width: 4),
-                          Text('Porcentaje: ', style: TextStyle(color: Colors.black87)),
-                          Text(porcentaje, style: TextStyle(color: Colors.black87)),
+                                                  Text('Porcentaje: ', style: TextStyle(color: _getAdaptiveColor(context))),
+                        Text(porcentaje, style: TextStyle(color: _getAdaptiveColor(context))),
                         ],
                       ),
                     ],
@@ -1106,9 +1133,9 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('Rendimiento', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
-                          Text(rendimientoValor, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-                          Text(tarja.nombreUnidad ?? 'Unidad', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                          Text('Rendimiento', style: TextStyle(fontWeight: FontWeight.w600, color: _getAdaptiveColor(context))),
+                          Text(rendimientoValor, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getAdaptiveColor(context))),
+                          Text(tarja.nombreUnidad ?? 'Unidad', style: TextStyle(fontSize: 12, color: _getAdaptiveColor(context))),
                         ],
                       ),
                     ],
@@ -1123,7 +1150,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('Pago a trabajador', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87, fontSize: 12)),
+                          Text('Pago a trabajador', style: TextStyle(fontWeight: FontWeight.w600, color: _getAdaptiveColor(context), fontSize: 12)),
                           Text(
                             '\$${_calcularPagoTrabajador(rendimientoValor, tarja.tarifa, r)}',
                             style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orange[700]),
@@ -1156,7 +1183,9 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Colors.green[50],
+                color: Theme.of(context).brightness == Brightness.dark 
+                  ? Colors.green[800]!.withOpacity(0.3) 
+                  : Colors.green[50],
                 borderRadius: BorderRadius.circular(12),
               ),
               padding: const EdgeInsets.all(16),
@@ -1179,7 +1208,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                     tarja.nombreUnidad ?? 'Unidad',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: _getAdaptiveColor(context),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -1192,7 +1221,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                         'Pago a trabajador: ',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: _getAdaptiveColor(context),
                           fontSize: 12,
                         ),
                       ),
@@ -1211,7 +1240,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                     Text(
                       'Observaciones: ${r['observaciones']}',
                       style: TextStyle(
-                        color: Colors.grey[700],
+                        color: _getAdaptiveColor(context),
                         fontSize: 14,
                         fontStyle: FontStyle.italic,
                       ),
@@ -1262,7 +1291,9 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.green[50],
+                  color: Theme.of(context).brightness == Brightness.dark 
+                  ? Colors.green[800]!.withOpacity(0.3) 
+                  : Colors.green[50],
                   borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -1281,7 +1312,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                           Icon(Icons.work, color: Colors.purple, size: 16),
                           const SizedBox(width: 4),
                           Expanded(
-                            child: Text(labor, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                            child: Text(labor, style: TextStyle(color: _getAdaptiveColor(context), fontSize: 13)),
                           ),
                         ],
                       ),
@@ -1291,8 +1322,8 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                       children: [
                         Icon(Icons.groups, color: Colors.amber, size: 16),
                         const SizedBox(width: 4),
-                        Text('Cantidad trabajadores: ', style: TextStyle(color: Colors.black87)),
-                        Text(cantidadTrab, style: TextStyle(color: Colors.black87)),
+                        Text('Cantidad trabajadores: ', style: TextStyle(color: _getAdaptiveColor(context))),
+                        Text(cantidadTrab, style: TextStyle(color: _getAdaptiveColor(context))),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -1300,8 +1331,8 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                       children: [
                         Icon(Icons.percent, color: Colors.blue, size: 16),
                         const SizedBox(width: 4),
-                        Text('Porcentaje: ', style: TextStyle(color: Colors.black87)),
-                        Text('${porcentajeStr != 'N/A' ? porcentajeStr + '%' : 'N/A'}', style: TextStyle(color: Colors.black87)),
+                        Text('Porcentaje: ', style: TextStyle(color: _getAdaptiveColor(context))),
+                        Text('${porcentajeStr != 'N/A' ? porcentajeStr + '%' : 'N/A'}', style: TextStyle(color: _getAdaptiveColor(context))),
                       ],
                     ),
                   ],
@@ -1316,9 +1347,9 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('Rendimiento total', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
-                      Text(rendimientoTotal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-                      Text(tarja.nombreUnidad ?? 'Unidad', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                      Text('Rendimiento total', style: TextStyle(fontWeight: FontWeight.w600, color: _getAdaptiveColor(context))),
+                      Text(rendimientoTotal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getAdaptiveColor(context))),
+                      Text(tarja.nombreUnidad ?? 'Unidad', style: TextStyle(fontSize: 12, color: _getAdaptiveColor(context))),
                     ],
                   ),
                 ],
@@ -1343,7 +1374,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
         child: Center(
           child: Text(
             'No hay datos del grupo disponibles',
-            style: TextStyle(color: Colors.grey[600]),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
           ),
         ),
       ),
@@ -1545,40 +1576,204 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
           ),
         ],
       ),
-      child: TextField(
-        controller: _searchController,
-        onChanged: _onSearchChanged,
-        onSubmitted: (_) => FocusScope.of(context).unfocus(),
-        decoration: InputDecoration(
-          hintText: 'Buscar por labor, contratista, CECO o tipo de rendimiento',
-          hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
-          prefixIcon: Icon(Icons.search, color: AppTheme.primaryColor),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+      child: Column(
+        children: [
+          TextField(
+            controller: _searchController,
+            onChanged: _onSearchChanged,
+            onSubmitted: (_) => FocusScope.of(context).unfocus(),
+            decoration: InputDecoration(
+              hintText: 'Buscar por labor, contratista, CECO o tipo de rendimiento',
+              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+              prefixIcon: Icon(Icons.search, color: AppTheme.primaryColor),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                      onPressed: () {
+                        _searchController.clear();
+                        _onSearchChanged('');
+                        FocusScope.of(context).unfocus();
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
                   onPressed: () {
-                    _searchController.clear();
-                    _onSearchChanged('');
-                    FocusScope.of(context).unfocus();
+                    setState(() {
+                      _showFiltros = !_showFiltros;
+                    });
                   },
-                )
-              : null,
-          filled: true,
-          fillColor: Theme.of(context).colorScheme.surface,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
+                  icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
+                  label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-                            ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-          ),
-        ),
+          if (_showFiltros) ...[
+            const SizedBox(height: 12),
+            _buildFiltrosAvanzados(),
+          ],
+        ],
       ),
+    );
+  }
+
+  Widget _buildFiltrosAvanzados() {
+    return Consumer<TarjaProvider>(
+      builder: (context, tarjaProvider, child) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[800] : Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Filtros Avanzados',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: tarjaProvider.filtroContratista.isEmpty ? null : tarjaProvider.filtroContratista,
+                      decoration: const InputDecoration(
+                        labelText: 'Contratista',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('Todos los contratistas'),
+                        ),
+                        ...tarjaProvider.contratistasUnicos.map((contratista) {
+                          return DropdownMenuItem<String>(
+                            value: contratista,
+                            child: Text(contratista),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        tarjaProvider.setFiltroContratista(value ?? '');
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: tarjaProvider.filtroTipoRendimiento.isEmpty ? null : tarjaProvider.filtroTipoRendimiento,
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo de Rendimiento',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('Todos los tipos'),
+                        ),
+                        ...tarjaProvider.tiposRendimientoUnicos.map((tipo) {
+                          return DropdownMenuItem<String>(
+                            value: tipo,
+                            child: Text(tipo),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        tarjaProvider.setFiltroTipoRendimiento(value ?? '');
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        tarjaProvider.limpiarFiltros();
+                        _searchController.clear();
+                        _onSearchChanged('');
+                        setState(() {
+                          _filtroActivo = null;
+                        });
+                      },
+                      icon: const Icon(Icons.clear_all),
+                      label: const Text('Limpiar filtros'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        tarjaProvider.cargarTarjas();
+                      },
+                      icon: const Icon(Icons.search),
+                      label: const Text('Aplicar filtros'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1790,7 +1985,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                         Icon(
                           _searchQuery.isNotEmpty ? Icons.search_off : Icons.filter_list,
                           size: 64,
-                          color: Colors.grey[400],
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -1799,7 +1994,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                             : 'No hay actividades que coincidan con los filtros',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.grey[600],
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -1810,7 +2005,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                             : 'Intenta cambiar los filtros o refrescar los datos',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[500],
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -1851,8 +2046,10 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                             }
                           },
                           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          backgroundColor: Colors.white,
-                          collapsedBackgroundColor: AppTheme.primaryColor.withOpacity(0.07),
+                          backgroundColor: Theme.of(context).colorScheme.surface,
+                          collapsedBackgroundColor: Theme.of(context).brightness == Brightness.dark 
+                            ? Colors.grey[800]!.withOpacity(0.3)
+                            : AppTheme.primaryColor.withOpacity(0.07),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           title: Row(
@@ -1862,7 +2059,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                                   _formatearFecha(fecha),
                                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: AppTheme.primaryColor,
+                                    color: _getAdaptiveColor(context, lightColor: AppTheme.primaryColor, darkColor: AppTheme.primaryColor),
                                   ),
                                 ),
                               ),
@@ -1881,15 +2078,15 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              const Text(
+                              Text(
                                 'actividades',
                                 style: TextStyle(
-                                  color: AppTheme.primaryColor,
+                                  color: _getAdaptiveColor(context, lightColor: AppTheme.primaryColor, darkColor: AppTheme.primaryColor),
                                   fontWeight: FontWeight.w500,
-                                  ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
+                          ),
                           children: tarjas.map((tarja) => _buildActividadCard(tarja)).toList(),
                         ),
                       ),

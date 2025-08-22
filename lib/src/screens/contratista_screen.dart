@@ -201,12 +201,17 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
   Widget _buildFiltrosAvanzados() {
     return Consumer<ContratistaProvider>(
       builder: (context, provider, child) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: isDark ? Colors.grey[800] : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -513,7 +518,7 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              contratista.rut,
+                              contratista.rutCompleto,
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[600],
@@ -623,128 +628,326 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
   void _mostrarDetallesContratista(Contratista contratista) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: contratista.estadoColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                contratista.estadoIcono,
-                color: contratista.estadoColor,
-                size: 20,
-              ),
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          constraints: const BoxConstraints(maxWidth: 500),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surface.withOpacity(0.95),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Detalles del Contratista',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Container(
-          width: double.maxFinite,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header con avatar y nombre
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: contratista.estadoColor.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.primaryColor.withOpacity(0.05),
+                    ],
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.person,
-                      color: contratista.estadoColor,
-                      size: 16,
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.7)],
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.business,
+                        color: Colors.white,
+                        size: 30,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 16),
                     Expanded(
-                      child: Text(
-                        contratista.nombreCompleto,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: contratista.estadoColor,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            contratista.nombreCompleto,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: contratista.estadoTexto == 'ACTIVO' 
+                                ? Colors.green.withOpacity(0.2) 
+                                : Colors.orange.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: contratista.estadoTexto == 'ACTIVO' 
+                                  ? Colors.green 
+                                  : Colors.orange,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              contratista.estadoTexto,
+                              style: TextStyle(
+                                color: contratista.estadoTexto == 'ACTIVO' 
+                                  ? Colors.green[700] 
+                                  : Colors.orange[700],
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Contenido con información
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      // Información básica
+                      _buildInfoSection(
+                        'Información Básica',
+                        Icons.business_outlined,
+                        [
+                          _buildModernInfoRow('RUT', contratista.rutCompleto, Icons.badge),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Información de contacto
+                      if (contratista.tieneEmail || contratista.tieneTelefono || contratista.tieneDireccion)
+                        _buildInfoSection(
+                          'Información de Contacto',
+                          Icons.contact_phone,
+                          [
+                            if (contratista.tieneEmail) _buildModernInfoRow('Email', contratista.email!, Icons.email),
+                            if (contratista.tieneTelefono) _buildModernInfoRow('Teléfono', contratista.telefono!, Icons.phone),
+                            if (contratista.tieneDireccion) _buildModernInfoRow('Dirección', contratista.direccion!, Icons.location_on),
+                          ],
+                        ),
+                      
+                      if (contratista.tieneEmail || contratista.tieneTelefono || contratista.tieneDireccion)
+                        const SizedBox(height: 20),
+                      
+                      // Fechas
+                      if (contratista.tieneFechaNacimiento || contratista.tieneFechaIncorporacion)
+                        _buildInfoSection(
+                          'Fechas',
+                          Icons.calendar_today,
+                          [
+                            if (contratista.tieneFechaNacimiento) _buildModernInfoRow('Fecha de Nacimiento', contratista.fechaNacimientoFormateadaEspanol, Icons.cake),
+                            if (contratista.tieneFechaIncorporacion) _buildModernInfoRow('Fecha de Incorporación', contratista.fechaIncorporacionFormateadaEspanol, Icons.work),
+                          ],
+                        ),
+                      
+                      if (contratista.tieneFechaNacimiento || contratista.tieneFechaIncorporacion)
+                        const SizedBox(height: 20),
+                      
+                      // Observaciones
+                      if (contratista.observaciones != null && contratista.observaciones!.isNotEmpty)
+                        _buildInfoSection(
+                          'Observaciones',
+                          Icons.note,
+                          [
+                            _buildModernInfoRow('Observaciones', contratista.observaciones!, Icons.note),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Botones de acción
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                        label: const Text('Cerrar'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                                                 onPressed: () {
+                           Navigator.pop(context);
+                           Navigator.push(
+                             context,
+                             MaterialPageRoute(
+                               builder: (_) => ContratistaEditarScreen(contratista: contratista),
+                             ),
+                           );
+                         },
+                        icon: const Icon(Icons.edit),
+                        label: const Text('Editar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              _buildInfoRow('RUT', contratista.rut, Icons.badge),
-              _buildInfoRow('Estado', contratista.estadoTexto, Icons.info_outline),
-              if (contratista.tieneEmail) _buildInfoRow('Email', contratista.email!, Icons.email),
-              if (contratista.tieneTelefono) _buildInfoRow('Teléfono', contratista.telefono!, Icons.phone),
-              if (contratista.tieneDireccion) _buildInfoRow('Dirección', contratista.direccion!, Icons.location_on),
-              if (contratista.tieneFechaNacimiento) _buildInfoRow('Fecha de Nacimiento', contratista.fechaNacimientoFormateadaEspanol, Icons.cake),
-              if (contratista.tieneFechaIncorporacion) _buildInfoRow('Fecha de Incorporación', contratista.fechaIncorporacionFormateadaEspanol, Icons.work),
-              if (contratista.observaciones != null && contratista.observaciones!.isNotEmpty) _buildInfoRow('Observaciones', contratista.observaciones!, Icons.note),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Cerrar'),
+      ),
+    );
+  }
+
+  Widget _buildInfoSection(String title, IconData icon, List<Widget> children) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...children,
         ],
       ),
     );
   }
 
-     Widget _buildInfoRow(String label, String value, IconData icon) {
-     return Padding(
-       padding: const EdgeInsets.symmetric(vertical: 8),
-       child: Row(
-         children: [
-           Icon(
-             icon,
-             size: 16,
-             color: Colors.grey[600],
-           ),
-           const SizedBox(width: 8),
-           SizedBox(
-             width: 120,
-             child: Text(
-               '$label:',
-               style: TextStyle(
-                 fontWeight: FontWeight.w500,
-                 color: Colors.grey[700],
-               ),
-             ),
-           ),
-           Expanded(
-             child: Text(
-               value,
-               style: const TextStyle(
-                 fontWeight: FontWeight.w500,
-               ),
-             ),
-           ),
-         ],
-       ),
-     );
-   }
+  Widget _buildModernInfoRow(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
    void _confirmarDesactivarContratista(Contratista contratista) {
      showDialog(

@@ -191,12 +191,17 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
   Widget _buildFiltrosAvanzados() {
     return Consumer2<LicenciaProvider, ColaboradorProvider>(
       builder: (context, licenciaProvider, colaboradorProvider, child) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: isDark ? Colors.grey[800] : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -525,59 +530,295 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
   void _mostrarDetallesLicencia(Licencia licencia) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Detalles de Licencia Médica'),
-        content: SingleChildScrollView(
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          constraints: const BoxConstraints(maxWidth: 500),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surface.withOpacity(0.95),
+              ],
+            ),
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildInfoRow('Colaborador', licencia.nombreCompletoColaborador),
-              _buildInfoRow('Período', licencia.periodoFormateadoEspanol),
-              _buildInfoRow('Duración', '${licencia.duracionDias} días'),
-              _buildInfoRow('Estado', licencia.estado),
-              _buildInfoRow('Fecha Inicio', licencia.fechaInicioFormateadaEspanol),
-              _buildInfoRow('Fecha Fin', licencia.fechaFinFormateadaEspanol),
+              // Header con avatar y nombre
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.primaryColor.withOpacity(0.05),
+                    ],
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.7)],
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.medical_services,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Licencia Médica',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            licencia.nombreCompletoColaborador,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Contenido con información
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      // Información de la licencia
+                      _buildInfoSection(
+                        'Información de la Licencia',
+                        Icons.medical_information,
+                        [
+                          _buildModernInfoRow('Período', licencia.periodoFormateadoEspanol, Icons.calendar_today),
+                          _buildModernInfoRow('Duración', '${licencia.duracionDias} días', Icons.schedule),
+                          _buildModernInfoRow('Estado', licencia.estado, Icons.info),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Fechas
+                      _buildInfoSection(
+                        'Fechas',
+                        Icons.date_range,
+                        [
+                          _buildModernInfoRow('Fecha Inicio', licencia.fechaInicioFormateadaEspanol, Icons.play_arrow),
+                          _buildModernInfoRow('Fecha Fin', licencia.fechaFinFormateadaEspanol, Icons.stop),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Botones de acción
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                        label: const Text('Cerrar'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _mostrarDialogoEditarLicencia(licencia);
+                        },
+                        icon: const Icon(Icons.edit),
+                        label: const Text('Editar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
+      ),
+    );
+  }
+
+  Widget _buildInfoSection(String title, IconData icon, List<Widget> children) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _mostrarDialogoEditarLicencia(licencia);
-            },
-            child: const Text('Editar'),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 16),
+          ...children,
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildModernInfoRow(String label, String value, IconData icon) {
+    // Definir colores para diferentes tipos de iconos
+    Color iconColor;
+    Color backgroundColor;
+    
+    // Comparar directamente con los iconos
+    if (icon == Icons.calendar_today) {
+      iconColor = Colors.blue;
+      backgroundColor = Colors.blue.withOpacity(0.1);
+    } else if (icon == Icons.schedule) {
+      iconColor = Colors.orange;
+      backgroundColor = Colors.orange.withOpacity(0.1);
+    } else if (icon == Icons.info) {
+      iconColor = Colors.purple;
+      backgroundColor = Colors.purple.withOpacity(0.1);
+    } else if (icon == Icons.play_arrow) {
+      iconColor = Colors.green;
+      backgroundColor = Colors.green.withOpacity(0.1);
+    } else if (icon == Icons.stop) {
+      iconColor = Colors.red;
+      backgroundColor = Colors.red.withOpacity(0.1);
+    } else {
+      iconColor = AppTheme.primaryColor;
+      backgroundColor = AppTheme.primaryColor.withOpacity(0.1);
+    }
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: iconColor,
             ),
           ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

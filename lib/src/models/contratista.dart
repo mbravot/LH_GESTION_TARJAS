@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class Contratista {
   final String id;
   final String rut;
+  final String? codigoVerificador;
   final String nombre;
   final String apellidoPaterno;
   final String apellidoMaterno;
@@ -18,6 +19,7 @@ class Contratista {
   Contratista({
     required this.id,
     required this.rut,
+    this.codigoVerificador,
     required this.nombre,
     required this.apellidoPaterno,
     required this.apellidoMaterno,
@@ -36,6 +38,7 @@ class Contratista {
       return Contratista(
         id: json['id']?.toString() ?? '',
         rut: json['rut']?.toString() ?? '',
+        codigoVerificador: json['codigo_verificador']?.toString(),
         nombre: json['nombre']?.toString() ?? '',
         apellidoPaterno: json['apellido_paterno']?.toString() ?? '',
         apellidoMaterno: json['apellido_materno']?.toString() ?? '',
@@ -98,6 +101,7 @@ class Contratista {
     return {
       'id': id,
       'rut': rut,
+      'codigo_verificador': codigoVerificador,
       'nombre': nombre,
       'apellido_paterno': apellidoPaterno,
       'apellido_materno': apellidoMaterno,
@@ -131,6 +135,14 @@ class Contratista {
 
   String get nombreCorto {
     return '$nombre $apellidoPaterno'.trim();
+  }
+
+  // Getter para RUT completo con dígito verificador
+  String get rutCompleto {
+    if (codigoVerificador != null && codigoVerificador!.isNotEmpty) {
+      return '$rut-$codigoVerificador';
+    }
+    return rut;
   }
 
   // Getters para formato de fecha

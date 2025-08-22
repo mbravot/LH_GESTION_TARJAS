@@ -179,15 +179,20 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
     );
   }
 
-  Widget _buildFiltrosAvanzados() {
+      Widget _buildFiltrosAvanzados() {
     return Consumer<HorasExtrasOtrosCecosProvider>(
       builder: (context, provider, child) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: isDark ? Colors.grey[800] : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

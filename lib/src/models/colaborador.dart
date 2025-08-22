@@ -255,6 +255,23 @@ class Colaborador {
     return fechaIncorporacion ?? 'Sin fecha';
   }
 
+  // Método para formatear fecha de finiquito en español con día de la semana
+  String get fechaFiniquitoFormateadaEspanol {
+    final fecha = _parseFecha(fechaFiniquito);
+    if (fecha != null) {
+      final diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+      final meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      
+      final diaSemana = diasSemana[fecha.weekday - 1];
+      final dia = fecha.day.toString().padLeft(2, '0');
+      final mes = meses[fecha.month - 1];
+      final anio = fecha.year;
+      
+      return '$diaSemana, $dia $mes $anio';
+    }
+    return fechaFiniquito ?? 'Sin fecha';
+  }
+
   // Método para clonar el colaborador con cambios
   Colaborador copyWith({
     String? id,

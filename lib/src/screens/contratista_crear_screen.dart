@@ -161,6 +161,7 @@ class _ContratistaCrearScreenState extends State<ContratistaCrearScreen> {
       
       final datos = {
         'rut': int.tryParse(_rutController.text.trim()) ?? 0,
+        'codigo_verificador': _codigoVerificadorController.text.trim(),
         'nombre': _nombreController.text.trim(),
         'id_estado': _getEstadoId(_estadoSeleccionado),
       };

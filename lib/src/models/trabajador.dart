@@ -9,6 +9,7 @@ class Trabajador {
   final String idPorcentaje;
   final String idEstado;
   final String idSucursalActiva;
+  final String? nombreSucursal;
   final String? nombreContratista;
   final double? porcentaje;
 
@@ -23,6 +24,7 @@ class Trabajador {
     required this.idPorcentaje,
     required this.idEstado,
     required this.idSucursalActiva,
+    this.nombreSucursal,
     this.nombreContratista,
     this.porcentaje,
   });
@@ -39,6 +41,7 @@ class Trabajador {
       idPorcentaje: json['id_porcentaje']?.toString() ?? '',
       idEstado: json['id_estado']?.toString() ?? '',
       idSucursalActiva: json['id_sucursal_activa']?.toString() ?? '',
+      nombreSucursal: json['nombre_sucursal']?.toString(),
       nombreContratista: json['nombre_contratista']?.toString(),
       porcentaje: json['porcentaje'] != null 
           ? (json['porcentaje'] is num 
@@ -60,6 +63,7 @@ class Trabajador {
       'id_porcentaje': idPorcentaje,
       'id_estado': idEstado,
       'id_sucursal_activa': idSucursalActiva,
+      'nombre_sucursal': nombreSucursal,
       'nombre_contratista': nombreContratista,
       'porcentaje': porcentaje,
     };
@@ -111,6 +115,11 @@ class Trabajador {
     return 'N/A';
   }
 
+  // Método para obtener el nombre de la sucursal
+  String get nombreSucursalFormateado {
+    return nombreSucursal ?? 'Sucursal $idSucursalActiva';
+  }
+
   // Método para clonar el trabajador con cambios
   Trabajador copyWith({
     String? id,
@@ -123,6 +132,7 @@ class Trabajador {
     String? idPorcentaje,
     String? idEstado,
     String? idSucursalActiva,
+    String? nombreSucursal,
     String? nombreContratista,
     double? porcentaje,
   }) {
@@ -137,6 +147,7 @@ class Trabajador {
       idPorcentaje: idPorcentaje ?? this.idPorcentaje,
       idEstado: idEstado ?? this.idEstado,
       idSucursalActiva: idSucursalActiva ?? this.idSucursalActiva,
+      nombreSucursal: nombreSucursal ?? this.nombreSucursal,
       nombreContratista: nombreContratista ?? this.nombreContratista,
       porcentaje: porcentaje ?? this.porcentaje,
     );

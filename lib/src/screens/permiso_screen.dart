@@ -188,12 +188,17 @@ class _PermisoScreenState extends State<PermisoScreen> {
   Widget _buildFiltrosAvanzados() {
     return Consumer2<PermisoProvider, ColaboradorProvider>(
       builder: (context, permisoProvider, colaboradorProvider, child) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: isDark ? Colors.grey[800] : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -573,55 +578,234 @@ class _PermisoScreenState extends State<PermisoScreen> {
   void _mostrarDetallesPermiso(Permiso permiso) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Detalles del Permiso'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoRow('Colaborador:', permiso.nombreCompletoColaborador),
-            _buildInfoRow('Tipo de Permiso:', permiso.tipoPermiso ?? 'Sin especificar'),
-            _buildInfoRow('Fecha:', permiso.fechaFormateadaEspanol),
-            _buildInfoRow('Horas:', '${permiso.horas} horas'),
-            _buildInfoRow('Estado:', permiso.estadoPermiso ?? 'Sin especificar'),
-            _buildInfoRow('Creado:', permiso.timestampFormateadoEspanol),
-          ],
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cerrar'),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surface.withOpacity(0.8),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _mostrarDialogoEditarPermiso(permiso);
-            },
-            child: const Text('Editar'),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header moderno
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  gradient: LinearGradient(
+                    colors: [
+                      AppTheme.primaryColor,
+                      AppTheme.primaryColor.withOpacity(0.8),
+                    ],
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.access_time,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Detalles del Permiso',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            permiso.nombreCompletoColaborador,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Contenido
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Información del colaborador
+                      _buildModernInfoRow('Colaborador', permiso.nombreCompletoColaborador, Icons.person),
+                      
+                      // Información del permiso
+                      _buildModernInfoRow('Tipo de Permiso', permiso.tipoPermiso ?? 'Sin especificar', Icons.category),
+                      _buildModernInfoRow('Fecha', permiso.fechaFormateadaEspanol, Icons.calendar_today),
+                      _buildModernInfoRow('Horas', '${permiso.horas} horas', Icons.schedule),
+                      
+                      // Estado
+                      _buildModernInfoRow('Estado', permiso.estadoPermiso ?? 'Sin especificar', Icons.info),
+                      
+                      // Timestamp
+                      _buildModernInfoRow('Creado', permiso.timestampFormateadoEspanol, Icons.access_time),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Botones de acción
+              Container(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                        label: const Text('Cerrar'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _mostrarDialogoEditarPermiso(permiso);
+                        },
+                        icon: const Icon(Icons.edit),
+                        label: const Text('Editar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildModernInfoRow(String label, String value, IconData icon) {
+    Color iconColor;
+    Color backgroundColor;
+    
+    if (icon == Icons.person) {
+      iconColor = Colors.blue;
+      backgroundColor = Colors.blue.withOpacity(0.1);
+    } else if (icon == Icons.category) {
+      iconColor = Colors.purple;
+      backgroundColor = Colors.purple.withOpacity(0.1);
+    } else if (icon == Icons.calendar_today) {
+      iconColor = Colors.orange;
+      backgroundColor = Colors.orange.withOpacity(0.1);
+    } else if (icon == Icons.schedule) {
+      iconColor = Colors.green;
+      backgroundColor = Colors.green.withOpacity(0.1);
+    } else if (icon == Icons.info) {
+      iconColor = Colors.indigo;
+      backgroundColor = Colors.indigo.withOpacity(0.1);
+    } else if (icon == Icons.access_time) {
+      iconColor = Colors.teal;
+      backgroundColor = Colors.teal.withOpacity(0.1);
+    } else {
+      iconColor = AppTheme.primaryColor;
+      backgroundColor = AppTheme.primaryColor.withOpacity(0.1);
+    }
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: iconColor,
             ),
           ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(value),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -703,7 +887,7 @@ class _PermisoScreenState extends State<PermisoScreen> {
   @override
   Widget build(BuildContext context) {
     return MainScaffold(
-      title: 'Gestión de Permisos',
+      title: 'Permisos',
       onRefresh: _refrescarDatos,
       body: Column(
         children: [

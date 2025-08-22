@@ -164,12 +164,12 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
               const SizedBox(width: 12),
               ElevatedButton.icon(
                 onPressed: () => _mostrarDialogoCrearTrabajador(),
-                icon: const Icon(Icons.person_add),
-                label: const Text('Nuevo'),
+                icon: const Icon(Icons.person_add, size: 20),
+                label: const Text('Nuevo', style: TextStyle(fontSize: 14)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -189,12 +189,17 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
   Widget _buildFiltrosAvanzados() {
     return Consumer<TrabajadorProvider>(
       builder: (context, trabajadorProvider, child) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: isDark ? Colors.grey[800] : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -509,69 +514,287 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
   void _mostrarDetallesTrabajador(Trabajador trabajador) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.person, color: AppTheme.primaryColor),
-            const SizedBox(width: 8),
-            const Text('Detalles del Trabajador'),
-          ],
-        ),
-        content: SingleChildScrollView(
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          constraints: const BoxConstraints(maxWidth: 500),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surface.withOpacity(0.95),
+              ],
+            ),
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDetalleItem('Nombre completo', trabajador.nombreCompleto),
-              _buildDetalleItem('RUT', trabajador.rutCompleto),
-              _buildDetalleItem('Estado', trabajador.estadoText),
-              _buildDetalleItem('Contratista', trabajador.nombreContratista ?? 'No asignado'),
-              _buildDetalleItem('Porcentaje', trabajador.porcentajeFormateado),
-              _buildDetalleItem('ID Trabajador', trabajador.id),
-              _buildDetalleItem('ID Contratista', trabajador.idContratista),
-              _buildDetalleItem('ID Porcentaje', trabajador.idPorcentaje),
-              _buildDetalleItem('ID Estado', trabajador.idEstado),
-              _buildDetalleItem('ID Sucursal', trabajador.idSucursalActiva),
+              // Header con avatar y nombre
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.primaryColor.withOpacity(0.05),
+                    ],
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.7)],
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.work,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            trabajador.nombreCompleto,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: trabajador.estadoText == 'ACTIVO' 
+                                ? Colors.green.withOpacity(0.2) 
+                                : Colors.orange.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: trabajador.estadoText == 'ACTIVO' 
+                                  ? Colors.green 
+                                  : Colors.orange,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              trabajador.estadoText,
+                              style: TextStyle(
+                                color: trabajador.estadoText == 'ACTIVO' 
+                                  ? Colors.green[700] 
+                                  : Colors.orange[700],
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Contenido con información
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      // Información personal
+                      _buildInfoSection(
+                        'Información Personal',
+                        Icons.person_outline,
+                        [
+                          _buildModernInfoRow('RUT', trabajador.rutCompleto, Icons.badge),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                                             // Información laboral
+                       _buildInfoSection(
+                         'Información Laboral',
+                         Icons.work_outline,
+                         [
+                           _buildModernInfoRow('Contratista', trabajador.nombreContratista ?? 'No asignado', Icons.business),
+                           _buildModernInfoRow('Porcentaje', trabajador.porcentajeFormateado, Icons.percent),
+                                                       _buildModernInfoRow('Sucursal', trabajador.nombreSucursalFormateado, Icons.location_on),
+                         ],
+                       ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Botones de acción
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                        label: const Text('Cerrar'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _mostrarDialogoEditarTrabajador(trabajador);
+                        },
+                        icon: const Icon(Icons.edit),
+                        label: const Text('Editar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
-                 actions: [
-           TextButton(
-             onPressed: () => Navigator.of(context).pop(),
-             child: const Text('Cerrar'),
-           ),
-           ElevatedButton(
-             onPressed: () {
-               Navigator.of(context).pop();
-               _mostrarDialogoEditarTrabajador(trabajador);
-             },
-             child: const Text('Editar'),
-           ),
-         ],
       ),
     );
   }
 
-  Widget _buildDetalleItem(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+  Widget _buildInfoSection(String title, IconData icon, List<Widget> children) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
               ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernInfoRow(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: Colors.grey[600],
             ),
           ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -700,7 +923,7 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
   @override
   Widget build(BuildContext context) {
     return MainScaffold(
-      title: 'Gestión de Trabajadores',
+      title: 'Trabajadores',
       onRefresh: _refrescarDatos,
       body: Column(
         children: [

@@ -640,10 +640,25 @@ class ApiService {
     Map<String, dynamic> trabajadorData
   ) async {
     try {
+      // Validar que el trabajadorId no sea null o vacío
+      if (trabajadorId.isEmpty) {
+        throw Exception('ID de trabajador no válido');
+      }
+
+      // Validar que los datos no contengan valores null que puedan causar problemas
+      final datosLimpios = <String, dynamic>{};
+      trabajadorData.forEach((key, value) {
+        if (value != null) {
+          datosLimpios[key] = value;
+        }
+      });
+
       final token = await _authService.getToken();
       if (token == null) {
         throw Exception('Token no encontrado');
       }
+
+
 
       final response = await http.put(
         Uri.parse('$baseUrl/trabajadores/$trabajadorId'),
@@ -651,14 +666,19 @@ class ApiService {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        body: json.encode(trabajadorData),
+        body: json.encode(datosLimpios),
       );
 
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(json.decode(response.body));
       } else {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['error'] ?? 'Error al editar trabajador');
+        try {
+          final errorData = json.decode(response.body);
+          final errorMessage = errorData['error'] ?? 'Error al editar trabajador';
+          throw Exception(errorMessage);
+        } catch (jsonError) {
+          throw Exception('Error al editar trabajador: ${response.statusCode} - ${response.body}');
+        }
       }
     } catch (e) {
       throw Exception('Error de conexión: $e');

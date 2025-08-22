@@ -194,12 +194,17 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
   Widget _buildFiltrosAvanzados() {
     return Consumer2<VacacionProvider, ColaboradorProvider>(
       builder: (context, vacacionProvider, colaboradorProvider, child) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: isDark ? Colors.grey[800] : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -528,59 +533,233 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
   void _mostrarDetallesVacacion(Vacacion vacacion) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Detalles de Vacación'),
-        content: SingleChildScrollView(
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surface.withOpacity(0.8),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildInfoRow('Colaborador', vacacion.nombreCompletoColaborador),
-                             _buildInfoRow('Período', vacacion.periodoFormateadoEspanol),
-               _buildInfoRow('Duración', vacacion.duracionTexto),
-               _buildInfoRow('Estado', vacacion.estado),
-               _buildInfoRow('Fecha Inicio', vacacion.fechaInicioFormateadaEspanol),
-               _buildInfoRow('Fecha Fin', vacacion.fechaFinFormateadaEspanol),
+              // Header moderno
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  gradient: LinearGradient(
+                    colors: [
+                      AppTheme.primaryColor,
+                      AppTheme.primaryColor.withOpacity(0.8),
+                    ],
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.beach_access,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Detalles de Vacación',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            vacacion.nombreCompletoColaborador,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Contenido
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Información del colaborador
+                      _buildModernInfoRow('Colaborador', vacacion.nombreCompletoColaborador, Icons.person),
+                      
+                      // Información del período
+                      _buildModernInfoRow('Período', vacacion.periodoFormateadoEspanol, Icons.calendar_today),
+                      _buildModernInfoRow('Duración', vacacion.duracionTexto, Icons.schedule),
+                      
+                      // Estado
+                      _buildModernInfoRow('Estado', vacacion.estado, Icons.info),
+                      
+                      // Fechas
+                      _buildModernInfoRow('Fecha Inicio', vacacion.fechaInicioFormateadaEspanol, Icons.play_arrow),
+                      _buildModernInfoRow('Fecha Fin', vacacion.fechaFinFormateadaEspanol, Icons.stop),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Botones de acción
+              Container(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                        label: const Text('Cerrar'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _mostrarDialogoEditarVacacion(vacacion);
+                        },
+                        icon: const Icon(Icons.edit),
+                        label: const Text('Editar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _mostrarDialogoEditarVacacion(vacacion);
-            },
-            child: const Text('Editar'),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildModernInfoRow(String label, String value, IconData icon) {
+    Color iconColor;
+    Color backgroundColor;
+    
+    if (icon == Icons.person) {
+      iconColor = Colors.blue;
+      backgroundColor = Colors.blue.withOpacity(0.1);
+    } else if (icon == Icons.calendar_today) {
+      iconColor = Colors.orange;
+      backgroundColor = Colors.orange.withOpacity(0.1);
+    } else if (icon == Icons.schedule) {
+      iconColor = Colors.green;
+      backgroundColor = Colors.green.withOpacity(0.1);
+    } else if (icon == Icons.info) {
+      iconColor = Colors.purple;
+      backgroundColor = Colors.purple.withOpacity(0.1);
+    } else if (icon == Icons.play_arrow) {
+      iconColor = Colors.green;
+      backgroundColor = Colors.green.withOpacity(0.1);
+    } else if (icon == Icons.stop) {
+      iconColor = Colors.red;
+      backgroundColor = Colors.red.withOpacity(0.1);
+    } else {
+      iconColor = AppTheme.primaryColor;
+      backgroundColor = AppTheme.primaryColor.withOpacity(0.1);
+    }
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: iconColor,
             ),
           ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
