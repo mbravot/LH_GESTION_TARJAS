@@ -66,14 +66,15 @@ class _PermisoScreenState extends State<PermisoScreen> {
     
     final permisoProvider = context.read<PermisoProvider>();
     switch (filtro) {
-      case 'hoy':
-        permisoProvider.filtrarPorEstado('Hoy');
+      case 'creados':
+        permisoProvider.filtrarPorEstado('Creado');
         break;
-      case 'programados':
-        permisoProvider.filtrarPorEstado('Programado');
+      case 'aprobados':
+        permisoProvider.filtrarPorEstado('Aprobado');
         break;
-      case 'completados':
-        permisoProvider.filtrarPorEstado('Completado');
+      case 'porAprobar':
+        // Los permisos "Por Aprobar" son los mismos que "Creado" pero para aprobación
+        permisoProvider.filtrarPorEstado('Creado');
         break;
       default: // 'todos'
         permisoProvider.limpiarFiltros();
@@ -329,34 +330,34 @@ class _PermisoScreenState extends State<PermisoScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: _buildTarjetaEstadistica(
-                  'Hoy',
-                  stats['hoy']?.toString() ?? '0',
-                  Icons.today,
-                  Colors.orange,
-                  'hoy',
-                  (stats['hoy'] ?? 0) > 0,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildTarjetaEstadistica(
-                  'Programados',
-                  stats['programados']?.toString() ?? '0',
-                  Icons.schedule,
+                  'Creados',
+                  stats['creados']?.toString() ?? '0',
+                  Icons.create,
                   Colors.blue,
-                  'programados',
-                  (stats['programados'] ?? 0) > 0,
+                  'creados',
+                  (stats['creados'] ?? 0) > 0,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _buildTarjetaEstadistica(
-                  'Completados',
-                  stats['completados']?.toString() ?? '0',
+                  'Aprobados',
+                  stats['aprobados']?.toString() ?? '0',
                   Icons.check_circle,
                   Colors.green,
-                  'completados',
-                  (stats['completados'] ?? 0) > 0,
+                  'aprobados',
+                  (stats['aprobados'] ?? 0) > 0,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  'Por Aprobar',
+                  stats['porAprobar']?.toString() ?? '0',
+                  Icons.pending,
+                  Colors.orange,
+                  'porAprobar',
+                  (stats['porAprobar'] ?? 0) > 0,
                 ),
               ),
             ],
@@ -528,7 +529,7 @@ class _PermisoScreenState extends State<PermisoScreen> {
                   Icon(
                     Icons.calendar_today,
                     size: 16,
-                    color: textColor.withOpacity(0.6),
+                    color: Colors.purple,
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -539,20 +540,33 @@ class _PermisoScreenState extends State<PermisoScreen> {
                     ),
                   ),
                   const Spacer(),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.edit, color: AppTheme.infoColor, size: 20),
-                        onPressed: () => _mostrarDialogoEditarPermiso(permiso),
-                        tooltip: 'Editar',
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete, color: AppTheme.errorColor, size: 20),
-                        onPressed: () => _mostrarDialogoEliminarPermiso(permiso),
-                        tooltip: 'Eliminar',
-                      ),
-                    ],
-                  ),
+                                     Row(
+                     children: [
+                       // Si estamos en la vista "Por Aprobar", mostrar botón de aprobar
+                       if (_filtroActivo == 'porAprobar' && permiso.estado == 'Creado')
+                         IconButton(
+                           icon: Icon(Icons.check_circle, color: AppTheme.successColor, size: 20),
+                           onPressed: () => _mostrarDialogoAprobarPermiso(permiso),
+                           tooltip: 'Aprobar',
+                         )
+                       else ...[
+                         // Botón de editar (solo para Creados y Aprobados)
+                         if (permiso.sePuedeEditar)
+                           IconButton(
+                             icon: Icon(Icons.edit, color: Colors.green, size: 20),
+                             onPressed: () => _mostrarDialogoEditarPermiso(permiso),
+                             tooltip: 'Editar',
+                           ),
+                         // Botón de eliminar (solo para Creados y Aprobados)
+                         if (permiso.sePuedeEliminar)
+                           IconButton(
+                             icon: Icon(Icons.delete, color: AppTheme.errorColor, size: 20),
+                             onPressed: () => _mostrarDialogoEliminarPermiso(permiso),
+                             tooltip: 'Eliminar',
+                           ),
+                       ],
+                     ],
+                   ),
                 ],
               ),
             ],
@@ -564,12 +578,12 @@ class _PermisoScreenState extends State<PermisoScreen> {
 
   IconData _getEstadoIcon(String estado) {
     switch (estado) {
-      case 'Hoy':
-        return Icons.today;
-      case 'Programado':
-        return Icons.schedule;
-      case 'Completado':
+      case 'Creado':
+        return Icons.create;
+      case 'Aprobado':
         return Icons.check_circle;
+      case 'Por Aprobar':
+        return Icons.pending;
       default:
         return Icons.assignment;
     }
@@ -684,8 +698,6 @@ class _PermisoScreenState extends State<PermisoScreen> {
                       // Estado
                       _buildModernInfoRow('Estado', permiso.estadoPermiso ?? 'Sin especificar', Icons.info),
                       
-                      // Timestamp
-                      _buildModernInfoRow('Creado', permiso.timestampFormateadoEspanol, Icons.access_time),
                     ],
                   ),
                 ),
@@ -699,8 +711,8 @@ class _PermisoScreenState extends State<PermisoScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close),
-                        label: const Text('Cerrar'),
+                        icon: const Icon(Icons.close, color: Colors.red),
+                        label: const Text('Cerrar', style: TextStyle(color: Colors.red)),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -878,6 +890,70 @@ class _PermisoScreenState extends State<PermisoScreen> {
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _mostrarDialogoAprobarPermiso(Permiso permiso) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Aprobación'),
+        content: Text(
+          '¿Estás seguro de que quieres aprobar el permiso de ${permiso.nombreCompletoColaborador}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final permisoProvider = context.read<PermisoProvider>();
+              final response = await permisoProvider.aprobarPermiso(permiso.id);
+              if (response != null) {
+                // Mostrar información detallada del permiso aprobado
+                final permisoAprobado = response['permiso_aprobado'];
+                final colaborador = permisoAprobado['colaborador'] ?? permiso.nombreCompletoColaborador;
+                final fecha = permisoAprobado['fecha'] ?? permiso.fecha;
+                final estadoAnterior = permisoAprobado['estado_anterior'] ?? 'Pendiente';
+                final estadoNuevo = permisoAprobado['estado_nuevo'] ?? 'Aprobado';
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '✅ Permiso aprobado correctamente',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text('Colaborador: $colaborador'),
+                        Text('Fecha: $fecha'),
+                        Text('Estado: $estadoAnterior → $estadoNuevo'),
+                      ],
+                    ),
+                    backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 4),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error al aprobar: ${permisoProvider.error}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.successColor),
+            child: const Text('Aprobar'),
           ),
         ],
       ),

@@ -2371,4 +2371,63 @@ class ApiService {
       throw Exception('Error de conexión: $e');
     }
   }
+
+  // Método para obtener usuarios
+  static Future<List<Map<String, dynamic>>> obtenerUsuarios() async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('Token no encontrado');
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/usuarios'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al obtener usuarios');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Método para aprobar permiso
+  static Future<Map<String, dynamic>> aprobarPermiso(String permisoId) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('Token no encontrado');
+      }
+
+      // Usar el endpoint específico para aprobar permisos
+      final url = '$baseUrl/permisos-ausencia/$permisoId/aprobar';
+
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        return responseData;
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al aprobar permiso');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
 } 

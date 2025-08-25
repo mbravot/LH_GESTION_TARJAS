@@ -41,6 +41,30 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
     }
   }
 
+  // Helper para convertir nombre de usuario corto a nombre completo
+  String _getNombreCompletoUsuario(String? nombreUsuario) {
+    if (nombreUsuario == null || nombreUsuario.isEmpty) {
+      return 'No especificado';
+    }
+    
+    // Mapeo de nombres de usuario a nombres completos
+    final Map<String, String> mapeoNombres = {
+      'galarcon': 'Gonzalo Alarcón',
+      'mbravo': 'Miguel Bravo',
+      'jperez': 'Juan Pérez',
+      'mgarcia': 'María García',
+      'lrodriguez': 'Luis Rodríguez',
+      'asanchez': 'Ana Sánchez',
+      'cmartinez': 'Carlos Martínez',
+      'plopez': 'Patricia López',
+      'rgonzalez': 'Roberto González',
+      'dhernandez': 'Daniel Hernández',
+      // Agregar más mapeos según sea necesario
+    };
+    
+    return mapeoNombres[nombreUsuario.toLowerCase()] ?? nombreUsuario;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -102,7 +126,9 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
   List<Tarja> _filtrarTarjas(List<Tarja> tarjas) {
     // Usar las tarjas filtradas del provider si hay filtros avanzados aplicados
     final tarjaProvider = context.read<TarjaProvider>();
-    List<Tarja> tarjasBase = tarjaProvider.filtroContratista.isNotEmpty || tarjaProvider.filtroTipoRendimiento.isNotEmpty
+    List<Tarja> tarjasBase = tarjaProvider.filtroContratista.isNotEmpty || 
+                             tarjaProvider.filtroTipoRendimiento.isNotEmpty ||
+                             tarjaProvider.filtroUsuario.isNotEmpty
         ? tarjaProvider.tarjasFiltradas
         : tarjas;
     
@@ -420,7 +446,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                   Icon(Icons.person, color: Colors.blue, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    'Usuario: ${tarja.nombreUsuario ?? 'No especificado'}',
+                    'Usuario: ${_getNombreCompletoUsuario(tarja.nombreUsuario)}',
                     style: TextStyle(color: textColor.withOpacity(0.7)),
                   ),
                 ],
@@ -1686,6 +1712,81 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: tarjaProvider.filtroUsuario.isEmpty ? null : tarjaProvider.filtroUsuario,
+                      decoration: const InputDecoration(
+                        labelText: 'Usuario',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('Todos los usuarios'),
+                        ),
+                        ...tarjaProvider.usuariosUnicos.map((usuario) {
+                          return DropdownMenuItem<String>(
+                            value: usuario,
+                            child: Text(usuario),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        tarjaProvider.setFiltroUsuario(value ?? '');
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(child: SizedBox()), // Espacio vacío para mantener el layout
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        tarjaProvider.limpiarFiltros();
+                        _searchController.clear();
+                        _onSearchChanged('');
+                        setState(() {
+                          _filtroActivo = null;
+                        });
+                      },
+                      icon: const Icon(Icons.clear_all),
+                      label: const Text('Limpiar filtros'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        tarjaProvider.cargarTarjas();
+                      },
+                      icon: const Icon(Icons.search),
+                      label: const Text('Aplicar filtros'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         );
@@ -1860,7 +1961,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
           Expanded(
             child: Consumer<TarjaProvider>(
               builder: (context, tarjaProvider, child) {
-                final tarjasFiltradas = _filtrarTarjas(tarjaProvider.tarjas);
+                final tarjasFiltradas = _filtrarTarjas(tarjaProvider.tarjasFiltradas.isNotEmpty ? tarjaProvider.tarjasFiltradas : tarjaProvider.tarjas);
                 final gruposPorFecha = _agruparPorFecha(tarjasFiltradas);
                 final fechasOrdenadas = gruposPorFecha.keys.toList()..sort((a, b) => b.compareTo(a));
 

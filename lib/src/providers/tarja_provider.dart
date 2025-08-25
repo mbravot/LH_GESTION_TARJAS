@@ -13,10 +13,15 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
   String? _idSucursal;
   AuthProvider? _authProvider;
   NotificationProvider? _notificationProvider;
+  
+  // Cache de usuarios
+  Map<String, String> _mapeoUsuarios = {};
+  bool _usuariosCargados = false;
 
   // Filtros
   String _filtroContratista = '';
   String _filtroTipoRendimiento = '';
+  String _filtroUsuario = '';
 
   // Getters
   List<Tarja> get tarjas => _tarjas;
@@ -27,6 +32,7 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
   // Getters para filtros
   String get filtroContratista => _filtroContratista;
   String get filtroTipoRendimiento => _filtroTipoRendimiento;
+  String get filtroUsuario => _filtroUsuario;
 
   // Listas únicas para filtros
   List<String> get contratistasUnicos {
@@ -51,6 +57,51 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
       }
     }
     return tipos.toList()..sort();
+  }
+
+  List<String> get usuariosUnicos {
+    final usuarios = <String>{};
+    for (var tarja in _tarjas) {
+      if (tarja.nombreUsuario != null && tarja.nombreUsuario!.isNotEmpty) {
+        // Usar el nombre completo del usuario si está disponible
+        final nombreCompleto = _getNombreCompletoUsuario(tarja.nombreUsuario);
+        usuarios.add(nombreCompleto);
+      }
+    }
+    return usuarios.toList()..sort();
+  }
+
+  // Helper para convertir nombre de usuario corto a nombre completo
+  String _getNombreCompletoUsuario(String? nombreUsuario) {
+    if (nombreUsuario == null || nombreUsuario.isEmpty) {
+      return 'No especificado';
+    }
+    
+    // Si el nombre ya parece ser un nombre completo (contiene espacios), usarlo directamente
+    if (nombreUsuario.contains(' ')) {
+      return nombreUsuario;
+    }
+    
+    // Si tenemos el mapeo dinámico cargado, usarlo
+    if (_mapeoUsuarios.isNotEmpty) {
+      return _mapeoUsuarios[nombreUsuario.toLowerCase()] ?? nombreUsuario;
+    }
+    
+    // Fallback al mapeo estático para casos de emergencia
+    final Map<String, String> mapeoEstatico = {
+      'galarcon': 'Gonzalo Alarcón',
+      'mbravo': 'Miguel Bravo',
+      'jperez': 'Juan Pérez',
+      'mgarcia': 'María García',
+      'lrodriguez': 'Luis Rodríguez',
+      'asanchez': 'Ana Sánchez',
+      'cmartinez': 'Carlos Martínez',
+      'plopez': 'Patricia López',
+      'rgonzalez': 'Roberto González',
+      'dhernandez': 'Daniel Hernández',
+    };
+    
+    return mapeoEstatico[nombreUsuario.toLowerCase()] ?? nombreUsuario;
   }
 
   // Método para configurar el AuthProvider y escuchar cambios
@@ -87,6 +138,36 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
     cargarTarjas();
   }
 
+  // Cargar usuarios
+  Future<void> cargarUsuarios() async {
+    if (_usuariosCargados) return; // Ya están cargados
+    
+    try {
+      final usuarios = await handleApiError(
+        () => ApiService.obtenerUsuarios(),
+        _authProvider!,
+        _notificationProvider,
+      );
+      
+      if (usuarios != null) {
+        _mapeoUsuarios.clear();
+        for (var usuario in usuarios) {
+          final username = usuario['usuario']?.toString().toLowerCase();
+          final nombreCompleto = usuario['nombre_completo']?.toString() ?? '';
+          
+          if (username != null && username.isNotEmpty && nombreCompleto.isNotEmpty) {
+            _mapeoUsuarios[username] = nombreCompleto;
+          }
+        }
+        _usuariosCargados = true;
+        notifyListeners();
+      }
+    } catch (e) {
+      // Si falla la carga de usuarios, continuar con el mapeo estático
+      print('⚠️ No se pudieron cargar usuarios: $e');
+    }
+  }
+
   // Cargar tarjas
   Future<void> cargarTarjas() async {
     if (_idSucursal == null) {
@@ -100,6 +181,11 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
     notifyListeners();
 
     try {
+      // Cargar usuarios en paralelo si no están cargados
+      if (!_usuariosCargados) {
+        cargarUsuarios();
+      }
+      
       final result = await handleApiError(
         () => ApiService().getTarjasByDate(DateTime.now(), _idSucursal!),
         _authProvider!,
@@ -135,10 +221,23 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
     _aplicarFiltros();
   }
 
+  void setFiltroUsuario(String value) {
+    _filtroUsuario = value;
+    _aplicarFiltros();
+  }
+
   void limpiarFiltros() {
     _filtroContratista = '';
     _filtroTipoRendimiento = '';
+    _filtroUsuario = '';
     _aplicarFiltros();
+  }
+
+  // Forzar recarga de usuarios
+  Future<void> recargarUsuarios() async {
+    _usuariosCargados = false;
+    _mapeoUsuarios.clear();
+    await cargarUsuarios();
   }
 
   void _aplicarFiltros() {
@@ -165,6 +264,14 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
         }
         
         if (tipoRendimiento != _filtroTipoRendimiento) {
+          return false;
+        }
+      }
+
+      // Filtro por usuario
+      if (_filtroUsuario.isNotEmpty) {
+        final nombreCompletoUsuario = _getNombreCompletoUsuario(tarja.nombreUsuario);
+        if (nombreCompletoUsuario != _filtroUsuario) {
           return false;
         }
       }

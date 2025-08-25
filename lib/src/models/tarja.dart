@@ -85,7 +85,7 @@ class Tarja {
       tipoRend: json['tipo_rend'] ?? '',
       nombreTipoceco: json['nombre_tipoceco'],
       nombreCeco: json['nombre_ceco'],
-      nombreUsuario: json['nombre_usuario'],
+      nombreUsuario: json['nombre_usuario'] ?? json['nombre_completo'],
       tieneRendimiento: json['tiene_rendimiento'] == 1 || json['tiene_rendimiento'] == true,
       
       // Campos de compatibilidad (aliases)

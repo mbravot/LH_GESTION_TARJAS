@@ -222,7 +222,7 @@ class _RevisionTarjasEditarScreenState extends State<RevisionTarjasEditarScreen>
                      _InfoRow(
                        icon: Icons.person,
                        label: 'Usuario',
-                       value: widget.tarja.nombreUsuario ?? 'No especificado',
+                       value: _getNombreCompletoUsuario(widget.tarja.nombreUsuario),
                        iconColor: Colors.blue,
                      ),
                      const SizedBox(height: 8),
@@ -497,6 +497,30 @@ class _RevisionTarjasEditarScreenState extends State<RevisionTarjasEditarScreen>
     } catch (e) {
       return fecha;
     }
+  }
+
+  // Helper para convertir nombre de usuario corto a nombre completo
+  String _getNombreCompletoUsuario(String? nombreUsuario) {
+    if (nombreUsuario == null || nombreUsuario.isEmpty) {
+      return 'No especificado';
+    }
+    
+    // Mapeo de nombres de usuario a nombres completos
+    final Map<String, String> mapeoNombres = {
+      'galarcon': 'Gonzalo Alarcón',
+      'mbravo': 'Miguel Bravo',
+      'jperez': 'Juan Pérez',
+      'mgarcia': 'María García',
+      'lrodriguez': 'Luis Rodríguez',
+      'asanchez': 'Ana Sánchez',
+      'cmartinez': 'Carlos Martínez',
+      'plopez': 'Patricia López',
+      'rgonzalez': 'Roberto González',
+      'dhernandez': 'Daniel Hernández',
+      // Agregar más mapeos según sea necesario
+    };
+    
+    return mapeoNombres[nombreUsuario.toLowerCase()] ?? nombreUsuario;
   }
 
   String _getTipoTrabajadorText(String? id) {

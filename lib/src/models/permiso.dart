@@ -140,26 +140,48 @@ class Permiso {
     return fecha.isBefore(ahora) && !esHoy;
   }
 
-  // Método para obtener el estado del permiso
+  // Método para obtener el estado del permiso basado en idEstadopermiso
   String get estado {
-    if (esHoy) return 'Hoy';
-    if (esFuturo) return 'Programado';
-    if (esPasado) return 'Completado';
-    return 'Desconocido';
+    // Mapear idEstadopermiso a estados legibles
+    switch (idEstadopermiso) {
+      case '1':
+        return 'Creado';
+      case '2':
+        return 'Aprobado';
+      case '3':
+        return 'Por Aprobar'; // Este es el mismo que Creado pero para aprobación
+      default:
+        return estadoPermiso ?? 'Desconocido';
+    }
   }
 
   // Método para obtener el color del estado
   String get estadoColor {
     switch (estado) {
-      case 'Hoy':
-        return 'orange';
-      case 'Programado':
+      case 'Creado':
         return 'blue';
-      case 'Completado':
+      case 'Aprobado':
         return 'green';
+      case 'Por Aprobar':
+        return 'orange';
       default:
         return 'grey';
     }
+  }
+
+  // Método para verificar si se puede editar
+  bool get sePuedeEditar {
+    return estado == 'Creado' || estado == 'Aprobado';
+  }
+
+  // Método para verificar si se puede eliminar
+  bool get sePuedeEliminar {
+    return estado == 'Creado' || estado == 'Aprobado';
+  }
+
+  // Método para verificar si se puede aprobar
+  bool get sePuedeAprobar {
+    return estado == 'Por Aprobar'; // Los permisos "Por Aprobar" son los que se pueden aprobar
   }
 
   // Método para parsear fechas del backend
