@@ -2430,4 +2430,59 @@ class ApiService {
       throw Exception('Error de conexión: $e');
     }
   }
+
+  // Método para actualizar horas trabajadas de un colaborador en una actividad
+  static Future<Map<String, dynamic>> actualizarHorasColaborador({
+    required String rendimientoId,
+    required double horasTrabajadas,
+    required double horasExtras,
+  }) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('Token no encontrado');
+      }
+
+      final url = '$baseUrl/horas-trabajadas/editar/$rendimientoId';
+      final body = {
+        'horas_trabajadas': horasTrabajadas,
+        'horas_extras': horasExtras,
+      };
+
+      print('🔧 Debug - URL: $url');
+      print('🔧 Debug - Body: ${json.encode(body)}');
+
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(body),
+      );
+
+      print('🔧 Debug - Status Code: ${response.statusCode}');
+      print('🔧 Debug - Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        return responseData;
+      } else {
+        print('🔧 Debug - Error Status Code: ${response.statusCode}');
+        print('🔧 Debug - Error Response: ${response.body}');
+        
+        try {
+          final errorData = json.decode(response.body);
+          throw Exception(errorData['error'] ?? errorData['message'] ?? 'Error al actualizar horas del colaborador');
+        } catch (parseError) {
+          throw Exception('Error HTTP ${response.statusCode}: ${response.body}');
+        }
+      }
+    } catch (e) {
+      print('🔧 Debug - Exception: $e');
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+
 } 

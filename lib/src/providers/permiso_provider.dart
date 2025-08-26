@@ -16,7 +16,7 @@ class PermisoProvider extends ChangeNotifier {
   
   // Variables para filtros
   String _filtroBusqueda = '';
-  String _filtroEstado = '';
+  String _filtroColaborador = '';
   String _filtroTipo = '';
 
   // Getters
@@ -29,7 +29,7 @@ class PermisoProvider extends ChangeNotifier {
   
   // Getters para filtros
   String get filtroBusqueda => _filtroBusqueda;
-  String get filtroEstado => _filtroEstado;
+  String get filtroColaborador => _filtroColaborador;
   String get filtroTipo => _filtroTipo;
 
   // Método para configurar el AuthProvider
@@ -172,9 +172,9 @@ class PermisoProvider extends ChangeNotifier {
     _aplicarFiltros();
   }
 
-  // Método para establecer filtro de estado
-  void setFiltroEstado(String estado) {
-    _filtroEstado = estado;
+  // Método para establecer filtro de colaborador
+  void setFiltroColaborador(String colaborador) {
+    _filtroColaborador = colaborador;
     _aplicarFiltros();
   }
 
@@ -203,10 +203,10 @@ class PermisoProvider extends ChangeNotifier {
       }).toList();
     }
 
-    // Aplicar filtro de estado
-    if (_filtroEstado.isNotEmpty && _filtroEstado != 'todos') {
+    // Aplicar filtro de colaborador
+    if (_filtroColaborador.isNotEmpty) {
       filtrados = filtrados.where((permiso) {
-        return permiso.estado == _filtroEstado;
+        return permiso.nombreCompletoColaborador == _filtroColaborador;
       }).toList();
     }
 
@@ -226,9 +226,16 @@ class PermisoProvider extends ChangeNotifier {
     setFiltroBusqueda(query);
   }
 
-  // Método para filtrar por estado (mantener compatibilidad)
-  void filtrarPorEstado(String estado) {
-    setFiltroEstado(estado);
+  // Método para filtrar por colaborador (mantener compatibilidad)
+  void filtrarPorColaborador(String colaborador) {
+    setFiltroColaborador(colaborador);
+  }
+
+  // Método para filtrar por estado (mantener compatibilidad con fichas)
+  void setFiltroEstado(String estado) {
+    // Para las fichas de colores, usamos el filtro de búsqueda
+    _filtroBusqueda = estado;
+    _aplicarFiltros();
   }
 
   // Método para filtrar por tipo de permiso (mantener compatibilidad)
@@ -239,7 +246,7 @@ class PermisoProvider extends ChangeNotifier {
   // Método para limpiar filtros
   void limpiarFiltros() {
     _filtroBusqueda = '';
-    _filtroEstado = '';
+    _filtroColaborador = '';
     _filtroTipo = '';
     _permisosFiltrados = List.from(_permisos);
     notifyListeners();

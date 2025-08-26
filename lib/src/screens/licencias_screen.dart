@@ -7,6 +7,7 @@ import '../providers/licencia_provider.dart';
 import '../providers/colaborador_provider.dart';
 import '../widgets/main_scaffold.dart';
 import '../theme/app_theme.dart';
+import '../theme/dark_theme_colors.dart';
 import '../services/api_service.dart';
 import 'licencia_crear_screen.dart';
 import 'licencia_editar_screen.dart';
@@ -192,15 +193,14 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
     return Consumer2<LicenciaProvider, ColaboradorProvider>(
       builder: (context, licenciaProvider, colaboradorProvider, child) {
         final theme = Theme.of(context);
-        final isDark = theme.brightness == Brightness.dark;
         
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? Colors.grey[800] : Colors.grey[50],
+            color: DarkThemeColors.getContainerColor(theme),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+              color: DarkThemeColors.getBorderColor(theme),
             ),
           ),
           child: Column(
@@ -399,25 +399,24 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
 
   Widget _buildLicenciaCard(Licencia licencia) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final cardColor = theme.colorScheme.surface;
-    final borderColor = isDark ? Colors.grey[800]! : Colors.grey[200]!;
-    final textColor = theme.colorScheme.onSurface;
+    final cardColor = DarkThemeColors.getCardColor(theme);
+    final borderColor = DarkThemeColors.getBorderColor(theme);
+    final textColor = DarkThemeColors.getPrimaryTextColor(theme);
 
-    // Determinar color del estado
+    // Determinar color del estado con mejor contraste
     Color estadoColor;
     switch (licencia.estadoColor) {
       case 'orange':
-        estadoColor = Colors.orange;
+        estadoColor = DarkThemeColors.getStateColor(theme, Colors.orange);
         break;
       case 'blue':
-        estadoColor = Colors.blue;
+        estadoColor = DarkThemeColors.getStateColor(theme, Colors.blue);
         break;
       case 'green':
-        estadoColor = Colors.green;
+        estadoColor = DarkThemeColors.getStateColor(theme, Colors.green);
         break;
       default:
-        estadoColor = Colors.grey;
+        estadoColor = DarkThemeColors.getStateColor(theme, Colors.grey);
     }
 
     return Card(
@@ -467,7 +466,7 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
                         Text(
                           licencia.periodoFormateadoEspanol,
                           style: TextStyle(
-                            color: textColor.withOpacity(0.7),
+                            color: DarkThemeColors.getSecondaryTextColor(theme),
                             fontSize: 14,
                           ),
                         ),
@@ -477,7 +476,7 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: estadoColor.withOpacity(0.1),
+                      color: DarkThemeColors.getBackgroundWithOpacity(theme, estadoColor, 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: estadoColor,

@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../providers/colaborador_provider.dart';
 import '../widgets/main_scaffold.dart';
 import '../theme/app_theme.dart';
+import '../theme/dark_theme_colors.dart';
 import '../services/api_service.dart';
 import 'colaborador_crear_screen.dart';
 import 'colaborador_editar_screen.dart';
@@ -193,15 +194,14 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
     return Consumer<ColaboradorProvider>(
       builder: (context, colaboradorProvider, child) {
         final theme = Theme.of(context);
-        final isDark = theme.brightness == Brightness.dark;
         
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? Colors.grey[800] : Colors.grey[50],
+            color: DarkThemeColors.getContainerColor(theme),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+              color: DarkThemeColors.getBorderColor(theme),
             ),
           ),
           child: Column(

@@ -133,7 +133,7 @@ class HorasTrabajadasProvider extends ChangeNotifier {
     // Aplicar filtro de colaborador
     if (_filtroColaborador.isNotEmpty) {
       filtrados = filtrados.where((horas) {
-        return horas.idColaborador == _filtroColaborador;
+        return horas.colaborador == _filtroColaborador;
       }).toList();
     }
 
@@ -199,5 +199,29 @@ class HorasTrabajadasProvider extends ChangeNotifier {
   void limpiarError() {
     _error = null;
     notifyListeners();
+  }
+
+  // Método para actualizar horas trabajadas de un colaborador en una actividad
+  Future<Map<String, dynamic>?> actualizarHorasColaborador({
+    required String rendimientoId,
+    required double horasTrabajadas,
+    required double horasExtras,
+  }) async {
+    try {
+      final response = await ApiService.actualizarHorasColaborador(
+        rendimientoId: rendimientoId,
+        horasTrabajadas: horasTrabajadas,
+        horasExtras: horasExtras,
+      );
+      
+      // Recargar los datos para reflejar los cambios
+      await cargarHorasTrabajadas();
+      
+      return response;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return null;
+    }
   }
 }

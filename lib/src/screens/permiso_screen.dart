@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../models/permiso.dart';
 import '../widgets/main_scaffold.dart';
 import '../theme/app_theme.dart';
+import '../theme/dark_theme_colors.dart';
 import 'permiso_crear_screen.dart';
 import 'permiso_editar_screen.dart';
 
@@ -67,14 +68,14 @@ class _PermisoScreenState extends State<PermisoScreen> {
     final permisoProvider = context.read<PermisoProvider>();
     switch (filtro) {
       case 'creados':
-        permisoProvider.filtrarPorEstado('Creado');
+        permisoProvider.setFiltroEstado('Creado');
         break;
       case 'aprobados':
-        permisoProvider.filtrarPorEstado('Aprobado');
+        permisoProvider.setFiltroEstado('Aprobado');
         break;
       case 'porAprobar':
         // Los permisos "Por Aprobar" son los mismos que "Creado" pero para aprobación
-        permisoProvider.filtrarPorEstado('Creado');
+        permisoProvider.setFiltroEstado('Creado');
         break;
       default: // 'todos'
         permisoProvider.limpiarFiltros();
@@ -190,15 +191,14 @@ class _PermisoScreenState extends State<PermisoScreen> {
     return Consumer2<PermisoProvider, ColaboradorProvider>(
       builder: (context, permisoProvider, colaboradorProvider, child) {
         final theme = Theme.of(context);
-        final isDark = theme.brightness == Brightness.dark;
         
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? Colors.grey[800] : Colors.grey[50],
+            color: DarkThemeColors.getContainerColor(theme),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+              color: DarkThemeColors.getBorderColor(theme),
             ),
           ),
           child: Column(
@@ -217,27 +217,27 @@ class _PermisoScreenState extends State<PermisoScreen> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: permisoProvider.filtroEstado.isEmpty ? null : permisoProvider.filtroEstado,
+                      value: permisoProvider.filtroColaborador.isEmpty ? null : permisoProvider.filtroColaborador,
                       decoration: const InputDecoration(
-                        labelText: 'Estado',
+                        labelText: 'Colaborador',
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
                       items: [
                         const DropdownMenuItem<String>(
                           value: null,
-                          child: Text('Todos los estados'),
+                          child: Text('Todos los colaboradores'),
                         ),
-                        ...permisoProvider.estadosUnicos.map((estado) {
+                        ...colaboradorProvider.colaboradores.map((colaborador) {
                           return DropdownMenuItem<String>(
-                            value: estado,
-                            child: Text(estado),
+                            value: colaborador.nombreCompleto,
+                            child: Text(colaborador.nombreCompleto),
                           );
                         }),
                       ],
                       onChanged: (value) {
                         if (value != null) {
-                          permisoProvider.filtrarPorEstado(value);
+                          permisoProvider.filtrarPorColaborador(value);
                         } else {
                           permisoProvider.limpiarFiltros();
                         }
@@ -369,21 +369,23 @@ class _PermisoScreenState extends State<PermisoScreen> {
 
   Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color, String filtro, bool tieneDatos) {
     final isActivo = _filtroActivo == filtro;
+    final theme = Theme.of(context);
+    final stateColor = DarkThemeColors.getStateColor(theme, color);
     
     return GestureDetector(
       onTap: () => _aplicarFiltro(filtro),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isActivo ? color.withOpacity(0.2) : color.withOpacity(0.1),
+          color: isActivo ? DarkThemeColors.getBackgroundWithOpacity(theme, stateColor, 0.2) : DarkThemeColors.getBackgroundWithOpacity(theme, stateColor, 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isActivo ? color : color.withOpacity(0.3),
+            color: isActivo ? stateColor : stateColor.withOpacity(0.3),
             width: isActivo ? 2 : 1,
           ),
           boxShadow: isActivo ? [
             BoxShadow(
-              color: color.withOpacity(0.3),
+              color: stateColor.withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -393,7 +395,7 @@ class _PermisoScreenState extends State<PermisoScreen> {
           children: [
             Icon(
               icono, 
-              color: color, 
+              color: stateColor, 
               size: 24,
             ),
             const SizedBox(height: 4),
@@ -402,14 +404,14 @@ class _PermisoScreenState extends State<PermisoScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: color,
+                color: stateColor,
               ),
             ),
             Text(
               titulo,
               style: TextStyle(
                 fontSize: 10,
-                color: color.withOpacity(0.8),
+                color: stateColor.withOpacity(0.8),
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.center,
@@ -420,7 +422,7 @@ class _PermisoScreenState extends State<PermisoScreen> {
                 width: 20,
                 height: 3,
                 decoration: BoxDecoration(
-                  color: color,
+                  color: stateColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
