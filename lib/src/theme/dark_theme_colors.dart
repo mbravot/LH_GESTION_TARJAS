@@ -29,49 +29,15 @@ class DarkThemeColors {
   static Color get errorBackgroundColor => Colors.red[900]!.withOpacity(0.2);
   static Color get infoBackgroundColor => Colors.blue[900]!.withOpacity(0.2);
   
-  // Método para obtener colores basados en el tema
-  static Color getSurfaceColor(ThemeData theme) {
-    return theme.brightness == Brightness.dark ? surfaceColor : theme.colorScheme.surface;
-  }
-  
-  static Color getCardColor(ThemeData theme) {
-    return theme.brightness == Brightness.dark ? cardColor : Colors.white;
-  }
-  
-  static Color getContainerColor(ThemeData theme) {
-    return theme.brightness == Brightness.dark ? containerColor : Colors.grey[50]!;
-  }
-  
-  static Color getBorderColor(ThemeData theme) {
-    return theme.brightness == Brightness.dark ? borderColor : Colors.grey[300]!;
-  }
-  
-  static Color getPrimaryTextColor(ThemeData theme) {
-    return theme.brightness == Brightness.dark ? primaryTextColor : Colors.black87;
-  }
-  
-  static Color getSecondaryTextColor(ThemeData theme) {
-    return theme.brightness == Brightness.dark ? secondaryTextColor : Colors.grey[700]!;
-  }
-  
-  static Color getTertiaryTextColor(ThemeData theme) {
-    return theme.brightness == Brightness.dark ? tertiaryTextColor : Colors.grey[600]!;
-  }
-  
   // Método para obtener color de fondo con opacidad
-  static Color getBackgroundWithOpacity(ThemeData theme, Color color, double opacity) {
-    final isDark = theme.brightness == Brightness.dark;
-    return isDark ? color.withOpacity(opacity * 1.5) : color.withOpacity(opacity);
+  static Color getBackgroundWithOpacity(Color color, double opacity) {
+    return color.withOpacity(opacity);
   }
   
   // Método para obtener color de estado con mejor contraste
-  static Color getStateColor(ThemeData theme, Color color) {
-    final isDark = theme.brightness == Brightness.dark;
-    if (isDark) {
-      // Aumentar la luminosidad para mejor contraste en tema oscuro
-      final hsl = HSLColor.fromColor(color);
-      return hsl.withLightness((hsl.lightness + 0.2).clamp(0.0, 1.0)).toColor();
-    }
-    return color;
+  static Color getStateColor(Color color) {
+    // Aumentar la luminosidad para mejor contraste en tema oscuro
+    final hsl = HSLColor.fromColor(color);
+    return hsl.withLightness((hsl.lightness + 0.2).clamp(0.0, 1.0)).toColor();
   }
 }

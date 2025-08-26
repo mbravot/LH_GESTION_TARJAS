@@ -198,10 +198,10 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DarkThemeColors.getContainerColor(theme),
+            color: DarkThemeColors.containerColor,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DarkThemeColors.getBorderColor(theme),
+              color: DarkThemeColors.borderColor,
             ),
           ),
           child: Column(

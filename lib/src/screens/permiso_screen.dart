@@ -195,10 +195,10 @@ class _PermisoScreenState extends State<PermisoScreen> {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DarkThemeColors.getContainerColor(theme),
+            color: DarkThemeColors.containerColor,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DarkThemeColors.getBorderColor(theme),
+              color: DarkThemeColors.borderColor,
             ),
           ),
           child: Column(
@@ -370,14 +370,14 @@ class _PermisoScreenState extends State<PermisoScreen> {
   Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color, String filtro, bool tieneDatos) {
     final isActivo = _filtroActivo == filtro;
     final theme = Theme.of(context);
-    final stateColor = DarkThemeColors.getStateColor(theme, color);
+    final stateColor = DarkThemeColors.getStateColor(color);
     
     return GestureDetector(
       onTap: () => _aplicarFiltro(filtro),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isActivo ? DarkThemeColors.getBackgroundWithOpacity(theme, stateColor, 0.2) : DarkThemeColors.getBackgroundWithOpacity(theme, stateColor, 0.1),
+          color: isActivo ? DarkThemeColors.getBackgroundWithOpacity(stateColor, 0.2) : DarkThemeColors.getBackgroundWithOpacity(stateColor, 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isActivo ? stateColor : stateColor.withOpacity(0.3),

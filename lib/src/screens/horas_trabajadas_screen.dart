@@ -448,14 +448,14 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
   }) {
     final isActivo = _filtroActivo == filtro;
     final theme = Theme.of(context);
-    final stateColor = DarkThemeColors.getStateColor(theme, color);
+    final stateColor = DarkThemeColors.getStateColor(color);
     
     return GestureDetector(
       onTap: () => _aplicarFiltro(filtro),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isActivo ? DarkThemeColors.getBackgroundWithOpacity(theme, stateColor, 0.2) : DarkThemeColors.getBackgroundWithOpacity(theme, stateColor, 0.1),
+          color: isActivo ? DarkThemeColors.getBackgroundWithOpacity(stateColor, 0.2) : DarkThemeColors.getBackgroundWithOpacity(stateColor, 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isActivo ? stateColor : stateColor.withOpacity(0.3),
@@ -881,13 +881,13 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
     final theme = Theme.of(context);
     switch (estado.toUpperCase()) {
       case 'MÁS':
-        return DarkThemeColors.getStateColor(theme, Colors.red);
+        return DarkThemeColors.getStateColor(Colors.red);
       case 'MENOS':
-        return DarkThemeColors.getStateColor(theme, Colors.red);
+        return DarkThemeColors.getStateColor(Colors.red);
       case 'EXACTO':
-        return DarkThemeColors.getStateColor(theme, Colors.green);
+        return DarkThemeColors.getStateColor(Colors.green);
       default:
-        return DarkThemeColors.getStateColor(theme, Colors.grey);
+        return DarkThemeColors.getStateColor(Colors.grey);
     }
   }
 
@@ -909,11 +909,11 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
       final theme = Theme.of(context);
       // Basado en el rendimiento para determinar el estado
       if (actividad.rendimiento >= 95 && actividad.rendimiento <= 105) {
-        return DarkThemeColors.getStateColor(theme, Colors.green); // EXACTO
+        return DarkThemeColors.getStateColor(Colors.green); // EXACTO
       } else if (actividad.rendimiento > 105) {
-        return DarkThemeColors.getStateColor(theme, Colors.red); // MÁS
+        return DarkThemeColors.getStateColor(Colors.red); // MÁS
       } else {
-        return DarkThemeColors.getStateColor(theme, Colors.red); // MENOS
+        return DarkThemeColors.getStateColor(Colors.red); // MENOS
       }
     }
 
