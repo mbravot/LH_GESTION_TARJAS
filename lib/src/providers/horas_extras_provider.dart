@@ -190,7 +190,12 @@ class HorasExtrasProvider extends ChangeNotifier {
     // Aplicar filtro de estado
     if (_filtroEstado.isNotEmpty && _filtroEstado != 'todos') {
       filtrados = filtrados.where((rendimiento) {
-        return rendimiento.estadoTrabajo == _filtroEstado;
+        if (_filtroEstado == 'CON_HORAS_EXTRAS') {
+          return rendimiento.actividadesDetalle.any((actividad) => actividad.horasExtras > 0);
+        } else if (_filtroEstado == 'SIN_HORAS_EXTRAS') {
+          return rendimiento.actividadesDetalle.every((actividad) => actividad.horasExtras == 0);
+        }
+        return true;
       }).toList();
     }
 
@@ -227,15 +232,15 @@ class HorasExtrasProvider extends ChangeNotifier {
 
   // Método para obtener estadísticas
   Map<String, int> get estadisticas {
-    final masHoras = _rendimientos.where((r) => r.estadoTrabajo == 'MÁS').length;
-    final menosHoras = _rendimientos.where((r) => r.estadoTrabajo == 'MENOS').length;
-    final exactas = _rendimientos.where((r) => r.estadoTrabajo == 'EXACTO').length;
+    final conHorasExtras = _rendimientos.where((r) => 
+      r.actividadesDetalle.any((actividad) => actividad.horasExtras > 0)).length;
+    final sinHorasExtras = _rendimientos.where((r) => 
+      r.actividadesDetalle.every((actividad) => actividad.horasExtras == 0)).length;
     final total = _rendimientos.length;
 
     return {
-      'mas_horas': masHoras,
-      'menos_horas': menosHoras,
-      'exactas': exactas,
+      'con_horas_extras': conHorasExtras,
+      'sin_horas_extras': sinHorasExtras,
       'total': total,
     };
   }

@@ -214,6 +214,8 @@ class HorasExtras {
 class ActividadDetalle {
   final String idActividad;
   final String nombreActividad;
+  final String labor;
+  final String ceco;
   final double horasTrabajadas;
   final double horasExtras;
   final double rendimiento;
@@ -223,6 +225,8 @@ class ActividadDetalle {
   ActividadDetalle({
     required this.idActividad,
     required this.nombreActividad,
+    required this.labor,
+    required this.ceco,
     required this.horasTrabajadas,
     required this.horasExtras,
     required this.rendimiento,
@@ -234,6 +238,8 @@ class ActividadDetalle {
     return ActividadDetalle(
       idActividad: json['id_actividad']?.toString() ?? '',
       nombreActividad: json['nombre_actividad']?.toString() ?? '',
+      labor: json['labor']?.toString() ?? '',
+      ceco: json['ceco']?.toString() ?? '',
       horasTrabajadas: HorasExtras._toDouble(json['horas_trabajadas']),
       horasExtras: HorasExtras._toDouble(json['horas_extras']),
       rendimiento: HorasExtras._toDouble(json['rendimiento']),

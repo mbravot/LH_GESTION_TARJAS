@@ -399,24 +399,25 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
 
   Widget _buildLicenciaCard(Licencia licencia) {
     final theme = Theme.of(context);
-    final cardColor = DarkThemeColors.cardColor;
-    final borderColor = DarkThemeColors.borderColor;
-    final textColor = DarkThemeColors.primaryTextColor;
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = isDark ? DarkThemeColors.cardColor : Colors.white;
+    final borderColor = isDark ? DarkThemeColors.borderColor : Colors.grey[300]!;
+    final textColor = isDark ? DarkThemeColors.primaryTextColor : Colors.black87;
 
     // Determinar color del estado con mejor contraste
     Color estadoColor;
     switch (licencia.estadoColor) {
       case 'orange':
-        estadoColor = DarkThemeColors.getStateColor(Colors.orange);
+        estadoColor = isDark ? DarkThemeColors.getStateColor(Colors.orange) : Colors.orange;
         break;
       case 'blue':
-        estadoColor = DarkThemeColors.getStateColor(Colors.blue);
+        estadoColor = isDark ? DarkThemeColors.getStateColor(Colors.blue) : Colors.blue;
         break;
       case 'green':
-        estadoColor = DarkThemeColors.getStateColor(Colors.green);
+        estadoColor = isDark ? DarkThemeColors.getStateColor(Colors.green) : Colors.green;
         break;
       default:
-        estadoColor = DarkThemeColors.getStateColor(Colors.grey);
+        estadoColor = isDark ? DarkThemeColors.getStateColor(Colors.grey) : Colors.grey;
     }
 
     return Card(
@@ -466,7 +467,7 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
                         Text(
                           licencia.periodoFormateadoEspanol,
                           style: TextStyle(
-                            color: DarkThemeColors.secondaryTextColor,
+                            color: isDark ? DarkThemeColors.secondaryTextColor : Colors.grey[600],
                             fontSize: 14,
                           ),
                         ),
@@ -476,7 +477,7 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: DarkThemeColors.getBackgroundWithOpacity(estadoColor, 0.1),
+                      color: isDark ? DarkThemeColors.getBackgroundWithOpacity(estadoColor, 0.1) : estadoColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: estadoColor,
@@ -502,7 +503,7 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
                   Text(
                     '${licencia.duracionDias} días',
                     style: TextStyle(
-                      color: textColor.withOpacity(0.7),
+                      color: isDark ? textColor.withOpacity(0.7) : Colors.grey[600],
                       fontSize: 14,
                     ),
                   ),

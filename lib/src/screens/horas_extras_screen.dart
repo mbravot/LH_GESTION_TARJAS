@@ -17,7 +17,7 @@ class HorasExtrasScreen extends StatefulWidget {
 class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
   String _searchQuery = '';
   bool _showFiltros = false;
-  String _filtroActivo = 'todos'; // 'todos', 'mas_horas', 'menos_horas', 'exactas'
+  String _filtroActivo = 'todos'; // 'todos', 'con_horas_extras', 'sin_horas_extras'
   Set<String> _tarjetasExpandidas = {};
 
   @override
@@ -33,14 +33,11 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
     
     final provider = Provider.of<HorasExtrasProvider>(context, listen: false);
     switch (filtro) {
-      case 'mas_horas':
-        provider.setFiltroEstado('MÁS');
+      case 'con_horas_extras':
+        provider.setFiltroEstado('CON_HORAS_EXTRAS');
         break;
-      case 'menos_horas':
-        provider.setFiltroEstado('MENOS');
-        break;
-      case 'exactas':
-        provider.setFiltroEstado('EXACTO');
+      case 'sin_horas_extras':
+        provider.setFiltroEstado('SIN_HORAS_EXTRAS');
         break;
       default: // 'todos'
         provider.setFiltroEstado('');
@@ -105,10 +102,11 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
   }
 
   Widget _buildSearchBar() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: DarkThemeColors.surfaceColor,
+        color: theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -129,11 +127,11 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
             },
             decoration: InputDecoration(
               hintText: 'Buscar por colaborador, actividad o fecha...',
-              hintStyle: TextStyle(color: DarkThemeColors.secondaryTextColor),
+              hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
               prefixIcon: Icon(Icons.search, color: AppTheme.primaryColor),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
-                      icon: Icon(Icons.clear, color: DarkThemeColors.secondaryTextColor),
+                      icon: Icon(Icons.clear, color: theme.colorScheme.onSurface.withOpacity(0.6)),
                       onPressed: () {
                         setState(() {
                           _searchQuery = '';
@@ -145,7 +143,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                     )
                   : null,
               filled: true,
-              fillColor: DarkThemeColors.containerColor,
+              fillColor: theme.colorScheme.surface,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(15),
                 borderSide: BorderSide.none,
@@ -194,15 +192,16 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
   }
 
   Widget _buildFiltrosAvanzados() {
+    final theme = Theme.of(context);
     return Consumer<HorasExtrasProvider>(
       builder: (context, provider, child) {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DarkThemeColors.cardColor,
+            color: theme.cardTheme.color,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DarkThemeColors.borderColor,
+              color: theme.dividerColor,
             ),
           ),
           child: Column(
@@ -224,10 +223,10 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                       value: provider.filtroColaborador.isEmpty ? null : provider.filtroColaborador,
                       decoration: InputDecoration(
                         labelText: 'Colaborador',
-                        labelStyle: TextStyle(color: DarkThemeColors.secondaryTextColor),
+                        labelStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        fillColor: DarkThemeColors.containerColor,
+                        fillColor: theme.colorScheme.surface,
                         filled: true,
                       ),
                       items: [
@@ -253,10 +252,10 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                       value: provider.filtroEstado.isEmpty ? null : provider.filtroEstado,
                       decoration: InputDecoration(
                         labelText: 'Estado',
-                        labelStyle: TextStyle(color: DarkThemeColors.secondaryTextColor),
+                        labelStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        fillColor: DarkThemeColors.containerColor,
+                        fillColor: theme.colorScheme.surface,
                         filled: true,
                       ),
                       items: [
@@ -286,10 +285,10 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                       value: provider.filtroActividad.isEmpty ? null : provider.filtroActividad,
                       decoration: InputDecoration(
                         labelText: 'Actividad',
-                        labelStyle: TextStyle(color: DarkThemeColors.secondaryTextColor),
+                        labelStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        fillColor: DarkThemeColors.containerColor,
+                        fillColor: theme.colorScheme.surface,
                         filled: true,
                       ),
                       items: [
@@ -388,6 +387,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
     required DateTime? value,
     required Function(DateTime?) onChanged,
   }) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: () async {
         final date = await showDatePicker(
@@ -402,12 +402,12 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: DarkThemeColors.secondaryTextColor),
+          labelStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
           ),
           suffixIcon: const Icon(Icons.calendar_today),
-          fillColor: DarkThemeColors.containerColor,
+          fillColor: theme.colorScheme.surface,
           filled: true,
         ),
         child: Text(
@@ -415,7 +415,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
               ? '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}'
               : 'Seleccionar fecha',
           style: TextStyle(
-            color: value != null ? DarkThemeColors.primaryTextColor : DarkThemeColors.secondaryTextColor,
+            color: value != null ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withOpacity(0.6),
           ),
         ),
       ),
@@ -431,41 +431,31 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
         children: [
           Expanded(
             child: _buildTarjetaEstadistica(
-              titulo: 'Más Horas',
-              valor: stats['mas_horas'].toString(),
-              color: Colors.red,
-              icono: Icons.arrow_upward,
-              filtro: 'mas_horas',
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Menos Horas',
-              valor: stats['menos_horas'].toString(),
-              color: Colors.red,
-              icono: Icons.arrow_downward,
-              filtro: 'menos_horas',
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Exactas',
-              valor: stats['exactas'].toString(),
-              color: Colors.green,
-              icono: Icons.check_circle,
-              filtro: 'exactas',
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildTarjetaEstadistica(
               titulo: 'Total',
               valor: stats['total'].toString(),
               color: Colors.orange,
               icono: Icons.list,
               filtro: 'todos',
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildTarjetaEstadistica(
+              titulo: 'Con Horas Extras',
+              valor: stats['con_horas_extras'].toString(),
+              color: Colors.green,
+              icono: Icons.add_circle,
+              filtro: 'con_horas_extras',
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildTarjetaEstadistica(
+              titulo: 'Sin Horas Extras',
+              valor: stats['sin_horas_extras'].toString(),
+              color: Colors.red,
+              icono: Icons.remove_circle,
+              filtro: 'sin_horas_extras',
             ),
           ),
         ],
@@ -541,6 +531,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
 
   Widget _buildListaRendimientos(List<HorasExtras> rendimientos) {
     if (rendimientos.isEmpty) {
+      final theme = Theme.of(context);
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -548,13 +539,13 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: DarkThemeColors.containerColor,
+                color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
                 Icons.work_off,
                 size: 64,
-                color: DarkThemeColors.secondaryTextColor,
+                color: Colors.grey[400],
               ),
             ),
             const SizedBox(height: 16),
@@ -562,7 +553,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
               'No hay rendimientos registrados',
               style: TextStyle(
                 fontSize: 18,
-                color: DarkThemeColors.primaryTextColor,
+                color: Colors.grey[600],
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -571,7 +562,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
               'Los rendimientos aparecerán aquí cuando se carguen datos',
               style: TextStyle(
                 fontSize: 14,
-                color: DarkThemeColors.secondaryTextColor,
+                color: Colors.grey[500],
               ),
               textAlign: TextAlign.center,
             ),
@@ -592,6 +583,8 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
 
   Widget _buildHorasCard(HorasExtras rendimiento) {
     final isExpanded = _tarjetasExpandidas.contains(rendimiento.idColaborador);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -645,7 +638,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: DarkThemeColors.primaryTextColor,
+                                  color: isDark ? DarkThemeColors.primaryTextColor : Colors.black87,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -654,28 +647,14 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                                   Icon(
                                     Icons.calendar_today,
                                     size: 14,
-                                    color: DarkThemeColors.secondaryTextColor,
+                                    color: Colors.purple,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     rendimiento.fechaFormateadaEspanolCompleta,
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: DarkThemeColors.secondaryTextColor,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    Icons.schedule,
-                                    size: 14,
-                                    color: DarkThemeColors.secondaryTextColor,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    rendimiento.nombreDia,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: DarkThemeColors.secondaryTextColor,
+                                      color: isDark ? DarkThemeColors.secondaryTextColor : Colors.grey[600],
                                     ),
                                   ),
                                 ],
@@ -698,14 +677,14 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                               'vs ${rendimiento.horasEsperadasFormateadas}h',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: DarkThemeColors.secondaryTextColor,
+                                color: isDark ? DarkThemeColors.secondaryTextColor : Colors.grey[600],
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Icon(
-                              isExpanded ? Icons.expand_less : Icons.expand_more,
-                              color: DarkThemeColors.secondaryTextColor,
-                            ),
+                                                         Icon(
+                               isExpanded ? Icons.expand_less : Icons.expand_more,
+                               color: isDark ? DarkThemeColors.secondaryTextColor : Colors.grey[600],
+                             ),
                           ],
                         ),
                       ],
@@ -763,15 +742,15 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
             
             // Contenido expandible
             if (isExpanded) ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: DarkThemeColors.getBackgroundWithOpacity(Colors.grey, 0.5),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
-                  ),
-                ),
+                             Container(
+                 padding: const EdgeInsets.all(16),
+                 decoration: BoxDecoration(
+                   color: isDark ? DarkThemeColors.containerColor : Colors.grey[50],
+                   borderRadius: const BorderRadius.only(
+                     bottomLeft: Radius.circular(12),
+                     bottomRight: Radius.circular(12),
+                   ),
+                 ),
                 child: _buildDetalleActividades(rendimiento),
               ),
             ],
@@ -782,6 +761,8 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
   }
 
   Widget _buildDetalleActividades(HorasExtras rendimiento) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     if (rendimiento.actividadesDetalle.isEmpty) {
       return Center(
         child: Padding(
@@ -789,7 +770,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
           child: Text(
             'No hay actividades detalladas disponibles',
             style: TextStyle(
-              color: DarkThemeColors.secondaryTextColor,
+              color: Colors.grey[500],
               fontSize: 14,
             ),
           ),
@@ -800,24 +781,24 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-                         Icon(
-               Icons.list_alt,
-               size: 16,
-               color: DarkThemeColors.primaryTextColor,
-             ),
-             const SizedBox(width: 8),
-             Text(
-               'Detalle de Actividades (${rendimiento.actividadesDetalle.length})',
-               style: TextStyle(
-                 fontWeight: FontWeight.bold,
-                 color: DarkThemeColors.primaryTextColor,
-                 fontSize: 14,
+                 Row(
+           children: [
+                          Icon(
+                Icons.list_alt,
+                size: 16,
+                color: Colors.purple,
+              ),
+              const SizedBox(width: 8),
+                             Text(
+                 'Detalle de Actividades (${rendimiento.actividadesDetalle.length})',
+                 style: TextStyle(
+                   fontWeight: FontWeight.bold,
+                   fontSize: 14,
+                   color: isDark ? DarkThemeColors.primaryTextColor : Colors.black87,
+                 ),
                ),
-             ),
-          ],
-        ),
+           ],
+         ),
         const SizedBox(height: 12),
         ...rendimiento.actividadesDetalle.map((actividad) => _buildActividadItem(actividad)),
       ],
@@ -825,87 +806,106 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
   }
 
   Widget _buildActividadItem(ActividadDetalle actividad) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-                 color: DarkThemeColors.cardColor,
-         borderRadius: BorderRadius.circular(8),
-         border: Border.all(color: DarkThemeColors.borderColor),
+        color: isDark ? Colors.grey[700] : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: isDark ? Colors.grey[600]! : Colors.grey[300]!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  actividad.nombreActividad,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: DarkThemeColors.primaryTextColor,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${actividad.rendimientoFormateado}%',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[700],
-                  ),
-                ),
-              ),
-            ],
-          ),
+                     Row(
+             children: [
+               Expanded(
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                                           Text(
+                        actividad.labor.isNotEmpty ? actividad.labor : 'Sin labor',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: isDark ? DarkThemeColors.primaryTextColor : Colors.black87,
+                        ),
+                      ),
+                     if (actividad.ceco.isNotEmpty) ...[
+                       const SizedBox(height: 2),
+                       Text(
+                         'CECO: ${actividad.ceco}',
+                         style: TextStyle(
+                           fontSize: 12,
+                           color: isDark ? Colors.grey[400] : Colors.grey[600],
+                           fontWeight: FontWeight.w500,
+                         ),
+                       ),
+                     ],
+                   ],
+                 ),
+               ),
+               Container(
+                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                 decoration: BoxDecoration(
+                   color: Colors.blue.withOpacity(0.1),
+                   borderRadius: BorderRadius.circular(12),
+                 ),
+                 child: Text(
+                   '${actividad.rendimientoFormateado}%',
+                   style: TextStyle(
+                     fontSize: 12,
+                     fontWeight: FontWeight.bold,
+                     color: Colors.blue[700],
+                   ),
+                 ),
+               ),
+             ],
+           ),
           const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
                 child: Row(
                   children: [
-                                       Icon(Icons.access_time, size: 14, color: DarkThemeColors.secondaryTextColor),
+                                       Icon(Icons.access_time, size: 14, color: isDark ? Colors.grey[400] : Colors.grey[600]),
                    const SizedBox(width: 4),
                    Text(
                      '${actividad.horasTrabajadasFormateadas}h',
                      style: TextStyle(
                        fontSize: 12,
-                       color: DarkThemeColors.secondaryTextColor,
+                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                      ),
                    ),
                    const SizedBox(width: 12),
-                   Icon(Icons.timer, size: 14, color: DarkThemeColors.secondaryTextColor),
+                   Icon(Icons.timer, size: 14, color: isDark ? Colors.grey[400] : Colors.grey[600]),
                    const SizedBox(width: 4),
                    Text(
                      '${actividad.horasExtrasFormateadas}h',
                      style: TextStyle(
                        fontSize: 12,
-                       color: DarkThemeColors.secondaryTextColor,
+                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                      ),
                    ),
                   ],
                 ),
               ),
-              Row(
-                children: [
-                                   Icon(Icons.schedule, size: 14, color: DarkThemeColors.secondaryTextColor),
-                 const SizedBox(width: 4),
-                 Text(
-                   '${actividad.horaInicioFormateada} - ${actividad.horaFinFormateada}',
-                   style: TextStyle(
-                     fontSize: 12,
-                     color: DarkThemeColors.secondaryTextColor,
-                   ),
-                 ),
-                ],
-              ),
+                                                               Row(
+                    children: [
+                                    Icon(Icons.schedule, size: 14, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${actividad.horaInicioFormateada} - ${actividad.horaFinFormateada}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  ],
+               ),
             ],
           ),
           const SizedBox(height: 8),
@@ -973,13 +973,23 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Actividad: ${actividad.nombreActividad}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
+                         Text(
+               'Actividad: ${actividad.labor.isNotEmpty ? actividad.labor : 'Sin labor'}',
+               style: const TextStyle(
+                 fontWeight: FontWeight.bold,
+                 fontSize: 16,
+               ),
+             ),
+             if (actividad.ceco.isNotEmpty) ...[
+               const SizedBox(height: 4),
+               Text(
+                 'CECO: ${actividad.ceco}',
+                 style: TextStyle(
+                   fontSize: 14,
+                   color: Colors.grey[600],
+                 ),
+               ),
+             ],
             const SizedBox(height: 16),
             TextField(
               controller: horasController,
@@ -1074,13 +1084,13 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
   Color _getEstadoColor(String estado) {
     switch (estado.toUpperCase()) {
       case 'MÁS':
-        return Colors.red;
+        return DarkThemeColors.getStateColor(Colors.red);
       case 'MENOS':
-        return Colors.red;
+        return DarkThemeColors.getStateColor(Colors.red);
       case 'EXACTO':
-        return Colors.green;
+        return DarkThemeColors.getStateColor(Colors.green);
       default:
-        return Colors.grey;
+        return DarkThemeColors.getStateColor(Colors.grey);
     }
   }
 

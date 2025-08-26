@@ -369,23 +369,21 @@ class _PermisoScreenState extends State<PermisoScreen> {
 
   Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color, String filtro, bool tieneDatos) {
     final isActivo = _filtroActivo == filtro;
-    final theme = Theme.of(context);
-    final stateColor = DarkThemeColors.getStateColor(color);
     
     return GestureDetector(
       onTap: () => _aplicarFiltro(filtro),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isActivo ? DarkThemeColors.getBackgroundWithOpacity(stateColor, 0.2) : DarkThemeColors.getBackgroundWithOpacity(stateColor, 0.1),
+          color: isActivo ? color.withOpacity(0.2) : color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isActivo ? stateColor : stateColor.withOpacity(0.3),
+            color: isActivo ? color : color.withOpacity(0.3),
             width: isActivo ? 2 : 1,
           ),
           boxShadow: isActivo ? [
             BoxShadow(
-              color: stateColor.withOpacity(0.3),
+              color: color.withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -395,7 +393,7 @@ class _PermisoScreenState extends State<PermisoScreen> {
           children: [
             Icon(
               icono, 
-              color: stateColor, 
+              color: color, 
               size: 24,
             ),
             const SizedBox(height: 4),
@@ -404,14 +402,14 @@ class _PermisoScreenState extends State<PermisoScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: stateColor,
+                color: color,
               ),
             ),
             Text(
               titulo,
               style: TextStyle(
                 fontSize: 10,
-                color: stateColor.withOpacity(0.8),
+                color: color.withOpacity(0.8),
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.center,
@@ -422,7 +420,7 @@ class _PermisoScreenState extends State<PermisoScreen> {
                 width: 20,
                 height: 3,
                 decoration: BoxDecoration(
-                  color: stateColor,
+                  color: color,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
