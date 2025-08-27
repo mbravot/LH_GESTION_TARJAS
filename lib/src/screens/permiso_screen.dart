@@ -540,33 +540,31 @@ class _PermisoScreenState extends State<PermisoScreen> {
                     ),
                   ),
                   const Spacer(),
-                                     Row(
-                     children: [
-                       // Si estamos en la vista "Por Aprobar", mostrar botón de aprobar
-                       if (_filtroActivo == 'porAprobar' && permiso.estado == 'Creado')
-                         IconButton(
-                           icon: Icon(Icons.check_circle, color: AppTheme.successColor, size: 20),
-                           onPressed: () => _mostrarDialogoAprobarPermiso(permiso),
-                           tooltip: 'Aprobar',
-                         )
-                       else ...[
-                         // Botón de editar (solo para Creados y Aprobados)
-                         if (permiso.sePuedeEditar)
-                           IconButton(
-                             icon: Icon(Icons.edit, color: Colors.green, size: 20),
-                             onPressed: () => _mostrarDialogoEditarPermiso(permiso),
-                             tooltip: 'Editar',
-                           ),
-                         // Botón de eliminar (solo para Creados y Aprobados)
-                         if (permiso.sePuedeEliminar)
-                           IconButton(
-                             icon: Icon(Icons.delete, color: AppTheme.errorColor, size: 20),
-                             onPressed: () => _mostrarDialogoEliminarPermiso(permiso),
-                             tooltip: 'Eliminar',
-                           ),
-                       ],
-                     ],
-                   ),
+                  Row(
+                    children: [
+                      // Si estamos en la vista "Por Aprobar", mostrar botón de aprobar
+                      if (_filtroActivo == 'porAprobar' && permiso.estado == 'Creado')
+                        IconButton(
+                          icon: Icon(Icons.check_circle, color: AppTheme.successColor, size: 20),
+                          onPressed: () => _mostrarDialogoAprobarPermiso(permiso),
+                          tooltip: 'Aprobar',
+                        ),
+                      // Botón de editar (solo para Creados y Aprobados)
+                      if (_filtroActivo != 'porAprobar' && permiso.sePuedeEditar)
+                        IconButton(
+                          icon: Icon(Icons.edit, color: Colors.green, size: 20),
+                          onPressed: () => _mostrarDialogoEditarPermiso(permiso),
+                          tooltip: 'Editar',
+                        ),
+                      // Botón de eliminar (solo para Creados y Aprobados)
+                      if (_filtroActivo != 'porAprobar' && permiso.sePuedeEliminar)
+                        IconButton(
+                          icon: Icon(Icons.delete, color: AppTheme.errorColor, size: 20),
+                          onPressed: () => _mostrarDialogoEliminarPermiso(permiso),
+                          tooltip: 'Eliminar',
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ],

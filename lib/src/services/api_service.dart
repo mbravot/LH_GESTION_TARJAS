@@ -354,6 +354,7 @@ class ApiService {
         endpoint = '$baseUrl/rendimientopropio/actividad/$actividadId';
         break;
       case 'contratista':
+        // Usar el endpoint corregido que ahora filtra por actividad
         endpoint = '$baseUrl/rendimientos/individual/contratista?id_actividad=$actividadId';
         break;
       case 'grupal':
@@ -376,6 +377,8 @@ class ApiService {
       developer.log('📡 Respuesta recibida - Status: ${response.statusCode}');
       developer.log('📡 Body: ${response.body}');
 
+
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         developer.log('📊 Datos decodificados: $data');
@@ -392,6 +395,11 @@ class ApiService {
             }
             return rendimiento;
           }).toList();
+          
+          // Para contratistas, el backend ahora filtra correctamente por actividad
+          if (tipoActividad == 'contratista') {
+            developer.log('🔍 Rendimientos de contratista filtrados por backend para actividad: $actividadId - Total: ${result.length}');
+          }
         } else if (data is Map && data.containsKey('rendimientos')) {
           final rendimientos = data['rendimientos'] as List;
           final actividad = data['actividad'] as Map<String, dynamic>?;

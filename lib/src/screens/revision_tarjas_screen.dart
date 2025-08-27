@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'dart:developer' as developer;
 import '../models/tarja.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tarja_provider.dart';
@@ -39,6 +40,57 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     } else {
       return lightColor ?? theme.colorScheme.onSurface;
     }
+  }
+
+  // Método para filtrar rendimientos que pertenecen a una tarja específica
+  List<Map<String, dynamic>> _filtrarRendimientosPorTarja(Tarja tarja, List<Map<String, dynamic>> rendimientos) {
+    if (rendimientos.isEmpty) return [];
+    
+    // Ahora que el backend filtra correctamente, solo necesitamos verificar que los rendimientos
+    // realmente pertenezcan a esta actividad específica
+    if (tarja.idTipotrabajador == '2' && tarja.idTiporendimiento == '1' && tarja.idContratista != null && tarja.idContratista!.isNotEmpty) {
+      // Para contratistas individuales, verificar que los rendimientos correspondan a esta actividad
+      final rendimientosFiltrados = rendimientos.where((r) {
+        final rendimientoActividadId = r['id_actividad']?.toString();
+        final rendimientoActividadId2 = r['actividad_id']?.toString();
+        final rendimientoTarjaId = r['id_tarja']?.toString();
+        final rendimientoActividadTarjaId = r['id_actividad_tarja']?.toString();
+        
+        developer.log('🔍 Verificando rendimiento para tarja ${tarja.id}:');
+        developer.log('   - Rendimiento actividad ID: $rendimientoActividadId');
+        developer.log('   - Rendimiento actividad ID2: $rendimientoActividadId2');
+        developer.log('   - Rendimiento tarja ID: $rendimientoTarjaId');
+        developer.log('   - Rendimiento actividad tarja ID: $rendimientoActividadTarjaId');
+        
+        final pertenece = rendimientoActividadId == tarja.id || 
+                         rendimientoActividadId2 == tarja.id || 
+                         rendimientoTarjaId == tarja.id ||
+                         rendimientoActividadTarjaId == tarja.id;
+        
+        developer.log('   - Pertenece a la tarja: $pertenece');
+        return pertenece;
+      }).toList();
+      
+      developer.log('🔍 Rendimientos verificados para tarja ${tarja.id}: ${rendimientosFiltrados.length} de ${rendimientos.length}');
+      return rendimientosFiltrados;
+    }
+    
+    // Para otros tipos, devolver todos los rendimientos
+    return rendimientos;
+  }
+
+  // Método para determinar si debería mostrar "Con rendimientos" o "Sin rendimientos"
+  bool _deberiaMostrarConRendimientos(Tarja tarja, List<Map<String, dynamic>> rendimientos) {
+    // Filtrar rendimientos que realmente pertenecen a esta tarja
+    final rendimientosFiltrados = _filtrarRendimientosPorTarja(tarja, rendimientos);
+    
+    // Siempre usar los rendimientos filtrados para determinar el estado real
+    if (rendimientosFiltrados.isNotEmpty) {
+      return true;
+    }
+    
+    // Si no hay rendimientos filtrados, usar la lógica original como fallback
+    return tarja.tieneRendimiento;
   }
 
   // Helper para convertir nombre de usuario corto a nombre completo
@@ -288,6 +340,13 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
         _rendimientosCache[tarjaId] = rendimientosList;
         _rendimientosLoadingState[tarjaId] = false;
       });
+      
+      // Log para debugging
+      developer.log('🔍 Rendimientos cargados para tarja $tarjaId: ${rendimientosList.length}');
+      for (int i = 0; i < rendimientosList.length; i++) {
+        final r = rendimientosList[i];
+        developer.log('🔍 Rendimiento $i: ${r['nombre_actividad'] ?? r['labor'] ?? 'Sin nombre'}');
+      }
     } catch (e) {
       setState(() {
         _rendimientosCache[tarjaId] = [];
@@ -316,10 +375,6 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.colorScheme.surface;
-    // Cambiar el color del borde según si tiene rendimientos o no
-    final borderColor = tarja.tieneRendimiento 
-        ? (isDark ? Colors.green[600]! : Colors.green[400]!)
-        : (isDark ? Colors.red[600]! : Colors.red[400]!);
     final textColor = theme.colorScheme.onSurface;
     final tarjaId = tarja.id;
     final isRendimientosExpanded = _rendimientosExpansionState[tarjaId] ?? false;
@@ -332,6 +387,12 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
         _cargarRendimientos(tarja);
       });
     }
+    
+    // Determinar el color del borde basado en los rendimientos reales cargados
+    final tieneRendimientosReales = _deberiaMostrarConRendimientos(tarja, rendimientos);
+    final borderColor = tieneRendimientosReales 
+        ? (isDark ? Colors.green[600]! : Colors.green[400]!)
+        : (isDark ? Colors.red[600]! : Colors.red[400]!);
 
     return Card(
         color: cardColor,
@@ -403,26 +464,26 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: tarja.tieneRendimiento ? Colors.green[100] : Colors.red[100],
+                          color: _deberiaMostrarConRendimientos(tarja, rendimientos) ? Colors.green[100] : Colors.red[100],
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              tarja.tieneRendimiento ? Icons.check_circle : Icons.cancel,
+                              _deberiaMostrarConRendimientos(tarja, rendimientos) ? Icons.check_circle : Icons.cancel,
                               size: 14,
-                              color: tarja.tieneRendimiento ? Colors.green : Colors.red,
+                              color: _deberiaMostrarConRendimientos(tarja, rendimientos) ? Colors.green : Colors.red,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              tarja.tieneRendimiento 
+                              _deberiaMostrarConRendimientos(tarja, rendimientos)
                                   ? (isLoadingRendimientos 
                                       ? 'Con rendimientos (cargando...)' 
-                                      : 'Con rendimientos (${rendimientos.length})')
+                                      : 'Con rendimientos (${_filtrarRendimientosPorTarja(tarja, rendimientos).length})')
                                   : 'Sin rendimientos',
                               style: TextStyle(
-                                color: tarja.tieneRendimiento ? Colors.green[800] : Colors.red[800],
+                                color: _deberiaMostrarConRendimientos(tarja, rendimientos) ? Colors.green[800] : Colors.red[800],
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -646,6 +707,9 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                            // Determinar el tipo de actividad de manera más robusta
                            Builder(
                              builder: (context) {
+                               // Filtrar rendimientos que pertenecen a esta tarja específica
+                               final rendimientosFiltrados = _filtrarRendimientosPorTarja(tarja, rendimientos);
+                               
                                String tipoActividad;
                                if (tarja.idContratista != null && tarja.idContratista!.isNotEmpty) {
                                  tipoActividad = 'contratista';
@@ -660,22 +724,22 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                                }
                                
                                // Detección automática de grupal basada en los datos
-                               if (rendimientos.isNotEmpty) {
-                                 final primerRendimiento = rendimientos.first;
+                               if (rendimientosFiltrados.isNotEmpty) {
+                                 final primerRendimiento = rendimientosFiltrados.first;
                                  if (primerRendimiento.containsKey('rendimiento_total') && primerRendimiento.containsKey('cantidad_trab')) {
                                    tipoActividad = 'grupal';
                                  }
                                }
                                
-                               // Para todos los tipos, mostrar rendimientos individuales
+                               // Mostrar solo los rendimientos filtrados que pertenecen a esta tarja
                                return Column(
-                                 children: rendimientos.asMap().entries.map((entry) {
+                                 children: rendimientosFiltrados.asMap().entries.map((entry) {
                                    final index = entry.key;
                                    final rendimiento = entry.value;
                                    return Column(
                                      children: [
                                        _buildRendimientoCardCompleto(rendimiento, tarja),
-                                       if (index < rendimientos.length - 1) 
+                                       if (index < rendimientosFiltrados.length - 1) 
                                          const SizedBox(height: 12),
                                      ],
                                    );
@@ -686,7 +750,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                          ],
                        ),
                     // Resumen del total de rendimientos de la actividad
-                    if (rendimientos.isNotEmpty) ...[
+                    if (_filtrarRendimientosPorTarja(tarja, rendimientos).isNotEmpty) ...[
                       const SizedBox(height: 20),
                       const Divider(),
                       const SizedBox(height: 12),
@@ -712,7 +776,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              _calcularTotalRendimientos(rendimientos, tarja),
+                              _calcularTotalRendimientos(_filtrarRendimientosPorTarja(tarja, rendimientos), tarja),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -745,7 +809,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              '\$${_calcularTotalPago(rendimientos, tarja)}',
+                              '\$${_calcularTotalPago(_filtrarRendimientosPorTarja(tarja, rendimientos), tarja)}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
