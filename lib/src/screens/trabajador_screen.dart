@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/trabajador.dart';
 import '../providers/auth_provider.dart';
 import '../providers/trabajador_provider.dart';
-import '../widgets/main_scaffold.dart';
+import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
 import 'trabajador_crear_screen.dart';
@@ -922,10 +922,11 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MainScaffold(
+    return AppLayout(
       title: 'Trabajadores',
       onRefresh: _refrescarDatos,
-      body: Column(
+      currentScreen: 'trabajadores',
+      child: Column(
         children: [
           _buildSearchBar(),
           _buildEstadisticas(),

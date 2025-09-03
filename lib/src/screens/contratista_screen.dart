@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/contratista_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/contratista.dart';
-import '../widgets/main_scaffold.dart';
+import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 import 'contratista_crear_screen.dart';
 import 'contratista_editar_screen.dart';
@@ -68,10 +68,11 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
   Widget build(BuildContext context) {
     return Consumer<ContratistaProvider>(
       builder: (context, provider, child) {
-        return MainScaffold(
-          title: 'Contratistas',
-          onRefresh: _refrescarDatos,
-          body: Column(
+            return AppLayout(
+      title: 'Contratistas',
+      onRefresh: _refrescarDatos,
+      currentScreen: 'contratistas',
+      child: Column(
             children: [
               // Barra de búsqueda y filtros
               _buildSearchBar(),

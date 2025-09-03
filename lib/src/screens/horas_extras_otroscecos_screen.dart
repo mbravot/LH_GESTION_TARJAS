@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/horas_extras_otroscecos_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/horas_extras_otroscecos.dart';
-import '../widgets/main_scaffold.dart';
+import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 
 class HorasExtrasOtrosCecosScreen extends StatefulWidget {
@@ -68,10 +68,11 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
   Widget build(BuildContext context) {
     return Consumer<HorasExtrasOtrosCecosProvider>(
       builder: (context, provider, child) {
-        return MainScaffold(
+        return AppLayout(
           title: 'Horas Extras Otros CECOs',
           onRefresh: _refrescarDatos,
-          body: Column(
+          currentScreen: 'horas_extras_otroscecos',
+          child: Column(
             children: [
               // Barra de búsqueda y filtros
               _buildSearchBar(),

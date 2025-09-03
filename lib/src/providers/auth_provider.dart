@@ -71,11 +71,27 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Verificar si hay un token almacenado
+      final token = await getToken();
+      if (token == null) {
+        _isAuthenticated = false;
+        _userData = null;
+        return;
+      }
+
+      // Intentar cargar los datos del usuario para verificar si el token es válido
       await _loadUserData();
     } catch (e) {
       _error = e.toString();
       _isAuthenticated = false;
       _userData = null;
+      
+      // Si hay error, limpiar el token inválido
+      try {
+        await _authService.logout();
+      } catch (logoutError) {
+        // Ignorar errores del logout
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -91,6 +107,20 @@ class AuthProvider extends ChangeNotifier {
 
   Future<String?> getToken() async {
     return await _authService.getToken();
+  }
+
+  // Verificar si el token actual es válido
+  Future<bool> isTokenValid() async {
+    try {
+      final token = await getToken();
+      if (token == null) return false;
+      
+      // Intentar hacer una llamada simple al servidor para verificar el token
+      await _loadUserData();
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   // Método para manejar sesión expirada

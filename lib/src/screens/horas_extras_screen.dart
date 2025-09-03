@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/horas_extras_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/horas_extras.dart';
-import '../widgets/main_scaffold.dart';
+import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 import '../theme/dark_theme_colors.dart';
 
@@ -79,10 +79,11 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
   Widget build(BuildContext context) {
     return Consumer<HorasExtrasProvider>(
       builder: (context, provider, child) {
-        return MainScaffold(
-          title: 'Horas Extras',
-          onRefresh: _refrescarDatos,
-          body: Column(
+            return AppLayout(
+      title: 'Horas Extras',
+      onRefresh: _refrescarDatos,
+      currentScreen: 'horas_extras',
+      child: Column(
             children: [
               // Barra de búsqueda y filtros
               _buildSearchBar(),

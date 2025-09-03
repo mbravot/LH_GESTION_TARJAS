@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-import '../widgets/main_scaffold.dart';
+import '../widgets/app_layout.dart';
 
 class InfoScreen extends StatefulWidget {
   const InfoScreen({super.key});
@@ -82,9 +82,10 @@ class _InfoScreenState extends State<InfoScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return MainScaffold(
+    return AppLayout(
       title: 'Acerca de',
-      body: Container(
+      currentScreen: 'info',
+      child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -369,8 +370,7 @@ class _InfoScreenState extends State<InfoScreen> with TickerProviderStateMixin {
                         ],
                       ),
                       const SizedBox(height: 15),
-                      _buildContactItem(Icons.email, 'Email', 'soporte@lahornilla.cl'),
-                      _buildContactItem(Icons.phone, 'Teléfono', '+56 9 XXXX XXXX'),
+                      _buildContactItem(Icons.travel_explore, 'Ticket', 'https://tickets.lahornilla.cl/'),
                       _buildContactItem(Icons.location_on, 'Ubicación', 'La Hornilla, Chile'),
                     ],
                   ),

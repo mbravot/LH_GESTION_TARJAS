@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/bono_especial_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/bono_especial.dart';
-import '../widgets/main_scaffold.dart';
+import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 
 class BonoEspecialScreen extends StatefulWidget {
@@ -69,10 +69,11 @@ class _BonoEspecialScreenState extends State<BonoEspecialScreen> {
   Widget build(BuildContext context) {
     return Consumer<BonoEspecialProvider>(
       builder: (context, provider, child) {
-        return MainScaffold(
-          title: 'Bono Especial',
-          onRefresh: _refrescarDatos,
-          body: Column(
+            return AppLayout(
+      title: 'Bono Especial',
+      onRefresh: _refrescarDatos,
+      currentScreen: 'bono_especial',
+      child: Column(
             children: [
               // Barra de búsqueda y filtros
               _buildSearchBar(),

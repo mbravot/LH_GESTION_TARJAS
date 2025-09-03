@@ -5,7 +5,7 @@ import '../models/colaborador.dart';
 import '../providers/auth_provider.dart';
 import '../providers/vacacion_provider.dart';
 import '../providers/colaborador_provider.dart';
-import '../widgets/main_scaffold.dart';
+import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 import '../theme/dark_theme_colors.dart';
 import '../services/api_service.dart';
@@ -841,10 +841,11 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MainScaffold(
+    return AppLayout(
       title: 'Vacaciones',
       onRefresh: _refrescarDatos,
-      body: Column(
+      currentScreen: 'vacaciones',
+      child: Column(
         children: [
           _buildSearchBar(),
           _buildEstadisticas(),

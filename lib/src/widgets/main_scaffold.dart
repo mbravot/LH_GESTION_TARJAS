@@ -18,6 +18,7 @@ import '../theme/app_theme.dart';
 import 'sucursal_selector.dart';
 import 'user_info.dart';
 
+
 class MainScaffold extends StatelessWidget {
   final Widget body;
   final String? title;

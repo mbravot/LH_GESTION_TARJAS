@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/horas_trabajadas_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/horas_trabajadas.dart';
-import '../widgets/main_scaffold.dart';
+import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 import '../theme/dark_theme_colors.dart';
 
@@ -85,10 +85,11 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
   Widget build(BuildContext context) {
     return Consumer<HorasTrabajadasProvider>(
       builder: (context, provider, child) {
-        return MainScaffold(
-          title: 'Horas Trabajadas',
-          onRefresh: _refrescarDatos,
-          body: Column(
+            return AppLayout(
+      title: 'Horas Trabajadas',
+      onRefresh: _refrescarDatos,
+      currentScreen: 'horas_trabajadas',
+      child: Column(
             children: [
               // Barra de búsqueda y filtros
               _buildSearchBar(),

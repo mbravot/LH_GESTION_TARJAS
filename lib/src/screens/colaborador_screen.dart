@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/colaborador.dart';
 import '../providers/auth_provider.dart';
 import '../providers/colaborador_provider.dart';
-import '../widgets/main_scaffold.dart';
+import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 import '../theme/dark_theme_colors.dart';
 import '../services/api_service.dart';
@@ -1030,10 +1030,11 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MainScaffold(
+    return AppLayout(
       title: 'Colaboradores',
       onRefresh: _refrescarDatos,
-      body: Column(
+      currentScreen: 'colaboradores',
+      child: Column(
         children: [
           _buildSearchBar(),
           _buildEstadisticas(),

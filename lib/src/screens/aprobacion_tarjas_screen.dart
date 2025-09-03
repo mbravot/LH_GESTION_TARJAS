@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/tarja.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tarja_provider.dart';
-import '../widgets/main_scaffold.dart';
+import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
 import 'aprobacion_tarjas_editar_screen.dart';
@@ -1951,10 +1951,11 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MainScaffold(
+    return AppLayout(
       title: 'Aprobación de Tarjas',
       onRefresh: _refrescarDatos,
-      body: Column(
+      currentScreen: 'aprobacion_tarjas',
+      child: Column(
         children: [
           _buildSearchBar(),
           _buildEstadisticas(),

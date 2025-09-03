@@ -5,7 +5,7 @@ import '../models/colaborador.dart';
 import '../providers/auth_provider.dart';
 import '../providers/licencia_provider.dart';
 import '../providers/colaborador_provider.dart';
-import '../widgets/main_scaffold.dart';
+import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 import '../theme/dark_theme_colors.dart';
 import '../services/api_service.dart';
@@ -900,10 +900,11 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MainScaffold(
+    return AppLayout(
       title: 'Licencias Médicas',
       onRefresh: _refrescarDatos,
-      body: Column(
+      currentScreen: 'licencias',
+      child: Column(
         children: [
           _buildSearchBar(),
           _buildEstadisticas(),
