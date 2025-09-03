@@ -123,23 +123,6 @@ class _CambiarSucursalScreenState extends State<CambiarSucursalScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppTheme.primaryColor,
-        title: const Text(
-          "Cambiar Sucursal",
-          style: TextStyle(color: Colors.white),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _cargando ? null : () {
-              setState(() => _isRefreshing = true);
-              _cargarSucursales();
-            },
-          ),
-        ],
-      ),
       body: RefreshIndicator(
         onRefresh: () async {
           setState(() => _isRefreshing = true);

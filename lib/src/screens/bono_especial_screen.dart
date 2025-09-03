@@ -3,8 +3,9 @@ import 'package:provider/provider.dart';
 import '../providers/bono_especial_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/bono_especial.dart';
-import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
+import 'bono_especial_crear_screen.dart';
+import 'bono_especial_editar_screen.dart';
 
 class BonoEspecialScreen extends StatefulWidget {
   const BonoEspecialScreen({Key? key}) : super(key: key);
@@ -67,28 +68,14 @@ class _BonoEspecialScreenState extends State<BonoEspecialScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<BonoEspecialProvider>(
-      builder: (context, provider, child) {
-            return AppLayout(
-      title: 'Bono Especial',
-      onRefresh: _refrescarDatos,
-      currentScreen: 'bono_especial',
-      child: Column(
-            children: [
-              // Barra de búsqueda y filtros
-              _buildSearchBar(),
-
-              // Estadísticas
-              _buildEstadisticas(provider),
-
-              // Lista de bonos especiales
-              Expanded(
-                child: _buildListaBonosEspeciales(provider.bonosEspecialesFiltradas),
-              ),
-            ],
-          ),
-        );
-      },
+    return Column(
+      children: [
+        _buildSearchBar(),
+        _buildEstadisticas(),
+        Expanded(
+          child: _buildListaBonosEspeciales(),
+        ),
+      ],
     );
   }
 
@@ -345,54 +332,58 @@ class _BonoEspecialScreenState extends State<BonoEspecialScreen> {
     );
   }
 
-  Widget _buildEstadisticas(BonoEspecialProvider provider) {
-    final stats = provider.estadisticas;
+  Widget _buildEstadisticas() {
+    return Consumer<BonoEspecialProvider>(
+      builder: (context, provider, child) {
+        final stats = provider.estadisticas;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Futuras',
-              valor: stats['futuras'].toString(),
-              color: Colors.blue,
-              icono: Icons.schedule,
-              filtro: 'futuras',
-            ),
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  titulo: 'Futuras',
+                  valor: stats['futuras'].toString(),
+                  color: Colors.blue,
+                  icono: Icons.schedule,
+                  filtro: 'futuras',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  titulo: 'Hoy',
+                  valor: stats['hoy'].toString(),
+                  color: Colors.green,
+                  icono: Icons.today,
+                  filtro: 'hoy',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  titulo: 'Pasadas',
+                  valor: stats['pasadas'].toString(),
+                  color: Colors.grey,
+                  icono: Icons.history,
+                  filtro: 'pasadas',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  titulo: 'Total',
+                  valor: stats['total'].toString(),
+                  color: Colors.orange,
+                  icono: Icons.list,
+                  filtro: 'todos',
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Hoy',
-              valor: stats['hoy'].toString(),
-              color: Colors.green,
-              icono: Icons.today,
-              filtro: 'hoy',
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Pasadas',
-              valor: stats['pasadas'].toString(),
-              color: Colors.grey,
-              icono: Icons.history,
-              filtro: 'pasadas',
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Total',
-              valor: stats['total'].toString(),
-              color: Colors.orange,
-              icono: Icons.list,
-              filtro: 'todos',
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -462,53 +453,59 @@ class _BonoEspecialScreenState extends State<BonoEspecialScreen> {
     );
   }
 
-  Widget _buildListaBonosEspeciales(List<BonoEspecial> bonosEspeciales) {
-    if (bonosEspeciales.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                Icons.card_giftcard,
-                size: 64,
-                color: Colors.grey[400],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No hay bonos especiales registrados',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Los bonos especiales aparecerán aquí cuando se carguen datos',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
-    }
+  Widget _buildListaBonosEspeciales() {
+    return Consumer<BonoEspecialProvider>(
+      builder: (context, provider, child) {
+        final bonosEspeciales = provider.bonosEspecialesFiltradas;
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: bonosEspeciales.length,
-      itemBuilder: (context, index) {
-        final bonoEspecial = bonosEspeciales[index];
-        return _buildBonoEspecialCard(bonoEspecial);
+        if (bonosEspeciales.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    Icons.card_giftcard,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No hay bonos especiales registrados',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Los bonos especiales aparecerán aquí cuando se carguen datos',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: bonosEspeciales.length,
+          itemBuilder: (context, index) {
+            final bonoEspecial = bonosEspeciales[index];
+            return _buildBonoEspecialCard(bonoEspecial);
+          },
+        );
       },
     );
   }

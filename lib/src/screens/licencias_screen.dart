@@ -5,7 +5,6 @@ import '../models/colaborador.dart';
 import '../providers/auth_provider.dart';
 import '../providers/licencia_provider.dart';
 import '../providers/colaborador_provider.dart';
-import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 import '../theme/dark_theme_colors.dart';
 import '../services/api_service.dart';
@@ -193,14 +192,15 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
     return Consumer2<LicenciaProvider, ColaboradorProvider>(
       builder: (context, licenciaProvider, colaboradorProvider, child) {
         final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
         
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DarkThemeColors.containerColor,
+            color: isDark ? Colors.grey[800] : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DarkThemeColors.borderColor,
+              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
             ),
           ),
           child: Column(
@@ -900,119 +900,114 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppLayout(
-      title: 'Licencias Médicas',
-      onRefresh: _refrescarDatos,
-      currentScreen: 'licencias',
-      child: Column(
-        children: [
-          _buildSearchBar(),
-          _buildEstadisticas(),
-          Expanded(
-            child: Consumer<LicenciaProvider>(
-              builder: (context, licenciaProvider, child) {
-                if (licenciaProvider.isLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
+    return Column(
+      children: [
+        _buildSearchBar(),
+        _buildEstadisticas(),
+        Expanded(
+          child: Consumer<LicenciaProvider>(
+            builder: (context, licenciaProvider, child) {
+              if (licenciaProvider.isLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
 
-                if (licenciaProvider.error != null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 80,
+              if (licenciaProvider.error != null) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 80,
+                        color: Colors.red.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error al cargar licencias médicas',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        licenciaProvider.error!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
                           color: Colors.red.withOpacity(0.5),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error al cargar licencias médicas',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red.withOpacity(0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          licenciaProvider.error!,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.red.withOpacity(0.5),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: () => licenciaProvider.cargarLicencias(),
-                          child: const Text('Reintentar'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                final licenciasFiltradas = licenciaProvider.licenciasFiltradas;
-
-                if (licenciasFiltradas.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.medical_services_outlined,
-                          size: 80,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No hay licencias médicas',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Agrega la primera licencia médica para comenzar',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: () => _mostrarDialogoCrearLicencia(),
-                          icon: const Icon(Icons.add),
-                          label: const Text('Agregar Licencia'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  itemCount: licenciasFiltradas.length,
-                  itemBuilder: (context, index) {
-                    return _buildLicenciaCard(licenciasFiltradas[index]);
-                  },
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => licenciaProvider.cargarLicencias(),
+                        child: const Text('Reintentar'),
+                      ),
+                    ],
+                  ),
                 );
-              },
-            ),
+              }
+
+              final licenciasFiltradas = licenciaProvider.licenciasFiltradas;
+
+              if (licenciasFiltradas.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.medical_services_outlined,
+                        size: 80,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No hay licencias médicas',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Agrega la primera licencia médica para comenzar',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () => _mostrarDialogoCrearLicencia(),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Agregar Licencia'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.only(bottom: 16),
+                itemCount: licenciasFiltradas.length,
+                itemBuilder: (context, index) {
+                  return _buildLicenciaCard(licenciasFiltradas[index]);
+                },
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

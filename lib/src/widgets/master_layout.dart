@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/permisos_provider.dart';
+import '../providers/sidebar_provider.dart';
 import '../theme/app_theme.dart';
 import '../screens/revision_tarjas_screen.dart';
 import '../screens/aprobacion_tarjas_screen.dart';
@@ -17,36 +18,44 @@ import '../screens/bono_especial_screen.dart';
 import '../screens/trabajador_screen.dart';
 import '../screens/contratista_screen.dart';
 import '../screens/ejemplo_permisos_screen.dart';
-import '../screens/home_screen.dart';
 import '../screens/info_screen.dart';
 import '../screens/cambiar_clave_screen.dart';
 import '../screens/login_screen.dart';
 import 'sucursal_selector.dart';
 import 'user_info.dart';
 
-class AppLayout extends StatefulWidget {
-  final Widget child;
-  final String? title;
-  final VoidCallback? onRefresh;
-  final String? currentScreen;
-
-  const AppLayout({
-    Key? key,
-    required this.child,
-    this.title,
-    this.onRefresh,
-    this.currentScreen,
-  }) : super(key: key);
+class MasterLayout extends StatefulWidget {
+  const MasterLayout({super.key});
 
   @override
-  State<AppLayout> createState() => _AppLayoutState();
+  State<MasterLayout> createState() => _MasterLayoutState();
 }
 
-class _AppLayoutState extends State<AppLayout>
+class _MasterLayoutState extends State<MasterLayout>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
-  bool _isExpanded = false;
+  int _currentScreenIndex = 0;
+
+  // Lista de todas las pantallas disponibles
+  final List<Map<String, dynamic>> _screens = [
+    {'key': 'home', 'screen': _HomeContent(), 'title': 'Inicio'},
+    {'key': 'revision_tarjas', 'screen': RevisionTarjasScreen(), 'title': 'Revisión de Tarjas'},
+    {'key': 'aprobacion_tarjas', 'screen': AprobacionTarjasScreen(), 'title': 'Aprobación de Tarjas'},
+    {'key': 'colaboradores', 'screen': ColaboradorScreen(), 'title': 'Colaboradores'},
+    {'key': 'licencias', 'screen': LicenciasScreen(), 'title': 'Licencias'},
+    {'key': 'vacaciones', 'screen': VacacionesScreen(), 'title': 'Vacaciones'},
+    {'key': 'permisos', 'screen': PermisoScreen(), 'title': 'Permisos'},
+    {'key': 'horas_trabajadas', 'screen': HorasTrabajadasScreen(), 'title': 'Horas Trabajadas'},
+    {'key': 'horas_extras', 'screen': HorasExtrasScreen(), 'title': 'Horas Extras'},
+    {'key': 'horas_extras_otroscecos', 'screen': HorasExtrasOtrosCecosScreen(), 'title': 'Horas Extras Otros Cecos'},
+    {'key': 'bono_especial', 'screen': BonoEspecialScreen(), 'title': 'Bono Especial'},
+    {'key': 'trabajadores', 'screen': TrabajadorScreen(), 'title': 'Trabajadores'},
+    {'key': 'contratistas', 'screen': ContratistaScreen(), 'title': 'Contratistas'},
+    {'key': 'ejemplo_permisos', 'screen': EjemploPermisosScreen(), 'title': 'Ejemplo de Permisos'},
+    {'key': 'info', 'screen': const InfoScreen(), 'title': 'Acerca de'},
+    {'key': 'cambiar_clave', 'screen': const CambiarClaveScreen(), 'title': 'Cambiar Contraseña'},
+  ];
 
   @override
   void initState() {
@@ -67,21 +76,20 @@ class _AppLayoutState extends State<AppLayout>
     super.dispose();
   }
 
-  void _toggleSidebar() {
-    setState(() {
-      _isExpanded = !_isExpanded;
-      if (_isExpanded) {
-        _animationController.forward();
-      } else {
-        _animationController.reverse();
-      }
-    });
+  void _navigateToScreen(String screenKey) {
+    final index = _screens.indexWhere((screen) => screen['key'] == screenKey);
+    if (index != -1) {
+      setState(() {
+        _currentScreenIndex = index;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
+    final sidebarProvider = Provider.of<SidebarProvider>(context);
     
     return Scaffold(
       body: SafeArea(
@@ -93,7 +101,7 @@ class _AppLayoutState extends State<AppLayout>
               builder: (context, child) {
                 return ClipRect(
                   child: Container(
-                    width: _isExpanded ? 280 : 70,
+                    width: sidebarProvider.isExpanded ? 280 : 70,
                     height: double.infinity,
                     decoration: BoxDecoration(
                       color: AppTheme.primaryColor,
@@ -113,7 +121,7 @@ class _AppLayoutState extends State<AppLayout>
                           padding: const EdgeInsets.all(8),
                           child: Row(
                             children: [
-                              if (_isExpanded) ...[
+                              if (sidebarProvider.isExpanded) ...[
                                 // Logo y título cuando está expandido
                                 ClipOval(
                                   child: Image.asset(
@@ -150,13 +158,20 @@ class _AppLayoutState extends State<AppLayout>
                                 ),
                               ],
                               // Botón de toggle solo cuando está expandido
-                              if (_isExpanded)
+                              if (sidebarProvider.isExpanded)
                                 IconButton(
                                   icon: const Icon(
                                     Icons.chevron_left,
                                     color: Colors.white,
                                   ),
-                                  onPressed: _toggleSidebar,
+                                  onPressed: () {
+                                    sidebarProvider.toggleSidebar();
+                                    if (sidebarProvider.isExpanded) {
+                                      _animationController.forward();
+                                    } else {
+                                      _animationController.reverse();
+                                    }
+                                  },
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(
                                     minWidth: 32,
@@ -179,7 +194,7 @@ class _AppLayoutState extends State<AppLayout>
                                     _buildMenuItem(
                                       icon: Icons.dashboard,
                                       title: 'Inicio',
-                                      onTap: () => _navigateToScreen(context, HomeScreen()),
+                                      onTap: () => _navigateToScreen('home'),
                                       screenKey: 'home',
                                     ),
                                   ],
@@ -192,14 +207,14 @@ class _AppLayoutState extends State<AppLayout>
                                     _buildMenuItem(
                                       icon: Icons.search,
                                       title: 'Revisión de Tarjas',
-                                      onTap: () => _navigateToScreen(context, RevisionTarjasScreen()),
+                                      onTap: () => _navigateToScreen('revision_tarjas'),
                                       permissionId: 2,
                                       screenKey: 'revision_tarjas',
                                     ),
                                     _buildMenuItem(
                                       icon: Icons.fact_check,
                                       title: 'Aprobación de Tarjas',
-                                      onTap: () => _navigateToScreen(context, AprobacionTarjasScreen()),
+                                      onTap: () => _navigateToScreen('aprobacion_tarjas'),
                                       permissionId: 3,
                                       screenKey: 'aprobacion_tarjas',
                                     ),
@@ -213,25 +228,25 @@ class _AppLayoutState extends State<AppLayout>
                                     _buildMenuItem(
                                       icon: Icons.people,
                                       title: 'Colaboradores',
-                                      onTap: () => _navigateToScreen(context, ColaboradorScreen()),
+                                      onTap: () => _navigateToScreen('colaboradores'),
                                       screenKey: 'colaboradores',
                                     ),
                                     _buildMenuItem(
                                       icon: Icons.medical_services,
                                       title: 'Licencias',
-                                      onTap: () => _navigateToScreen(context, LicenciasScreen()),
+                                      onTap: () => _navigateToScreen('licencias'),
                                       screenKey: 'licencias',
                                     ),
                                     _buildMenuItem(
                                       icon: Icons.beach_access,
                                       title: 'Vacaciones',
-                                      onTap: () => _navigateToScreen(context, VacacionesScreen()),
+                                      onTap: () => _navigateToScreen('vacaciones'),
                                       screenKey: 'vacaciones',
                                     ),
                                     _buildMenuItem(
                                       icon: Icons.assignment_turned_in,
                                       title: 'Permisos',
-                                      onTap: () => _navigateToScreen(context, PermisoScreen()),
+                                      onTap: () => _navigateToScreen('permisos'),
                                       screenKey: 'permisos',
                                     ),
                                   ],
@@ -244,25 +259,25 @@ class _AppLayoutState extends State<AppLayout>
                                     _buildMenuItem(
                                       icon: Icons.access_time,
                                       title: 'Horas Trabajadas',
-                                      onTap: () => _navigateToScreen(context, HorasTrabajadasScreen()),
+                                      onTap: () => _navigateToScreen('horas_trabajadas'),
                                       screenKey: 'horas_trabajadas',
                                     ),
                                     _buildMenuItem(
                                       icon: Icons.more_time,
                                       title: 'Horas Extras',
-                                      onTap: () => _navigateToScreen(context, HorasExtrasScreen()),
+                                      onTap: () => _navigateToScreen('horas_extras'),
                                       screenKey: 'horas_extras',
                                     ),
                                     _buildMenuItem(
                                       icon: Icons.add_circle_outline,
                                       title: 'Horas Extras Otros Cecos',
-                                      onTap: () => _navigateToScreen(context, HorasExtrasOtrosCecosScreen()),
+                                      onTap: () => _navigateToScreen('horas_extras_otroscecos'),
                                       screenKey: 'horas_extras_otroscecos',
                                     ),
                                     _buildMenuItem(
                                       icon: Icons.card_giftcard,
                                       title: 'Bono Especial',
-                                      onTap: () => _navigateToScreen(context, BonoEspecialScreen()),
+                                      onTap: () => _navigateToScreen('bono_especial'),
                                       screenKey: 'bono_especial',
                                     ),
                                   ],
@@ -275,13 +290,13 @@ class _AppLayoutState extends State<AppLayout>
                                     _buildMenuItem(
                                       icon: Icons.people,
                                       title: 'Trabajadores',
-                                      onTap: () => _navigateToScreen(context, TrabajadorScreen()),
+                                      onTap: () => _navigateToScreen('trabajadores'),
                                       screenKey: 'trabajadores',
                                     ),
                                     _buildMenuItem(
                                       icon: Icons.groups,
                                       title: 'Contratistas',
-                                      onTap: () => _navigateToScreen(context, ContratistaScreen()),
+                                      onTap: () => _navigateToScreen('contratistas'),
                                       screenKey: 'contratistas',
                                     ),
                                   ],
@@ -294,7 +309,7 @@ class _AppLayoutState extends State<AppLayout>
                                     _buildMenuItem(
                                       icon: Icons.security,
                                       title: 'Ejemplo de Permisos',
-                                      onTap: () => _navigateToScreen(context, EjemploPermisosScreen()),
+                                      onTap: () => _navigateToScreen('ejemplo_permisos'),
                                       screenKey: 'ejemplo_permisos',
                                     ),
                                   ],
@@ -306,14 +321,14 @@ class _AppLayoutState extends State<AppLayout>
                                 _buildMenuItem(
                                   icon: Icons.info,
                                   title: 'Acerca de',
-                                  onTap: () => _navigateToScreen(context, InfoScreen()),
+                                  onTap: () => _navigateToScreen('info'),
                                   iconColor: Colors.blue,
                                   screenKey: 'info',
                                 ),
                                 _buildMenuItem(
                                   icon: Icons.lock,
                                   title: 'Cambiar Contraseña',
-                                  onTap: () => _navigateToScreen(context, CambiarClaveScreen()),
+                                  onTap: () => _navigateToScreen('cambiar_clave'),
                                   iconColor: Colors.amber,
                                   screenKey: 'cambiar_clave',
                                 ),
@@ -358,33 +373,44 @@ class _AppLayoutState extends State<AppLayout>
                         // Botón de menú
                         IconButton(
                           icon: const Icon(Icons.menu, color: Colors.white),
-                          onPressed: _toggleSidebar,
+                          onPressed: () {
+                            sidebarProvider.toggleSidebar();
+                            if (sidebarProvider.isExpanded) {
+                              _animationController.forward();
+                            } else {
+                              _animationController.reverse();
+                            }
+                          },
                         ),
                         
                         // Título
-                        if (widget.title != null) ...[
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Text(
-                              widget.title!,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            _screens[_currentScreenIndex]['title'],
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ],
+                        ),
                         
                         // Acciones del usuario
                         const UserInfo(),
                         const SucursalSelector(),
                         
-                        // Botón de actualizar
-                        if (widget.onRefresh != null)
+                        // Botón de actualizar para pantallas específicas
+                        if (_screens[_currentScreenIndex]['key'] == 'horas_trabajadas' ||
+                            _screens[_currentScreenIndex]['key'] == 'revision_tarjas' ||
+                            _screens[_currentScreenIndex]['key'] == 'aprobacion_tarjas')
                           IconButton(
                             icon: const Icon(Icons.refresh, color: Colors.white),
-                            onPressed: widget.onRefresh,
+                            onPressed: () {
+                              // Aquí podrías implementar la lógica de refresh específica para cada pantalla
+                              // Por ahora solo hacemos un rebuild
+                              setState(() {});
+                            },
                           ),
                         
                         // Botón de tema
@@ -404,9 +430,14 @@ class _AppLayoutState extends State<AppLayout>
                       ],
                     ),
                   ),
-                  
-                  // Contenido del body
-                  Expanded(child: widget.child),
+                   
+                  // Contenido del body usando IndexedStack para mantener el estado
+                  Expanded(
+                    child: IndexedStack(
+                      index: _currentScreenIndex,
+                      children: _screens.map((screen) => screen['screen'] as Widget).toList(),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -417,10 +448,12 @@ class _AppLayoutState extends State<AppLayout>
   }
 
   Widget _buildMenuSection(String title, List<Widget> children) {
+    final sidebarProvider = Provider.of<SidebarProvider>(context);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_isExpanded) ...[
+        if (sidebarProvider.isExpanded) ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
@@ -448,6 +481,8 @@ class _AppLayoutState extends State<AppLayout>
     int? permissionId,
     String? screenKey,
   }) {
+    final sidebarProvider = Provider.of<SidebarProvider>(context);
+    
     // Verificar permisos si se especifica
     if (permissionId != null) {
       final permisosProvider = Provider.of<PermisosProvider>(context, listen: false);
@@ -457,9 +492,7 @@ class _AppLayoutState extends State<AppLayout>
     }
 
     // Determinar si este elemento está activo
-    final isActive = widget.currentScreen != null && 
-                     screenKey != null && 
-                     widget.currentScreen == screenKey;
+    final isActive = _screens[_currentScreenIndex]['key'] == screenKey;
 
     return AnimatedBuilder(
       animation: _animation,
@@ -480,7 +513,7 @@ class _AppLayoutState extends State<AppLayout>
                 message: title,
                 child: Container(
                   padding: EdgeInsets.symmetric(
-                    horizontal: _isExpanded ? 16 : 8,
+                    horizontal: sidebarProvider.isExpanded ? 16 : 8,
                     vertical: 12,
                   ),
                   child: Row(
@@ -490,7 +523,7 @@ class _AppLayoutState extends State<AppLayout>
                         color: isActive ? Colors.yellow : (iconColor ?? Colors.white),
                         size: 24,
                       ),
-                      if (_isExpanded) ...[
+                      if (sidebarProvider.isExpanded) ...[
                         const SizedBox(width: 16),
                         Expanded(
                           child: Text(
@@ -511,13 +544,6 @@ class _AppLayoutState extends State<AppLayout>
           ),
         );
       },
-    );
-  }
-
-  void _navigateToScreen(BuildContext context, dynamic screen) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => screen),
     );
   }
 
@@ -549,6 +575,33 @@ class _AppLayoutState extends State<AppLayout>
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
             child: const Text('Cerrar Sesión'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Widget para el contenido de la pantalla de inicio
+class _HomeContent extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Bienvenido a LH Gestión Tarjas',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Selecciona una opción del menú lateral para comenzar.',
+            style: TextStyle(fontSize: 16),
           ),
         ],
       ),

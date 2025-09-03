@@ -5,7 +5,6 @@ import '../models/colaborador.dart';
 import '../providers/auth_provider.dart';
 import '../providers/vacacion_provider.dart';
 import '../providers/colaborador_provider.dart';
-import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 import '../theme/dark_theme_colors.dart';
 import '../services/api_service.dart';
@@ -196,14 +195,15 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
     return Consumer2<VacacionProvider, ColaboradorProvider>(
       builder: (context, vacacionProvider, colaboradorProvider, child) {
         final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
         
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DarkThemeColors.containerColor,
+            color: isDark ? Colors.grey[800] : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DarkThemeColors.borderColor,
+              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
             ),
           ),
           child: Column(
@@ -841,119 +841,114 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppLayout(
-      title: 'Vacaciones',
-      onRefresh: _refrescarDatos,
-      currentScreen: 'vacaciones',
-      child: Column(
-        children: [
-          _buildSearchBar(),
-          _buildEstadisticas(),
-          Expanded(
-            child: Consumer<VacacionProvider>(
-              builder: (context, vacacionProvider, child) {
-                if (vacacionProvider.isLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
+    return Column(
+      children: [
+        _buildSearchBar(),
+        _buildEstadisticas(),
+        Expanded(
+          child: Consumer<VacacionProvider>(
+            builder: (context, vacacionProvider, child) {
+              if (vacacionProvider.isLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
 
-                if (vacacionProvider.error != null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 80,
+              if (vacacionProvider.error != null) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 80,
+                        color: Colors.red.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error al cargar vacaciones',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        vacacionProvider.error!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
                           color: Colors.red.withOpacity(0.5),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error al cargar vacaciones',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red.withOpacity(0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          vacacionProvider.error!,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.red.withOpacity(0.5),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: () => vacacionProvider.cargarVacaciones(),
-                          child: const Text('Reintentar'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                final vacacionesFiltradas = vacacionProvider.vacacionesFiltradas;
-
-                if (vacacionesFiltradas.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.beach_access_outlined,
-                          size: 80,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No hay vacaciones',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Agrega la primera vacación para comenzar',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: () => _mostrarDialogoCrearVacacion(),
-                          icon: const Icon(Icons.add),
-                          label: const Text('Agregar Vacación'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  itemCount: vacacionesFiltradas.length,
-                  itemBuilder: (context, index) {
-                    return _buildVacacionCard(vacacionesFiltradas[index]);
-                  },
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => vacacionProvider.cargarVacaciones(),
+                        child: const Text('Reintentar'),
+                      ),
+                    ],
+                  ),
                 );
-              },
-            ),
+              }
+
+              final vacacionesFiltradas = vacacionProvider.vacacionesFiltradas;
+
+              if (vacacionesFiltradas.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.beach_access_outlined,
+                        size: 80,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No hay vacaciones',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Agrega la primera vacación para comenzar',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () => _mostrarDialogoCrearVacacion(),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Agregar Vacación'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.only(bottom: 16),
+                itemCount: vacacionesFiltradas.length,
+                itemBuilder: (context, index) {
+                  return _buildVacacionCard(vacacionesFiltradas[index]);
+                },
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

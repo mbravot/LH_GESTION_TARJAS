@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/horas_trabajadas_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/horas_trabajadas.dart';
-import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 import '../theme/dark_theme_colors.dart';
 
@@ -85,24 +84,19 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
   Widget build(BuildContext context) {
     return Consumer<HorasTrabajadasProvider>(
       builder: (context, provider, child) {
-            return AppLayout(
-      title: 'Horas Trabajadas',
-      onRefresh: _refrescarDatos,
-      currentScreen: 'horas_trabajadas',
-      child: Column(
-            children: [
-              // Barra de búsqueda y filtros
-              _buildSearchBar(),
-              
-              // Estadísticas
-              _buildEstadisticas(provider),
-              
-              // Lista de horas trabajadas
-              Expanded(
-                child: _buildListaHoras(provider.horasTrabajadasFiltradas),
-              ),
-            ],
-          ),
+        return Column(
+          children: [
+            // Barra de búsqueda y filtros
+            _buildSearchBar(),
+            
+            // Estadísticas
+            _buildEstadisticas(provider),
+            
+            // Lista de horas trabajadas
+            Expanded(
+              child: _buildListaHorasTrabajadas(provider),
+            ),
+          ],
         );
       },
     );
@@ -506,9 +500,9 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
     );
   }
 
-  Widget _buildListaHoras(List<HorasTrabajadas> horas) {
+  Widget _buildListaHorasTrabajadas(HorasTrabajadasProvider provider) {
     
-    if (horas.isEmpty) {
+    if (provider.horasTrabajadasFiltradas.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -550,9 +544,9 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: horas.length,
+      itemCount: provider.horasTrabajadasFiltradas.length,
       itemBuilder: (context, index) {
-        final hora = horas[index];
+        final hora = provider.horasTrabajadasFiltradas[index];
         return _buildHorasCard(hora);
       },
     );

@@ -92,156 +92,148 @@ class _CambiarClaveScreenState extends State<CambiarClaveScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Cambiar Contraseña"),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Card(
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Ingresa tus Contraseñas',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: AppTheme.textPrimaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _claveActualController,
-                          obscureText: !_mostrarClaveActual,
-                          validator: _validarClave,
-                          decoration: InputDecoration(
-                            labelText: "Contraseña actual",
-                            prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.primaryColor),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _mostrarClaveActual ? Icons.visibility_off : Icons.visibility,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _mostrarClaveActual = !_mostrarClaveActual;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _nuevaClaveController,
-                          obscureText: !_mostrarNuevaClave,
-                          validator: _validarClave,
-                          decoration: InputDecoration(
-                            labelText: "Nueva contraseña",
-                            prefixIcon: const Icon(Icons.lock, color: AppTheme.primaryColor),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _mostrarNuevaClave ? Icons.visibility_off : Icons.visibility,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _mostrarNuevaClave = !_mostrarNuevaClave;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _confirmarClaveController,
-                          obscureText: !_mostrarConfirmarClave,
-                          validator: _validarClave,
-                          decoration: InputDecoration(
-                            labelText: "Confirmar nueva contraseña",
-                            prefixIcon: const Icon(Icons.lock_clock, color: AppTheme.primaryColor),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _mostrarConfirmarClave ? Icons.visibility_off : Icons.visibility,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _mostrarConfirmarClave = !_mostrarConfirmarClave;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Cambiar Contraseña',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              
+              // Campo de contraseña actual
+              TextFormField(
+                controller: _claveActualController,
+                obscureText: !_mostrarClaveActual,
+                decoration: InputDecoration(
+                  labelText: 'Contraseña Actual',
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _mostrarClaveActual ? Icons.visibility : Icons.visibility_off,
                     ),
+                    onPressed: () {
+                      setState(() {
+                        _mostrarClaveActual = !_mostrarClaveActual;
+                      });
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                if (_errorMensaje != null) ...[
-                  const SizedBox(height: 16),
-                  Card(
-                    color: AppTheme.errorColor.withOpacity(0.1),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.error_outline, color: AppTheme.errorColor),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _errorMensaje!,
-                              style: const TextStyle(color: AppTheme.errorColor),
-                            ),
-                          ),
-                        ],
+                validator: _validarClave,
+              ),
+              const SizedBox(height: 16),
+              
+              // Campo de nueva contraseña
+              TextFormField(
+                controller: _nuevaClaveController,
+                obscureText: !_mostrarNuevaClave,
+                decoration: InputDecoration(
+                  labelText: 'Nueva Contraseña',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _mostrarNuevaClave ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _mostrarNuevaClave = !_mostrarNuevaClave;
+                      });
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                validator: _validarClave,
+              ),
+              const SizedBox(height: 16),
+              
+              // Campo de confirmar contraseña
+              TextFormField(
+                controller: _confirmarClaveController,
+                obscureText: !_mostrarConfirmarClave,
+                decoration: InputDecoration(
+                  labelText: 'Confirmar Nueva Contraseña',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _mostrarConfirmarClave ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _mostrarConfirmarClave = !_mostrarConfirmarClave;
+                      });
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                validator: _validarClave,
+              ),
+              const SizedBox(height: 24),
+              
+              // Mensaje de error
+              if (_errorMensaje != null)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error, color: Colors.red),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _errorMensaje!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _cargando ? null : _cambiarClave,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: _cargando
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.save, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text(
-                              "Cambiar Contraseña",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
                 ),
-              ],
-            ),
+              const SizedBox(height: 24),
+              
+              // Botón de cambiar contraseña
+              ElevatedButton(
+                onPressed: _cargando ? null : _cambiarClave,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: _cargando
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text(
+                        'Cambiar Contraseña',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+              ),
+            ],
           ),
         ),
       ),

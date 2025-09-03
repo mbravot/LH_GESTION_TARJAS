@@ -17,6 +17,7 @@ import 'src/providers/horas_extras_otroscecos_provider.dart';
 import 'src/providers/bono_especial_provider.dart';
 import 'src/providers/contratista_provider.dart';
 import 'src/providers/notification_provider.dart';
+import 'src/providers/sidebar_provider.dart';
 import 'src/screens/splash_screen.dart';
 import 'src/theme/app_theme.dart';
 import 'src/widgets/session_handler_wrapper.dart';
@@ -43,6 +44,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => BonoEspecialProvider()),
         ChangeNotifierProvider(create: (_) => ContratistaProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => SidebarProvider()),
       ],
       child: const MyApp(),
     ),

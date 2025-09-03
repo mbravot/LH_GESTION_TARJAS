@@ -4,9 +4,7 @@ import '../providers/permiso_provider.dart';
 import '../providers/colaborador_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/permiso.dart';
-import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
-import '../theme/dark_theme_colors.dart';
 import 'permiso_crear_screen.dart';
 import 'permiso_editar_screen.dart';
 
@@ -191,14 +189,15 @@ class _PermisoScreenState extends State<PermisoScreen> {
     return Consumer2<PermisoProvider, ColaboradorProvider>(
       builder: (context, permisoProvider, colaboradorProvider, child) {
         final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
         
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DarkThemeColors.containerColor,
+            color: isDark ? Colors.grey[800] : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DarkThemeColors.borderColor,
+              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
             ),
           ),
           child: Column(
@@ -432,461 +431,190 @@ class _PermisoScreenState extends State<PermisoScreen> {
   }
 
   Widget _buildPermisoCard(Permiso permiso) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final cardColor = theme.colorScheme.surface;
-    final borderColor = isDark ? Colors.grey[800]! : Colors.grey[200]!;
-    final textColor = theme.colorScheme.onSurface;
-
-    // Determinar color del estado
-    Color estadoColor;
-    switch (permiso.estadoColor) {
-      case 'orange':
-        estadoColor = Colors.orange;
-        break;
-      case 'blue':
-        estadoColor = Colors.blue;
-        break;
-      case 'green':
-        estadoColor = Colors.green;
-        break;
-      default:
-        estadoColor = Colors.grey;
-    }
-
     return Card(
-      color: cardColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-        side: BorderSide(color: borderColor, width: 1),
-      ),
+      margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: InkWell(
-        onTap: () => _mostrarDetallesPermiso(permiso),
-        borderRadius: BorderRadius.circular(15),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: estadoColor.withOpacity(0.2),
-                    radius: 20,
-                    child: Icon(
-                      _getEstadoIcon(permiso.estado),
-                      color: estadoColor,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          permiso.nombreCompletoColaborador,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${permiso.tipoPermiso ?? 'Sin tipo'} - ${permiso.horas} horas',
-                          style: TextStyle(
-                            color: textColor.withOpacity(0.7),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: estadoColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: estadoColor.withOpacity(0.3)),
-                    ),
-                    child: Text(
-                      permiso.estado,
-                      style: TextStyle(
-                        color: estadoColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today,
-                    size: 16,
-                    color: Colors.purple,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    permiso.fechaFormateadaEspanol,
-                    style: TextStyle(
-                      color: textColor.withOpacity(0.8),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      // Si estamos en la vista "Por Aprobar", mostrar botón de aprobar
-                      if (_filtroActivo == 'porAprobar' && permiso.estado == 'Creado')
-                        IconButton(
-                          icon: Icon(Icons.check_circle, color: AppTheme.successColor, size: 20),
-                          onPressed: () => _mostrarDialogoAprobarPermiso(permiso),
-                          tooltip: 'Aprobar',
-                        ),
-                      // Botón de editar (solo para Creados y Aprobados)
-                      if (_filtroActivo != 'porAprobar' && permiso.sePuedeEditar)
-                        IconButton(
-                          icon: Icon(Icons.edit, color: Colors.green, size: 20),
-                          onPressed: () => _mostrarDialogoEditarPermiso(permiso),
-                          tooltip: 'Editar',
-                        ),
-                      // Botón de eliminar (solo para Creados y Aprobados)
-                      if (_filtroActivo != 'porAprobar' && permiso.sePuedeEliminar)
-                        IconButton(
-                          icon: Icon(Icons.delete, color: AppTheme.errorColor, size: 20),
-                          onPressed: () => _mostrarDialogoEliminarPermiso(permiso),
-                          tooltip: 'Eliminar',
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: CircleAvatar(
+          backgroundColor: _getColorEstado(permiso.estadoPermiso),
+          child: Icon(
+            _getIconEstado(permiso.estadoPermiso),
+            color: Colors.white,
+            size: 20,
           ),
         ),
+        title: Text(
+          permiso.nombreCompletoColaborador,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              'Tipo: ${permiso.tipoPermiso ?? 'N/A'}',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Fecha: ${permiso.fechaFormateadaEspanol}',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Horas: ${permiso.horas}',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Estado: ${permiso.estadoPermiso ?? 'N/A'}',
+              style: TextStyle(
+                color: _getColorEstado(permiso.estadoPermiso),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) => _manejarAccionPermiso(value, permiso),
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'editar',
+              child: Row(
+                children: [
+                  Icon(Icons.edit, size: 18),
+                  SizedBox(width: 8),
+                  Text('Editar'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'eliminar',
+              child: Row(
+                children: [
+                  Icon(Icons.delete, size: 18),
+                  SizedBox(width: 8),
+                  Text('Eliminar'),
+                ],
+              ),
+            ),
+          ],
+        ),
+        onTap: () => _mostrarDetallesPermiso(permiso),
       ),
     );
   }
 
-  IconData _getEstadoIcon(String estado) {
-    switch (estado) {
-      case 'Creado':
-        return Icons.create;
-      case 'Aprobado':
+  Color _getColorEstado(String? estado) {
+    switch (estado?.toLowerCase()) {
+      case 'aprobado':
+        return Colors.green;
+      case 'rechazado':
+        return Colors.red;
+      case 'creado':
+      case 'por aprobar':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getIconEstado(String? estado) {
+    switch (estado?.toLowerCase()) {
+      case 'aprobado':
         return Icons.check_circle;
-      case 'Por Aprobar':
+      case 'rechazado':
+        return Icons.cancel;
+      case 'creado':
+      case 'por aprobar':
         return Icons.pending;
       default:
-        return Icons.assignment;
+        return Icons.help;
+    }
+  }
+
+  void _manejarAccionPermiso(String accion, Permiso permiso) {
+    switch (accion) {
+      case 'editar':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PermisoEditarScreen(permiso: permiso),
+          ),
+        );
+        break;
+      case 'eliminar':
+        _mostrarDialogoConfirmarEliminacion(permiso);
+        break;
     }
   }
 
   void _mostrarDetallesPermiso(Permiso permiso) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).colorScheme.surface,
-                Theme.of(context).colorScheme.surface.withOpacity(0.8),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
+      builder: (context) => AlertDialog(
+        title: const Text('Detalles del Permiso'),
+        content: SingleChildScrollView(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header moderno
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                  gradient: LinearGradient(
-                    colors: [
-                      AppTheme.primaryColor,
-                      AppTheme.primaryColor.withOpacity(0.8),
-                    ],
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.access_time,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Detalles del Permiso',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            permiso.nombreCompletoColaborador,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white.withOpacity(0.9),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Contenido
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Información del colaborador
-                      _buildModernInfoRow('Colaborador', permiso.nombreCompletoColaborador, Icons.person),
-                      
-                      // Información del permiso
-                      _buildModernInfoRow('Tipo de Permiso', permiso.tipoPermiso ?? 'Sin especificar', Icons.category),
-                      _buildModernInfoRow('Fecha', permiso.fechaFormateadaEspanol, Icons.calendar_today),
-                      _buildModernInfoRow('Horas', '${permiso.horas} horas', Icons.schedule),
-                      
-                      // Estado
-                      _buildModernInfoRow('Estado', permiso.estadoPermiso ?? 'Sin especificar', Icons.info),
-                      
-                    ],
-                  ),
-                ),
-              ),
-              
-              // Botones de acción
-              Container(
-                padding: const EdgeInsets.all(24),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close, color: Colors.red),
-                        label: const Text('Cerrar', style: TextStyle(color: Colors.red)),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _mostrarDialogoEditarPermiso(permiso);
-                        },
-                        icon: const Icon(Icons.edit),
-                        label: const Text('Editar'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              Text('Colaborador: ${permiso.nombreCompletoColaborador}'),
+              const SizedBox(height: 8),
+              Text('Tipo: ${permiso.tipoPermiso ?? 'N/A'}'),
+              const SizedBox(height: 8),
+              Text('Fecha: ${permiso.fechaFormateadaEspanol}'),
+              const SizedBox(height: 8),
+              Text('Horas: ${permiso.horas}'),
+              const SizedBox(height: 8),
+              Text('Estado: ${permiso.estadoPermiso ?? 'N/A'}'),
+              const SizedBox(height: 8),
+              Text('ID Colaborador: ${permiso.idColaborador}'),
+              const SizedBox(height: 8),
+              Text('ID Usuario: ${permiso.idUsuario}'),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildModernInfoRow(String label, String value, IconData icon) {
-    Color iconColor;
-    Color backgroundColor;
-    
-    if (icon == Icons.person) {
-      iconColor = Colors.blue;
-      backgroundColor = Colors.blue.withOpacity(0.1);
-    } else if (icon == Icons.category) {
-      iconColor = Colors.purple;
-      backgroundColor = Colors.purple.withOpacity(0.1);
-    } else if (icon == Icons.calendar_today) {
-      iconColor = Colors.orange;
-      backgroundColor = Colors.orange.withOpacity(0.1);
-    } else if (icon == Icons.schedule) {
-      iconColor = Colors.green;
-      backgroundColor = Colors.green.withOpacity(0.1);
-    } else if (icon == Icons.info) {
-      iconColor = Colors.indigo;
-      backgroundColor = Colors.indigo.withOpacity(0.1);
-    } else if (icon == Icons.access_time) {
-      iconColor = Colors.teal;
-      backgroundColor = Colors.teal.withOpacity(0.1);
-    } else {
-      iconColor = AppTheme.primaryColor;
-      backgroundColor = AppTheme.primaryColor.withOpacity(0.1);
-    }
-    
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              size: 16,
-              color: iconColor,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar'),
           ),
         ],
       ),
     );
   }
 
-  void _mostrarDialogoCrearPermiso() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const PermisoCrearScreen(),
-      ),
-    );
-    
-    // Si se creó exitosamente un permiso, refrescar la lista
-    if (result == true) {
-      final permisoProvider = context.read<PermisoProvider>();
-      await permisoProvider.cargarPermisos();
-    }
-  }
-
-  void _mostrarDialogoEditarPermiso(Permiso permiso) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PermisoEditarScreen(permiso: permiso),
-      ),
-    );
-    
-    // Si se editó exitosamente un permiso, refrescar la lista
-    if (result == true) {
-      final permisoProvider = context.read<PermisoProvider>();
-      await permisoProvider.cargarPermisos();
-    }
-  }
-
-  void _mostrarDialogoEliminarPermiso(Permiso permiso) {
+  void _mostrarDialogoConfirmarEliminacion(Permiso permiso) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar Eliminación'),
-        content: Text(
-          '¿Estás seguro de que quieres eliminar el permiso de ${permiso.nombreCompletoColaborador}?',
-        ),
+        content: Text('¿Estás seguro de que quieres eliminar el permiso de ${permiso.nombreCompletoColaborador}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancelar'),
           ),
-          ElevatedButton(
-            onPressed: () async {
+          TextButton(
+            onPressed: () {
               Navigator.pop(context);
-              final permisoProvider = context.read<PermisoProvider>();
-              final success = await permisoProvider.eliminarPermiso(permiso.id);
-              if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Permiso eliminado correctamente'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error al eliminar: ${permisoProvider.error}'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
+              _eliminarPermiso(permiso);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Eliminar'),
           ),
         ],
@@ -894,189 +622,152 @@ class _PermisoScreenState extends State<PermisoScreen> {
     );
   }
 
-  void _mostrarDialogoAprobarPermiso(Permiso permiso) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar Aprobación'),
-        content: Text(
-          '¿Estás seguro de que quieres aprobar el permiso de ${permiso.nombreCompletoColaborador}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+  Future<void> _eliminarPermiso(Permiso permiso) async {
+    try {
+      final permisoProvider = context.read<PermisoProvider>();
+      await permisoProvider.eliminarPermiso(permiso.id);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Permiso eliminado correctamente'),
+            backgroundColor: Colors.green,
           ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final permisoProvider = context.read<PermisoProvider>();
-              final response = await permisoProvider.aprobarPermiso(permiso.id);
-              if (response != null) {
-                // Mostrar información detallada del permiso aprobado
-                final permisoAprobado = response['permiso_aprobado'];
-                final colaborador = permisoAprobado['colaborador'] ?? permiso.nombreCompletoColaborador;
-                final fecha = permisoAprobado['fecha'] ?? permiso.fecha;
-                final estadoAnterior = permisoAprobado['estado_anterior'] ?? 'Pendiente';
-                final estadoNuevo = permisoAprobado['estado_nuevo'] ?? 'Aprobado';
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '✅ Permiso aprobado correctamente',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Text('Colaborador: $colaborador'),
-                        Text('Fecha: $fecha'),
-                        Text('Estado: $estadoAnterior → $estadoNuevo'),
-                      ],
-                    ),
-                    backgroundColor: Colors.green,
-                    duration: const Duration(seconds: 4),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error al aprobar: ${permisoProvider.error}'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.successColor),
-            child: const Text('Aprobar'),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al eliminar permiso: $e'),
+            backgroundColor: Colors.red,
           ),
-        ],
+        );
+      }
+    }
+  }
+
+  void _mostrarDialogoCrearPermiso() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PermisoCrearScreen(),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return AppLayout(
-      title: 'Permisos',
-      onRefresh: _refrescarDatos,
-      currentScreen: 'permisos',
-      child: Column(
-        children: [
-          _buildSearchBar(),
-          _buildEstadisticas(),
-          Expanded(
-            child: Consumer<PermisoProvider>(
-              builder: (context, permisoProvider, child) {
-                if (permisoProvider.isLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
+    return Column(
+      children: [
+        _buildSearchBar(),
+        _buildEstadisticas(),
+        Expanded(
+          child: Consumer<PermisoProvider>(
+            builder: (context, permisoProvider, child) {
+              if (permisoProvider.isLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
 
-                if (permisoProvider.error != null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 80,
+              if (permisoProvider.error != null) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 80,
+                        color: Colors.red.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error al cargar permisos',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        permisoProvider.error!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
                           color: Colors.red.withOpacity(0.5),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error al cargar permisos',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red.withOpacity(0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          permisoProvider.error!,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.red.withOpacity(0.5),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: () => permisoProvider.cargarPermisos(),
-                          child: const Text('Reintentar'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                final permisosFiltrados = permisoProvider.permisosFiltrados;
-
-                if (permisosFiltrados.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.assignment_outlined,
-                          size: 80,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No hay permisos',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Agrega el primer permiso para comenzar',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: () => _mostrarDialogoCrearPermiso(),
-                          icon: const Icon(Icons.add),
-                          label: const Text('Agregar Permiso'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  itemCount: permisosFiltrados.length,
-                  itemBuilder: (context, index) {
-                    return _buildPermisoCard(permisosFiltrados[index]);
-                  },
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => permisoProvider.cargarPermisos(),
+                        child: const Text('Reintentar'),
+                      ),
+                    ],
+                  ),
                 );
-              },
-            ),
+              }
+
+              final permisosFiltrados = permisoProvider.permisosFiltrados;
+
+              if (permisosFiltrados.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.assignment_outlined,
+                        size: 80,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No hay permisos',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Agrega el primer permiso para comenzar',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () => _mostrarDialogoCrearPermiso(),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Agregar Permiso'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.only(bottom: 16),
+                itemCount: permisosFiltrados.length,
+                itemBuilder: (context, index) {
+                  return _buildPermisoCard(permisosFiltrados[index]);
+                },
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
-
-
 }
 
 

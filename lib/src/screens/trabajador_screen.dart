@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/trabajador.dart';
-import '../providers/auth_provider.dart';
 import '../providers/trabajador_provider.dart';
-import '../widgets/app_layout.dart';
+import '../providers/auth_provider.dart';
+import '../models/trabajador.dart';
 import '../theme/app_theme.dart';
-import '../services/api_service.dart';
 import 'trabajador_crear_screen.dart';
 import 'trabajador_editar_screen.dart';
 
@@ -343,7 +341,7 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
             Text(
               valor,
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
@@ -922,110 +920,105 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppLayout(
-      title: 'Trabajadores',
-      onRefresh: _refrescarDatos,
-      currentScreen: 'trabajadores',
-      child: Column(
-        children: [
-          _buildSearchBar(),
-          _buildEstadisticas(),
-          Expanded(
-            child: Consumer<TrabajadorProvider>(
-              builder: (context, trabajadorProvider, child) {
-                if (trabajadorProvider.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                
-                if (trabajadorProvider.error != null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.red[400],
+    return Column(
+      children: [
+        _buildSearchBar(),
+        _buildEstadisticas(),
+        Expanded(
+          child: Consumer<TrabajadorProvider>(
+            builder: (context, trabajadorProvider, child) {
+              if (trabajadorProvider.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              
+              if (trabajadorProvider.error != null) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.red[400],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error al cargar trabajadores',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red[700],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error al cargar trabajadores',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red[700],
-                          ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        trabajadorProvider.error!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          trabajadorProvider.error!,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => trabajadorProvider.cargarTrabajadores(),
-                          child: const Text('Reintentar'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                final trabajadoresFiltrados = trabajadorProvider.trabajadoresFiltrados;
-                
-                if (trabajadoresFiltrados.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _searchQuery.isNotEmpty ? Icons.search_off : Icons.people_outline,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _searchQuery.isNotEmpty 
-                            ? 'No se encontraron trabajadores que coincidan con "$_searchQuery"'
-                            : 'No hay trabajadores registrados',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _searchQuery.isNotEmpty
-                            ? 'Intenta con otros términos de búsqueda'
-                            : 'Agrega el primer trabajador usando el botón "Nuevo"',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[500],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  itemCount: trabajadoresFiltrados.length,
-                  itemBuilder: (context, index) {
-                    return _buildTrabajadorCard(trabajadoresFiltrados[index]);
-                  },
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => trabajadorProvider.cargarTrabajadores(),
+                        child: const Text('Reintentar'),
+                      ),
+                    ],
+                  ),
                 );
-              },
-            ),
+              }
+
+              final trabajadoresFiltrados = trabajadorProvider.trabajadoresFiltrados;
+              
+              if (trabajadoresFiltrados.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _searchQuery.isNotEmpty ? Icons.search_off : Icons.people_outline,
+                        size: 64,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _searchQuery.isNotEmpty 
+                          ? 'No se encontraron trabajadores que coincidan con "$_searchQuery"'
+                          : 'No hay trabajadores registrados',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _searchQuery.isNotEmpty
+                          ? 'Intenta con otros términos de búsqueda'
+                          : 'Agrega el primer trabajador usando el botón "Nuevo"',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[500],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.only(bottom: 16),
+                itemCount: trabajadoresFiltrados.length,
+                itemBuilder: (context, index) {
+                  return _buildTrabajadorCard(trabajadoresFiltrados[index]);
+                },
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

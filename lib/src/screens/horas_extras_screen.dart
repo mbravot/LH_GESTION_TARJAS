@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/horas_extras_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/horas_extras.dart';
-import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 import '../theme/dark_theme_colors.dart';
 
@@ -79,21 +78,17 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
   Widget build(BuildContext context) {
     return Consumer<HorasExtrasProvider>(
       builder: (context, provider, child) {
-            return AppLayout(
-      title: 'Horas Extras',
-      onRefresh: _refrescarDatos,
-      currentScreen: 'horas_extras',
-      child: Column(
+        return Scaffold(
+          body: Column(
             children: [
-              // Barra de búsqueda y filtros
               _buildSearchBar(),
-              
-              // Estadísticas
+              if (_showFiltros) ...[
+                const SizedBox(height: 12),
+                _buildFiltrosAvanzados(),
+              ],
               _buildEstadisticas(provider),
-              
-              // Lista de horas extras
               Expanded(
-                child: _buildListaRendimientos(provider.rendimientosFiltrados),
+                child: _buildListaHorasExtras(provider),
               ),
             ],
           ),
@@ -527,6 +522,42 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildListaHorasExtras(HorasExtrasProvider provider) {
+    final rendimientos = provider.rendimientosFiltrados;
+    
+    if (rendimientos.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.work_off,
+              size: 64,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'No hay rendimientos disponibles',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: rendimientos.length,
+      itemBuilder: (context, index) {
+        final rendimiento = rendimientos[index];
+        return _buildHorasCard(rendimiento);
+      },
     );
   }
 

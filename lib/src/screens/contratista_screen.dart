@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/contratista_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/contratista.dart';
-import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 import 'contratista_crear_screen.dart';
 import 'contratista_editar_screen.dart';
@@ -66,28 +65,14 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ContratistaProvider>(
-      builder: (context, provider, child) {
-            return AppLayout(
-      title: 'Contratistas',
-      onRefresh: _refrescarDatos,
-      currentScreen: 'contratistas',
-      child: Column(
-            children: [
-              // Barra de búsqueda y filtros
-              _buildSearchBar(),
-
-              // Estadísticas
-              _buildEstadisticas(provider),
-
-              // Lista de contratistas
-              Expanded(
-                child: _buildListaContratistas(provider.contratistasFiltradas),
-              ),
-            ],
-          ),
-        );
-      },
+    return Column(
+      children: [
+        _buildSearchBar(),
+        _buildEstadisticas(),
+        Expanded(
+          child: _buildListaContratistas(),
+        ),
+      ],
     );
   }
 
@@ -303,44 +288,48 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
     );
   }
 
-  Widget _buildEstadisticas(ContratistaProvider provider) {
-    final stats = provider.estadisticas;
+  Widget _buildEstadisticas() {
+    return Consumer<ContratistaProvider>(
+      builder: (context, provider, child) {
+        final stats = provider.estadisticas;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Total',
-              valor: stats['total'].toString(),
-              color: Colors.purple,
-              icono: Icons.people,
-              filtro: 'todos',
-            ),
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  titulo: 'Total',
+                  valor: stats['total'].toString(),
+                  color: Colors.purple,
+                  icono: Icons.people,
+                  filtro: 'todos',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  titulo: 'Activos',
+                  valor: stats['activos'].toString(),
+                  color: Colors.green,
+                  icono: Icons.check_circle,
+                  filtro: 'activos',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  titulo: 'Inactivos',
+                  valor: stats['inactivos'].toString(),
+                  color: Colors.red,
+                  icono: Icons.cancel,
+                  filtro: 'inactivos',
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Activos',
-              valor: stats['activos'].toString(),
-              color: Colors.green,
-              icono: Icons.check_circle,
-              filtro: 'activos',
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Inactivos',
-              valor: stats['inactivos'].toString(),
-              color: Colors.red,
-              icono: Icons.cancel,
-              filtro: 'inactivos',
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -410,53 +399,59 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
     );
   }
 
-  Widget _buildListaContratistas(List<Contratista> contratistas) {
-    if (contratistas.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                Icons.person_outline,
-                size: 64,
-                color: Colors.grey[400],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No hay contratistas registrados',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Los contratistas aparecerán aquí cuando se carguen datos',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
-    }
+  Widget _buildListaContratistas() {
+    return Consumer<ContratistaProvider>(
+      builder: (context, provider, child) {
+        final contratistas = provider.contratistasFiltradas;
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: contratistas.length,
-      itemBuilder: (context, index) {
-        final contratista = contratistas[index];
-        return _buildContratistaCard(contratista);
+        if (contratistas.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    Icons.person_outline,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No hay contratistas registrados',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Los contratistas aparecerán aquí cuando se carguen datos',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: contratistas.length,
+          itemBuilder: (context, index) {
+            final contratista = contratistas[index];
+            return _buildContratistaCard(contratista);
+          },
+        );
       },
     );
   }

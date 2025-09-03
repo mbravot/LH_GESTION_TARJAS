@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/colaborador.dart';
-import '../providers/auth_provider.dart';
 import '../providers/colaborador_provider.dart';
-import '../widgets/app_layout.dart';
+import '../providers/auth_provider.dart';
+import '../models/colaborador.dart';
 import '../theme/app_theme.dart';
 import '../theme/dark_theme_colors.dart';
 import '../services/api_service.dart';
@@ -194,14 +193,15 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
     return Consumer<ColaboradorProvider>(
       builder: (context, colaboradorProvider, child) {
         final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
         
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DarkThemeColors.containerColor,
+            color: isDark ? Colors.grey[800] : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DarkThemeColors.borderColor,
+              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
             ),
           ),
           child: Column(
@@ -332,39 +332,39 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
     
     return GestureDetector(
       onTap: () => _aplicarFiltro(filtro),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isActivo ? color.withOpacity(0.2) : color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isActivo ? color : color.withOpacity(0.3),
-            width: isActivo ? 2 : 1,
-          ),
-          boxShadow: isActivo ? [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            color: isActivo ? color.withOpacity(0.2) : color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isActivo ? color : color.withOpacity(0.3),
+              width: isActivo ? 2 : 1,
             ),
-          ] : null,
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icono, 
-              color: color, 
-              size: 32,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              valor,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
+            boxShadow: isActivo ? [
+              BoxShadow(
+                color: color.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            ),
+            ] : null,
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icono, 
+                color: color, 
+                size: 24,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                valor,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
             Text(
               titulo,
               style: TextStyle(
@@ -1030,119 +1030,114 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppLayout(
-      title: 'Colaboradores',
-      onRefresh: _refrescarDatos,
-      currentScreen: 'colaboradores',
-      child: Column(
-        children: [
-          _buildSearchBar(),
-          _buildEstadisticas(),
-          Expanded(
-            child: Consumer<ColaboradorProvider>(
-              builder: (context, colaboradorProvider, child) {
-                if (colaboradorProvider.isLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
+    return Column(
+      children: [
+        _buildSearchBar(),
+        _buildEstadisticas(),
+        Expanded(
+          child: Consumer<ColaboradorProvider>(
+            builder: (context, colaboradorProvider, child) {
+              if (colaboradorProvider.isLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
 
-                if (colaboradorProvider.error != null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 80,
+              if (colaboradorProvider.error != null) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 80,
+                        color: Colors.red.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error al cargar colaboradores',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        colaboradorProvider.error!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
                           color: Colors.red.withOpacity(0.5),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error al cargar colaboradores',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red.withOpacity(0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          colaboradorProvider.error!,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.red.withOpacity(0.5),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: () => colaboradorProvider.cargarColaboradores(),
-                          child: const Text('Reintentar'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                final colaboradoresFiltrados = colaboradorProvider.colaboradoresFiltrados;
-
-                if (colaboradoresFiltrados.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.people_outline,
-                          size: 80,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No hay colaboradores',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Agrega tu primer colaborador para comenzar',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: () => _mostrarDialogoCrearColaborador(),
-                          icon: const Icon(Icons.add),
-                          label: const Text('Agregar Colaborador'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  itemCount: colaboradoresFiltrados.length,
-                  itemBuilder: (context, index) {
-                    return _buildColaboradorCard(colaboradoresFiltrados[index]);
-                  },
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => colaboradorProvider.cargarColaboradores(),
+                        child: const Text('Reintentar'),
+                      ),
+                    ],
+                  ),
                 );
-              },
-            ),
+              }
+
+              final colaboradoresFiltrados = colaboradorProvider.colaboradoresFiltrados;
+
+              if (colaboradoresFiltrados.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.people_outline,
+                        size: 80,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No hay colaboradores',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Agrega tu primer colaborador para comenzar',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () => _mostrarDialogoCrearColaborador(),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Agregar Colaborador'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.only(bottom: 16),
+                itemCount: colaboradoresFiltrados.length,
+                itemBuilder: (context, index) {
+                  return _buildColaboradorCard(colaboradoresFiltrados[index]);
+                },
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

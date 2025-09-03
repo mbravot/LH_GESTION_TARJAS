@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import '../models/tarja.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tarja_provider.dart';
-import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
 import 'aprobacion_tarjas_editar_screen.dart';
@@ -1951,171 +1950,166 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppLayout(
-      title: 'Aprobación de Tarjas',
-      onRefresh: _refrescarDatos,
-      currentScreen: 'aprobacion_tarjas',
-      child: Column(
-        children: [
-          _buildSearchBar(),
-          _buildEstadisticas(),
-          Expanded(
-            child: Consumer<TarjaProvider>(
-              builder: (context, tarjaProvider, child) {
-                final tarjasFiltradas = _filtrarTarjas(tarjaProvider.tarjasFiltradas.isNotEmpty ? tarjaProvider.tarjasFiltradas : tarjaProvider.tarjas);
-                final gruposPorFecha = _agruparPorFecha(tarjasFiltradas);
-                final fechasOrdenadas = gruposPorFecha.keys.toList()..sort((a, b) => b.compareTo(a));
+    return Column(
+      children: [
+        _buildSearchBar(),
+        _buildEstadisticas(),
+        Expanded(
+          child: Consumer<TarjaProvider>(
+            builder: (context, tarjaProvider, child) {
+              final tarjasFiltradas = _filtrarTarjas(tarjaProvider.tarjasFiltradas.isNotEmpty ? tarjaProvider.tarjasFiltradas : tarjaProvider.tarjas);
+              final gruposPorFecha = _agruparPorFecha(tarjasFiltradas);
+              final fechasOrdenadas = gruposPorFecha.keys.toList()..sort((a, b) => b.compareTo(a));
 
-                // Solo reiniciar expansión si cambió la cantidad de grupos
-                if (_expansionState.length != fechasOrdenadas.length) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _resetExpansionState(fechasOrdenadas.length);
-                  });
-                }
+              // Solo reiniciar expansión si cambió la cantidad de grupos
+              if (_expansionState.length != fechasOrdenadas.length) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _resetExpansionState(fechasOrdenadas.length);
+                });
+              }
 
-                if (tarjaProvider.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (tarjaProvider.error != null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          tarjaProvider.error!,
-                          style: const TextStyle(color: Colors.red),
-                          textAlign: TextAlign.center,
+              if (tarjaProvider.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (tarjaProvider.error != null) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        tarjaProvider.error!,
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => tarjaProvider.cargarTarjas(),
+                        child: const Text('Reintentar'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              if (tarjasFiltradas.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _searchQuery.isNotEmpty ? Icons.search_off : Icons.filter_list,
+                        size: 64,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _searchQuery.isNotEmpty 
+                          ? 'No se encontraron actividades que coincidan con "$_searchQuery"'
+                          : 'No hay actividades que coincidan con los filtros',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[600],
                         ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => tarjaProvider.cargarTarjas(),
-                          child: const Text('Reintentar'),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _searchQuery.isNotEmpty
+                          ? 'Intenta con otros términos de búsqueda'
+                          : 'Intenta cambiar los filtros o refrescar los datos',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[500],
                         ),
-                      ],
-                    ),
-                  );
-                }
-                if (tarjasFiltradas.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _searchQuery.isNotEmpty ? Icons.search_off : Icons.filter_list,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _searchQuery.isNotEmpty 
-                            ? 'No se encontraron actividades que coincidan con "$_searchQuery"'
-                            : 'No hay actividades que coincidan con los filtros',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _searchQuery.isNotEmpty
-                            ? 'Intenta con otros términos de búsqueda'
-                            : 'Intenta cambiar los filtros o refrescar los datos',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[500],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
-                }
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                );
+              }
 
-                return ListView(
-                  key: _expansionKey,
-                  padding: const EdgeInsets.all(16.0),
-                  children: List.generate(fechasOrdenadas.length, (i) {
-                    final fecha = fechasOrdenadas[i];
-                    final tarjas = gruposPorFecha[fecha]!;
-                    final expanded = (_expansionState.length > i) ? _expansionState[i] : true;
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: Theme(
-                        data: Theme.of(context).copyWith(
-                          dividerColor: Colors.transparent,
-                          splashColor: AppTheme.primaryLightColor.withOpacity(0.1),
-                          highlightColor: AppTheme.primaryLightColor.withOpacity(0.05),
-                          colorScheme: Theme.of(context).colorScheme.copyWith(
-                            primary: AppTheme.primaryColor,
-                            secondary: AppTheme.primaryLightColor,
-                          ),
-                        ),
-                        child: ExpansionTile(
-                          key: ValueKey('expansion_$i'),
-                          initiallyExpanded: expanded,
-                          onExpansionChanged: (isExpanded) {
-                            if (_expansionState.length > i) {
-                              setState(() {
-                                _expansionState[i] = isExpanded;
-                              });
-                            }
-                          },
-                          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          backgroundColor: Theme.of(context).colorScheme.surface,
-                          collapsedBackgroundColor: Theme.of(context).brightness == Brightness.dark 
-                            ? Colors.grey[800]!.withOpacity(0.3)
-                            : AppTheme.primaryColor.withOpacity(0.07),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          title: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  _formatearFecha(fecha),
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: _getAdaptiveColor(context, lightColor: AppTheme.primaryColor, darkColor: AppTheme.primaryColor),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '${tarjas.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'actividades',
-                                style: TextStyle(
-                                  color: _getAdaptiveColor(context, lightColor: AppTheme.primaryColor, darkColor: AppTheme.primaryColor),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                          children: tarjas.map((tarja) => _buildActividadCard(tarja)).toList(),
+              return ListView(
+                key: _expansionKey,
+                padding: const EdgeInsets.all(16.0),
+                children: List.generate(fechasOrdenadas.length, (i) {
+                  final fecha = fechasOrdenadas[i];
+                  final tarjas = gruposPorFecha[fecha]!;
+                  final expanded = (_expansionState.length > i) ? _expansionState[i] : true;
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        dividerColor: Colors.transparent,
+                        splashColor: AppTheme.primaryLightColor.withOpacity(0.1),
+                        highlightColor: AppTheme.primaryLightColor.withOpacity(0.05),
+                        colorScheme: Theme.of(context).colorScheme.copyWith(
+                          primary: AppTheme.primaryColor,
+                          secondary: AppTheme.primaryLightColor,
                         ),
                       ),
-                    );
-                  }),
-                );
-              },
-            ),
+                      child: ExpansionTile(
+                        key: ValueKey('expansion_$i'),
+                        initiallyExpanded: expanded,
+                        onExpansionChanged: (isExpanded) {
+                          if (_expansionState.length > i) {
+                            setState(() {
+                              _expansionState[i] = isExpanded;
+                            });
+                          }
+                        },
+                        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        backgroundColor: Theme.of(context).colorScheme.surface,
+                        collapsedBackgroundColor: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.grey[800]!.withOpacity(0.3)
+                          : AppTheme.primaryColor.withOpacity(0.07),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _formatearFecha(fecha),
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: _getAdaptiveColor(context, lightColor: AppTheme.primaryColor, darkColor: AppTheme.primaryColor),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${tarjas.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'actividades',
+                              style: TextStyle(
+                                color: _getAdaptiveColor(context, lightColor: AppTheme.primaryColor, darkColor: AppTheme.primaryColor),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        children: tarjas.map((tarja) => _buildActividadCard(tarja)).toList(),
+                      ),
+                    ),
+                  );
+                }),
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

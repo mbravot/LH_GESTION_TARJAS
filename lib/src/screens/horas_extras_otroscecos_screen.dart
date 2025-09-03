@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/horas_extras_otroscecos_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/horas_extras_otroscecos.dart';
-import '../widgets/app_layout.dart';
 import '../theme/app_theme.dart';
+import '../theme/dark_theme_colors.dart';
 
 class HorasExtrasOtrosCecosScreen extends StatefulWidget {
   const HorasExtrasOtrosCecosScreen({Key? key}) : super(key: key);
@@ -68,21 +68,17 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
   Widget build(BuildContext context) {
     return Consumer<HorasExtrasOtrosCecosProvider>(
       builder: (context, provider, child) {
-        return AppLayout(
-          title: 'Horas Extras Otros CECOs',
-          onRefresh: _refrescarDatos,
-          currentScreen: 'horas_extras_otroscecos',
-          child: Column(
+        return Scaffold(
+          body: Column(
             children: [
-              // Barra de búsqueda y filtros
               _buildSearchBar(),
-              
-              // Estadísticas
+              if (_showFiltros) ...[
+                const SizedBox(height: 12),
+                _buildFiltrosAvanzados(),
+              ],
               _buildEstadisticas(provider),
-              
-              // Lista de horas extras
               Expanded(
-                child: _buildListaHorasExtras(provider.horasExtrasFiltradas),
+                child: _buildListaHorasExtrasOtrosCecos(provider),
               ),
             ],
           ),
@@ -517,41 +513,26 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
     );
   }
 
-  Widget _buildListaHorasExtras(List<HorasExtrasOtrosCecos> horasExtras) {
+  Widget _buildListaHorasExtrasOtrosCecos(HorasExtrasOtrosCecosProvider provider) {
+    final horasExtras = provider.horasExtrasFiltradas;
+    
     if (horasExtras.isEmpty) {
-      return Center(
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                Icons.work_off,
-                size: 64,
-                color: Colors.grey[400],
-              ),
+            Icon(
+              Icons.work_off,
+              size: 64,
+              color: Colors.grey,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
-              'No hay horas extras registradas',
+              'No hay horas extras disponibles',
               style: TextStyle(
                 fontSize: 18,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
+                color: Colors.grey,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Las horas extras aparecerán aquí cuando se carguen datos',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
