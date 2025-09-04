@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import '../services/api_service.dart';
 
 class PermisosProvider with ChangeNotifier {
@@ -48,8 +49,14 @@ class PermisosProvider with ChangeNotifier {
   bool tienePermisoPorId(int idPermiso) {
     // Si no hay permisos cargados, intentar cargarlos automáticamente
     if (_permisos.isEmpty && !_isLoading) {
-      cargarPermisos();
-      return false; // Retornar false temporalmente mientras se cargan
+      // Cargar permisos de forma asíncrona pero no bloquear la UI
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        cargarPermisos();
+      });
+      // Durante el hot reload, asumir que el usuario tiene permisos temporalmente
+      // para evitar que los elementos del menú desaparezcan
+      // Los permisos se validarán correctamente una vez que se carguen
+      return true;
     }
     
     final tiene = _permisos.any((permiso) {

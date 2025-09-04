@@ -4,6 +4,17 @@ import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/permisos_provider.dart';
 import '../providers/sidebar_provider.dart';
+import '../providers/tarja_provider.dart';
+import '../providers/horas_trabajadas_provider.dart';
+import '../providers/horas_extras_provider.dart';
+import '../providers/horas_extras_otroscecos_provider.dart';
+import '../providers/colaborador_provider.dart';
+import '../providers/licencia_provider.dart';
+import '../providers/vacacion_provider.dart';
+import '../providers/permiso_provider.dart';
+import '../providers/bono_especial_provider.dart';
+import '../providers/trabajador_provider.dart';
+import '../providers/contratista_provider.dart';
 import '../theme/app_theme.dart';
 import '../screens/revision_tarjas_screen.dart';
 import '../screens/aprobacion_tarjas_screen.dart';
@@ -82,6 +93,59 @@ class _MasterLayoutState extends State<MasterLayout>
       setState(() {
         _currentScreenIndex = index;
       });
+    }
+  }
+
+  void _refreshCurrentScreen() {
+    final screenKey = _screens[_currentScreenIndex]['key'];
+    
+    // Mostrar un mensaje de confirmación
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Refrescando datos de ${_screens[_currentScreenIndex]['title']}...'),
+        duration: const Duration(seconds: 1),
+        backgroundColor: AppTheme.primaryColor,
+      ),
+    );
+    
+    // Llamar al método de refresh del provider correspondiente
+    switch (screenKey) {
+      case 'horas_trabajadas':
+        Provider.of<HorasTrabajadasProvider>(context, listen: false).cargarHorasTrabajadas();
+        break;
+      case 'revision_tarjas':
+        Provider.of<TarjaProvider>(context, listen: false).cargarTarjas();
+        break;
+      case 'aprobacion_tarjas':
+        Provider.of<TarjaProvider>(context, listen: false).cargarTarjas();
+        break;
+      case 'horas_extras':
+        Provider.of<HorasExtrasProvider>(context, listen: false).cargarRendimientos();
+        break;
+      case 'horas_extras_otroscecos':
+        Provider.of<HorasExtrasOtrosCecosProvider>(context, listen: false).cargarHorasExtras();
+        break;
+      case 'colaboradores':
+        Provider.of<ColaboradorProvider>(context, listen: false).cargarColaboradores();
+        break;
+      case 'licencias':
+        Provider.of<LicenciaProvider>(context, listen: false).cargarLicencias();
+        break;
+      case 'vacaciones':
+        Provider.of<VacacionProvider>(context, listen: false).cargarVacaciones();
+        break;
+      case 'permisos':
+        Provider.of<PermisoProvider>(context, listen: false).cargarPermisos();
+        break;
+      case 'bono_especial':
+        Provider.of<BonoEspecialProvider>(context, listen: false).cargarBonosEspeciales();
+        break;
+      case 'trabajadores':
+        Provider.of<TrabajadorProvider>(context, listen: false).cargarTrabajadores();
+        break;
+      case 'contratistas':
+        Provider.of<ContratistaProvider>(context, listen: false).cargarContratistas();
+        break;
     }
   }
 
@@ -403,13 +467,20 @@ class _MasterLayoutState extends State<MasterLayout>
                         // Botón de actualizar para pantallas específicas
                         if (_screens[_currentScreenIndex]['key'] == 'horas_trabajadas' ||
                             _screens[_currentScreenIndex]['key'] == 'revision_tarjas' ||
-                            _screens[_currentScreenIndex]['key'] == 'aprobacion_tarjas')
+                            _screens[_currentScreenIndex]['key'] == 'aprobacion_tarjas' ||
+                            _screens[_currentScreenIndex]['key'] == 'horas_extras' ||
+                            _screens[_currentScreenIndex]['key'] == 'horas_extras_otroscecos' ||
+                            _screens[_currentScreenIndex]['key'] == 'colaboradores' ||
+                            _screens[_currentScreenIndex]['key'] == 'licencias' ||
+                            _screens[_currentScreenIndex]['key'] == 'vacaciones' ||
+                            _screens[_currentScreenIndex]['key'] == 'permisos' ||
+                            _screens[_currentScreenIndex]['key'] == 'bono_especial' ||
+                            _screens[_currentScreenIndex]['key'] == 'trabajadores' ||
+                            _screens[_currentScreenIndex]['key'] == 'contratistas')
                           IconButton(
                             icon: const Icon(Icons.refresh, color: Colors.white),
                             onPressed: () {
-                              // Aquí podrías implementar la lógica de refresh específica para cada pantalla
-                              // Por ahora solo hacemos un rebuild
-                              setState(() {});
+                              _refreshCurrentScreen();
                             },
                           ),
                         

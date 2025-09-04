@@ -261,6 +261,66 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     }
   }
 
+  String _formatearHora(String? hora) {
+    if (hora == null || hora.isEmpty) {
+      return '00:00';
+    }
+    
+    try {
+      // Si la hora ya está en formato HH:mm, devolverla tal como está
+      if (RegExp(r'^\d{2}:\d{2}$').hasMatch(hora)) {
+        return hora;
+      }
+      
+      // Si está en formato HH:mm:ss, quitar los segundos
+      if (RegExp(r'^\d{2}:\d{2}:\d{2}$').hasMatch(hora)) {
+        return hora.substring(0, 5);
+      }
+      
+      // Si está en formato de tiempo completo, parsear y formatear
+      final time = DateTime.parse('1970-01-01 $hora');
+      return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return '00:00';
+    }
+  }
+
+  String _obtenerNombreCompletoTrabajador(Map<String, dynamic> rendimiento, bool isContratista) {
+    if (isContratista) {
+      // Para contratistas, usar los nuevos campos del backend
+      final nombre = rendimiento['nombre_trabajador']?.toString() ?? 
+                     rendimiento['trabajador']?.toString() ?? '';
+      final apellidoPaterno = rendimiento['apellido_paterno']?.toString() ?? '';
+      final apellidoMaterno = rendimiento['apellido_materno']?.toString() ?? '';
+      
+      // Construir el nombre completo
+      List<String> partesNombre = [];
+      if (nombre.isNotEmpty) partesNombre.add(nombre);
+      if (apellidoPaterno.isNotEmpty) partesNombre.add(apellidoPaterno);
+      if (apellidoMaterno.isNotEmpty) partesNombre.add(apellidoMaterno);
+      
+      if (partesNombre.isNotEmpty) {
+        return partesNombre.join(' ');
+      } else {
+        return 'N/A';
+      }
+    } else {
+      // Para personal propio
+      final nombre = rendimiento['nombre_colaborador']?.toString() ?? 
+                     rendimiento['colaborador']?.toString() ?? '';
+      final apellido = rendimiento['apellido_colaborador']?.toString() ?? 
+                       rendimiento['apellido']?.toString() ?? '';
+      
+      if (nombre.isNotEmpty && apellido.isNotEmpty) {
+        return '$nombre $apellido';
+      } else if (nombre.isNotEmpty) {
+        return nombre;
+      } else {
+        return 'N/A';
+      }
+    }
+  }
+
   Map<String, dynamic> _getEstadoActividad(String? id) {
     switch (id) {
       case '1':
@@ -413,6 +473,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Título de la actividad
               Row(
                 children: [
                   Icon(Icons.work, color: AppTheme.primaryColor),
@@ -427,216 +488,266 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                       ),
                     ),
                   ),
-                      // Mostrar el estado actual como texto informativo
-                      Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                          color: tarja.idEstadoactividad == '1' ? Colors.orange : 
-                                 tarja.idEstadoactividad == '2' ? Colors.green : 
-                                 estadoColor.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: estadoColor, width: 1),
-                      ),
-                      child: Text(
-                        estadoNombre,
-                          style: TextStyle(
-                            color: tarja.idEstadoactividad == '1' ? Colors.white : 
-                                   tarja.idEstadoactividad == '2' ? Colors.white : 
-                                   estadoColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                      ),
-                    ),
-                  ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
+              // Contenido en 3 columnas
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.straighten, color: Colors.teal, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Unidad: ${obtenerNombreUnidad(tarja)}',
-                    style: TextStyle(color: textColor.withOpacity(0.7)),
-                  ),
-                      const Spacer(),
-                      // Indicador de rendimientos al lado de la unidad
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _deberiaMostrarConRendimientos(tarja, rendimientos) ? Colors.green[100] : Colors.red[100],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                  // Columna 1: Título (labor), Tipo CECO, Personal, Tipo Rendimiento
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Tipo CECO
+                        Row(
                           children: [
-                            Icon(
-                              _deberiaMostrarConRendimientos(tarja, rendimientos) ? Icons.check_circle : Icons.cancel,
-                              size: 14,
-                              color: _deberiaMostrarConRendimientos(tarja, rendimientos) ? Colors.green : Colors.red,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _deberiaMostrarConRendimientos(tarja, rendimientos)
-                                  ? (isLoadingRendimientos 
-                                      ? 'Con rendimientos (cargando...)' 
-                                      : 'Con rendimientos (${_filtrarRendimientosPorTarja(tarja, rendimientos).length})')
-                                  : 'Sin rendimientos',
-                              style: TextStyle(
-                                color: _deberiaMostrarConRendimientos(tarja, rendimientos) ? Colors.green[800] : Colors.red[800],
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                            Icon(Icons.category, color: Colors.purple, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Tipo CECO: ${tarja.nombreTipoceco ?? 'ID: ${tarja.idTipoceco}'}',
+                                style: TextStyle(color: textColor.withOpacity(0.7)),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.person, color: Colors.blue, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Usuario: ${_getNombreCompletoUsuario(tarja.nombreUsuario)}',
-                    style: TextStyle(color: textColor.withOpacity(0.7)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.category, color: Colors.purple, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Tipo CECO: ${tarja.nombreTipoceco ?? 'ID: ${tarja.idTipoceco}'}',
-                    style: TextStyle(color: textColor.withOpacity(0.7)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Icon(Icons.folder, color: Colors.amber, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'CECO: ${obtenerNombreCeco(tarja)}',
-                      style: TextStyle(color: textColor.withOpacity(0.7)),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.business, color: Colors.blue, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Personal:${tarja.trabajador} ${_getTipoPersonalText(tarja)}',
-                      style: TextStyle(color: textColor.withOpacity(0.7)),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                  Icon(Icons.assessment, color: Colors.purple, size: 20),
-                  const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                      'Tipo Rendimiento: ${tarja.tipo}',
-                      style: TextStyle(color: textColor.withOpacity(0.7)),
-                                  ),
-                                ),
-                      // Botón "Editar" - siempre azul, independiente de si tiene rendimientos
-                                    GestureDetector(
-                    onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => RevisionTarjasEditarScreen(tarja: tarja),
+                        const SizedBox(height: 8),
+                        // CECO
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(Icons.folder, color: Colors.amber, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'CECO: ${obtenerNombreCeco(tarja)}',
+                                style: TextStyle(color: textColor.withOpacity(0.7)),
+                              ),
                             ),
-                          ).then((_) {
-                            // Refrescar datos cuando regrese de la pantalla de edición
-                            final tarjaProvider = context.read<TarjaProvider>();
-                            tarjaProvider.cargarTarjas();
-                          });
-                    },
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                              color: Colors.blue,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                  Icons.edit,
-                                            size: 16,
-                                  color: Colors.white,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                  'Editar',
-                                            style: TextStyle(
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Personal
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.business, color: Colors.blue, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Personal: ${tarja.trabajador} ${_getTipoPersonalText(tarja)}',
+                                style: TextStyle(color: textColor.withOpacity(0.7)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Tipo Rendimiento
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(Icons.assessment, color: Colors.purple, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Tipo Rendimiento: ${tarja.tipo}',
+                                style: TextStyle(color: textColor.withOpacity(0.7)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 2: Unidad, Tarifa, Usuario, Horario
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Unidad
+                        Row(
+                          children: [
+                            Icon(Icons.straighten, color: Colors.teal, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Unidad: ${obtenerNombreUnidad(tarja)}',
+                                style: TextStyle(color: textColor.withOpacity(0.7)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Tarifa
+                        Row(
+                          children: [
+                            Icon(Icons.attach_money, color: Colors.green, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Tarifa: \$${_formatearTarifa(tarja.tarifa)}',
+                              style: TextStyle(
+                                color: textColor.withOpacity(0.7),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Usuario
+                        Row(
+                          children: [
+                            Icon(Icons.person, color: Colors.blue, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Usuario: ${_getNombreCompletoUsuario(tarja.nombreUsuario)}',
+                                style: TextStyle(color: textColor.withOpacity(0.7)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Horario
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.schedule, color: Colors.indigo, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Horario: ${_formatearHora(tarja.horaInicio)} - ${_formatearHora(tarja.horaFin)}',
+                                style: TextStyle(color: textColor.withOpacity(0.7)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 3: Estado, Indicador con/sin rendimientos, Editar, Flecha desplegar
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // Estado
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: tarja.idEstadoactividad == '1' ? Colors.orange : 
+                                   tarja.idEstadoactividad == '2' ? Colors.green : 
+                                   estadoColor.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: estadoColor, width: 1),
+                          ),
+                          child: Text(
+                            estadoNombre,
+                            style: TextStyle(
+                              color: tarja.idEstadoactividad == '1' ? Colors.white : 
+                                     tarja.idEstadoactividad == '2' ? Colors.white : 
+                                     estadoColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Indicador de rendimientos
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _deberiaMostrarConRendimientos(tarja, rendimientos) ? Colors.green[100] : Colors.red[100],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _deberiaMostrarConRendimientos(tarja, rendimientos) ? Icons.check_circle : Icons.cancel,
+                                size: 14,
+                                color: _deberiaMostrarConRendimientos(tarja, rendimientos) ? Colors.green : Colors.red,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _deberiaMostrarConRendimientos(tarja, rendimientos)
+                                    ? (isLoadingRendimientos 
+                                        ? 'Con rendimientos (cargando...)' 
+                                        : 'Con rendimientos (${_filtrarRendimientosPorTarja(tarja, rendimientos).length})')
+                                    : 'Sin rendimientos',
+                                style: TextStyle(
+                                  color: _deberiaMostrarConRendimientos(tarja, rendimientos) ? Colors.green[800] : Colors.red[800],
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Botón "Editar"
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => RevisionTarjasEditarScreen(tarja: tarja),
+                              ),
+                            ).then((_) {
+                              // Refrescar datos cuando regrese de la pantalla de edición
+                              final tarjaProvider = context.read<TarjaProvider>();
+                              tarjaProvider.cargarTarjas();
+                            });
+                          },
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.edit,
+                                    size: 16,
                                     color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Editar',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
                                     ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.attach_money, color: Colors.green, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Tarifa: \$${_formatearTarifa(tarja.tarifa)}',
-                    style: TextStyle(
-                      color: textColor.withOpacity(0.7),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.schedule, color: Colors.indigo, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                                      child: Text(
-                      'Horario: ${tarja.horaInicio} - ${tarja.horaFin}',
-                      style: TextStyle(color: textColor.withOpacity(0.7)),
-                                      ),
-                                    ),
-                      // Indicador de expansión
-                      Icon(
-                        isRendimientosExpanded ? Icons.expand_less : Icons.expand_more,
-                        color: AppTheme.primaryColor,
-                        size: 24,
-                      ),
-                                  ],
-                                ),
-                              ],
+                                  ),
+                                ],
+                              ),
                             ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Indicador de expansión
+                        Icon(
+                          isRendimientosExpanded ? Icons.expand_less : Icons.expand_more,
+                          color: AppTheme.primaryColor,
+                          size: 24,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
           // Sección expandible de rendimientos
@@ -957,11 +1068,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    rendimiento['nombre_colaborador']?.toString() ?? 
-                    rendimiento['nombre_trabajador']?.toString() ?? 
-                    rendimiento['colaborador']?.toString() ?? 
-                    rendimiento['trabajador']?.toString() ?? 
-                    'Sin nombre',
+                    _obtenerNombreCompletoTrabajador(rendimiento, false),
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
@@ -1151,9 +1258,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     // Para tipo propio y contratista
     if (tipoActividad == 'propio' || tipoActividad == 'contratista') {
       final isContratista = tipoActividad == 'contratista';
-      final nombre = isContratista
-          ? (r['nombre_trabajador'] ?? r['trabajador'] ?? 'N/A')
-          : (r['nombre_colaborador'] ?? r['colaborador'] ?? 'N/A');
+      final nombre = _obtenerNombreCompletoTrabajador(r, isContratista);
       final rendimientoValor = r['rendimiento']?.toString() ?? r['horas_trabajadas']?.toString() ?? r['cantidad']?.toString() ?? '0';
       final porcentaje = isContratista && r['porcentaje'] != null
           ? ((r['porcentaje'] is num ? (r['porcentaje'] * 100).toStringAsFixed(0) : r['porcentaje'].toString()) + '%')

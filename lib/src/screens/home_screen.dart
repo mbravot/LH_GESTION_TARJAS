@@ -21,9 +21,9 @@ class _HomeScreenState extends State<HomeScreen> {
     // Cargar permisos automáticamente si no están cargados
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final permisosProvider = context.read<PermisosProvider>();
-      if (!permisosProvider.permisosCargados) {
-        permisosProvider.cargarPermisos();
-      }
+      // Siempre intentar cargar permisos para asegurar que estén disponibles
+      // especialmente después de un hot reload
+      permisosProvider.cargarPermisos();
     });
   }
 
