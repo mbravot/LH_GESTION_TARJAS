@@ -56,22 +56,15 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
         final rendimientoTarjaId = r['id_tarja']?.toString();
         final rendimientoActividadTarjaId = r['id_actividad_tarja']?.toString();
         
-        developer.log('🔍 Verificando rendimiento para tarja ${tarja.id}:');
-        developer.log('   - Rendimiento actividad ID: $rendimientoActividadId');
-        developer.log('   - Rendimiento actividad ID2: $rendimientoActividadId2');
-        developer.log('   - Rendimiento tarja ID: $rendimientoTarjaId');
-        developer.log('   - Rendimiento actividad tarja ID: $rendimientoActividadTarjaId');
         
         final pertenece = rendimientoActividadId == tarja.id || 
                          rendimientoActividadId2 == tarja.id || 
                          rendimientoTarjaId == tarja.id ||
                          rendimientoActividadTarjaId == tarja.id;
         
-        developer.log('   - Pertenece a la tarja: $pertenece');
         return pertenece;
       }).toList();
       
-      developer.log('🔍 Rendimientos verificados para tarja ${tarja.id}: ${rendimientosFiltrados.length} de ${rendimientos.length}');
       return rendimientosFiltrados;
     }
     
@@ -130,12 +123,35 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
       
       // Configurar el TarjaProvider para escuchar cambios de sucursal
       tarjaProvider.setAuthProvider(authProvider);
+      
+      // Escuchar cambios del TarjaProvider para limpiar cache cuando sea necesario
+      tarjaProvider.addListener(_onTarjaProviderChanged);
     });
+  }
+
+  void _onTarjaProviderChanged() {
+    // Este método se ejecuta cuando el TarjaProvider notifica cambios
+    // Si se llama limpiarCacheRendimientos(), limpiar el cache local
+    if (mounted) {
+      setState(() {
+        _rendimientosCache.clear();
+        _rendimientosExpansionState.clear();
+        _rendimientosLoadingState.clear();
+      });
+    }
   }
 
   // Método para refrescar datos desde el AppBar
   Future<void> _refrescarDatos() async {
     final tarjaProvider = context.read<TarjaProvider>();
+    
+    // Limpiar cache de rendimientos antes de cargar nuevos datos
+    setState(() {
+      _rendimientosCache.clear();
+      _rendimientosExpansionState.clear();
+      _rendimientosLoadingState.clear();
+    });
+    
     await tarjaProvider.cargarTarjas();
     
     // Resetear el estado de expansión después de cargar los datos
@@ -156,6 +172,9 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    // Remover listener del TarjaProvider
+    final tarjaProvider = context.read<TarjaProvider>();
+    tarjaProvider.removeListener(_onTarjaProviderChanged);
     super.dispose();
   }
 
@@ -267,19 +286,44 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     }
     
     try {
+      // Limpiar espacios en blanco
+      final horaLimpia = hora.trim();
+      
       // Si la hora ya está en formato HH:mm, devolverla tal como está
-      if (RegExp(r'^\d{2}:\d{2}$').hasMatch(hora)) {
-        return hora;
+      if (RegExp(r'^\d{1,2}:\d{2}$').hasMatch(horaLimpia)) {
+        // Asegurar que tenga formato HH:mm (con cero a la izquierda si es necesario)
+        final partes = horaLimpia.split(':');
+        final horas = partes[0].padLeft(2, '0');
+        final minutos = partes[1];
+        return '$horas:$minutos';
       }
       
       // Si está en formato HH:mm:ss, quitar los segundos
-      if (RegExp(r'^\d{2}:\d{2}:\d{2}$').hasMatch(hora)) {
-        return hora.substring(0, 5);
+      if (RegExp(r'^\d{1,2}:\d{2}:\d{2}$').hasMatch(horaLimpia)) {
+        final partes = horaLimpia.split(':');
+        final horas = partes[0].padLeft(2, '0');
+        final minutos = partes[1];
+        return '$horas:$minutos';
       }
       
-      // Si está en formato de tiempo completo, parsear y formatear
-      final time = DateTime.parse('1970-01-01 $hora');
+      // Si está en formato de tiempo completo (con fecha), parsear y formatear
+      if (horaLimpia.contains('T') || horaLimpia.contains(' ')) {
+        final time = DateTime.parse(horaLimpia);
+        return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+      }
+      
+      // Si es solo un número (horas), asumir que son las 00:XX
+      if (RegExp(r'^\d+$').hasMatch(horaLimpia)) {
+        final numero = int.parse(horaLimpia);
+        if (numero >= 0 && numero <= 23) {
+          return '${numero.toString().padLeft(2, '0')}:00';
+        }
+      }
+      
+      // Intentar parsear como tiempo con prefijo de fecha
+      final time = DateTime.parse('1970-01-01 $horaLimpia');
       return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+      
     } catch (e) {
       return '00:00';
     }
@@ -401,12 +445,6 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
         _rendimientosLoadingState[tarjaId] = false;
       });
       
-      // Log para debugging
-      developer.log('🔍 Rendimientos cargados para tarja $tarjaId: ${rendimientosList.length}');
-      for (int i = 0; i < rendimientosList.length; i++) {
-        final r = rendimientosList[i];
-        developer.log('🔍 Rendimiento $i: ${r['nombre_actividad'] ?? r['labor'] ?? 'Sin nombre'}');
-      }
     } catch (e) {
       setState(() {
         _rendimientosCache[tarjaId] = [];
@@ -495,7 +533,6 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Columna 1: Título (labor), Tipo CECO, Personal, Tipo Rendimiento
                   Expanded(
                     flex: 2,
                     child: Column(
@@ -1722,21 +1759,10 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     // Convertir la tarifa a double
     final tarifaDouble = double.tryParse(tarifa) ?? 0;
     
-    // Determinar si es contratista y obtener el porcentaje
-    double porcentaje = 0;
-    if (rendimientoData != null) {
-      final porcentajeRaw = rendimientoData['porcentaje'];
-      if (porcentajeRaw != null) {
-        if (porcentajeRaw is num) {
-          porcentaje = porcentajeRaw.toDouble();
-        } else {
-          porcentaje = double.tryParse(porcentajeRaw.toString()) ?? 0;
-        }
-      }
-    }
-    
-    // Calcular el pago: tarifa * rendimiento * (1 + porcentaje)
-    final pago = tarifaDouble * rendimiento * (1 + porcentaje);
+    // Para el pago individual del trabajador, NO aplicamos el porcentaje
+    // porque ya se aplicó en el cálculo del pago total de la actividad
+    // Solo calculamos: tarifa * rendimiento
+    final pago = tarifaDouble * rendimiento;
     
     // Formatear como número entero con separación de miles
     final pagoEntero = pago.round();
@@ -1750,22 +1776,11 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     final cantidad = double.tryParse(cantidadTrab) ?? 1;
     final tarifaDouble = double.tryParse(tarifa) ?? 0;
     
-    // Obtener el porcentaje del grupo
-    double porcentaje = 0;
-    if (rendimientoData != null) {
-      final porcentajeRaw = rendimientoData['porcentaje_grupal'] ?? rendimientoData['porcentaje'];
-      if (porcentajeRaw != null) {
-        if (porcentajeRaw is num) {
-          porcentaje = porcentajeRaw.toDouble();
-        } else {
-          porcentaje = double.tryParse(porcentajeRaw.toString()) ?? 0;
-        }
-      }
-    }
-    
-    // Calcular: (rendimiento_total ÷ cantidad_trabajadores) × tarifa × (1 + porcentaje)
+    // Para el pago estimado por trabajador, NO aplicamos el porcentaje
+    // porque ya se aplicó en el cálculo del pago total de la actividad
+    // Solo calculamos: (rendimiento_total ÷ cantidad_trabajadores) × tarifa
     final rendimientoPorTrabajador = rendimiento / cantidad;
-    final totalEstimado = rendimientoPorTrabajador * tarifaDouble * (1 + porcentaje);
+    final totalEstimado = rendimientoPorTrabajador * tarifaDouble;
     
     // Formatear como número entero con separación de miles
     final totalEntero = totalEstimado.round();

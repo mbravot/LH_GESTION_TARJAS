@@ -308,6 +308,13 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
     notifyListeners();
   }
 
+  // Limpiar cache de rendimientos (para uso desde MasterLayout)
+  void limpiarCacheRendimientos() {
+    // Este método será llamado desde las pantallas para limpiar su cache local
+    // Las pantallas escucharán este cambio y limpiarán su cache
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _authProvider?.removeListener(_onAuthChanged);

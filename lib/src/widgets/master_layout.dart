@@ -114,10 +114,14 @@ class _MasterLayoutState extends State<MasterLayout>
         Provider.of<HorasTrabajadasProvider>(context, listen: false).cargarHorasTrabajadas();
         break;
       case 'revision_tarjas':
-        Provider.of<TarjaProvider>(context, listen: false).cargarTarjas();
+        final tarjaProvider = Provider.of<TarjaProvider>(context, listen: false);
+        tarjaProvider.limpiarCacheRendimientos();
+        tarjaProvider.cargarTarjas();
         break;
       case 'aprobacion_tarjas':
-        Provider.of<TarjaProvider>(context, listen: false).cargarTarjas();
+        final tarjaProvider2 = Provider.of<TarjaProvider>(context, listen: false);
+        tarjaProvider2.limpiarCacheRendimientos();
+        tarjaProvider2.cargarTarjas();
         break;
       case 'horas_extras':
         Provider.of<HorasExtrasProvider>(context, listen: false).cargarRendimientos();
