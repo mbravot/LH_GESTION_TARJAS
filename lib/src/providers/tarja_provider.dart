@@ -54,6 +54,8 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
         tipos.add('Individual');
       } else if (tarja.idTiporendimiento == '2') {
         tipos.add('Grupal');
+      } else if (tarja.idTiporendimiento == '3') {
+        tipos.add('Múltiple');
       }
     }
     return tipos.toList()..sort();
@@ -259,6 +261,8 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
           tipoRendimiento = 'Individual';
         } else if (tarja.idTiporendimiento == '2') {
           tipoRendimiento = 'Grupal';
+        } else if (tarja.idTiporendimiento == '3') {
+          tipoRendimiento = 'Múltiple';
         } else {
           tipoRendimiento = 'Individual'; // Por defecto
         }

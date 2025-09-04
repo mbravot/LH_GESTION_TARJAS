@@ -863,6 +863,8 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                                  tipoActividad = 'contratista';
                                } else if (tarja.idTiporendimiento == '2') {
                                  tipoActividad = 'grupal';
+                               } else if (tarja.idTiporendimiento == '3') {
+                                 tipoActividad = 'multiple';
                                } else if (tarja.idTipotrabajador == '1') {
                                  tipoActividad = 'propio';
                                } else if (tarja.idTipotrabajador == '2') {
@@ -1152,6 +1154,8 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
       tipoActividad = 'contratista';
     } else if (tarja.idTiporendimiento == '2') {
       tipoActividad = 'grupal';
+    } else if (tarja.idTiporendimiento == '3') {
+      tipoActividad = 'multiple';
     } else if (tarja.idTipotrabajador == '1') {
       tipoActividad = 'propio';
     } else if (tarja.idTipotrabajador == '2') {
@@ -1292,8 +1296,8 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
       );
     }
 
-    // Para tipo propio y contratista
-    if (tipoActividad == 'propio' || tipoActividad == 'contratista') {
+    // Para tipo propio, contratista y múltiple (múltiple son individuales propios)
+    if (tipoActividad == 'propio' || tipoActividad == 'contratista' || tipoActividad == 'multiple') {
       final isContratista = tipoActividad == 'contratista';
       final nombre = _obtenerNombreCompletoTrabajador(r, isContratista);
       final rendimientoValor = r['rendimiento']?.toString() ?? r['horas_trabajadas']?.toString() ?? r['cantidad']?.toString() ?? '0';
@@ -1635,6 +1639,8 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     String tipoActividad;
     if (tarja.idTiporendimiento == '2') {
       tipoActividad = 'grupal';
+    } else if (tarja.idTiporendimiento == '3') {
+      tipoActividad = 'multiple';
     } else if (tarja.idContratista != null && tarja.idContratista!.isNotEmpty) {
       tipoActividad = 'contratista';
     } else if (tarja.idTipotrabajador == '1') {
@@ -1676,6 +1682,8 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     String tipoActividad;
     if (tarja.idTiporendimiento == '2') {
       tipoActividad = 'grupal';
+    } else if (tarja.idTiporendimiento == '3') {
+      tipoActividad = 'multiple';
     } else if (tarja.idContratista != null && tarja.idContratista!.isNotEmpty) {
       tipoActividad = 'contratista';
     } else if (tarja.idTipotrabajador == '1') {
@@ -1696,6 +1704,15 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
       final totalRendimientoStr = _calcularTotalRendimientos(rendimientos, tarja);
       final totalRendimiento = double.tryParse(totalRendimientoStr) ?? 0;
       totalPago = tarifa * totalRendimiento;
+    } else if (tipoActividad == 'multiple') {
+      // Para múltiples: suma del pago individual de cada trabajador (sin porcentaje)
+      for (var rendimiento in rendimientos) {
+        final rendimientoValor = rendimiento['rendimiento']?.toString() ?? rendimiento['horas_trabajadas']?.toString() ?? rendimiento['cantidad']?.toString() ?? '0';
+        final rendimientoDouble = double.tryParse(rendimientoValor) ?? 0;
+        
+        final pagoIndividual = rendimientoDouble * tarifa;
+        totalPago += pagoIndividual;
+      }
     } else if (tipoActividad == 'contratista') {
       // Para contratistas individuales: suma de (rendimiento × tarifa × (1 + porcentaje))
       for (var rendimiento in rendimientos) {
