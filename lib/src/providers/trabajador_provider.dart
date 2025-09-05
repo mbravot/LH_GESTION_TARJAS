@@ -11,6 +11,7 @@ class TrabajadorProvider extends ChangeNotifier {
   String? _filtroContratista;
   String _filtroEstado = 'todos';
   String _filtroBusqueda = '';
+  String? _filtroPorcentaje;
 
   List<Trabajador> get trabajadores => _trabajadores;
   bool get isLoading => _isLoading;
@@ -18,6 +19,7 @@ class TrabajadorProvider extends ChangeNotifier {
   String? get filtroContratista => _filtroContratista;
   String get filtroEstado => _filtroEstado;
   String get filtroBusqueda => _filtroBusqueda;
+  String? get filtroPorcentaje => _filtroPorcentaje;
 
   // Trabajadores filtrados
   List<Trabajador> get trabajadoresFiltrados {
@@ -40,6 +42,14 @@ class TrabajadorProvider extends ChangeNotifier {
         return t.nombreCompleto.toLowerCase().contains(busqueda) ||
                t.rutCompleto.toLowerCase().contains(busqueda) ||
                (t.nombreContratista?.toLowerCase().contains(busqueda) ?? false);
+      }).toList();
+    }
+
+    // Filtrar por porcentaje
+    if (_filtroPorcentaje != null && _filtroPorcentaje!.isNotEmpty) {
+      filtrados = filtrados.where((t) {
+        final porcentajeTrabajador = t.porcentajeFormateado;
+        return porcentajeTrabajador == _filtroPorcentaje;
       }).toList();
     }
 
@@ -223,10 +233,16 @@ class TrabajadorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setFiltroPorcentaje(String? porcentaje) {
+    _filtroPorcentaje = porcentaje;
+    notifyListeners();
+  }
+
   void limpiarFiltros() {
     _filtroContratista = null;
     _filtroEstado = 'todos';
     _filtroBusqueda = '';
+    _filtroPorcentaje = null;
     notifyListeners();
   }
 
@@ -238,6 +254,13 @@ class TrabajadorProvider extends ChangeNotifier {
         .cast<String>()
         .toSet();
     return contratistas.toList()..sort();
+  }
+
+  List<String> get porcentajesUnicos {
+    final porcentajes = _trabajadores
+        .map((t) => t.porcentajeFormateado)
+        .toSet();
+    return porcentajes.toList()..sort();
   }
 
   // Obtener trabajadores por contratista

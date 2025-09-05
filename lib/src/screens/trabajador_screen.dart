@@ -19,6 +19,10 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
   String _searchQuery = '';
   bool _showFiltros = false;
   String _filtroActivo = 'todos'; // 'todos', 'activos', 'inactivos'
+  
+  // Variables para agrupación
+  List<bool> _expansionState = [];
+  final GlobalKey _expansionKey = GlobalKey();
 
   @override
   void initState() {
@@ -141,6 +145,7 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
           Row(
             children: [
               Expanded(
+                flex: 4,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     setState(() {
@@ -150,7 +155,7 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
                   icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                   label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: Colors.grey[600],
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -160,16 +165,20 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: () => _mostrarDialogoCrearTrabajador(),
-                icon: const Icon(Icons.person_add, size: 20),
-                label: const Text('Nuevo', style: TextStyle(fontSize: 14)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              Expanded(
+                flex: 1,
+                child: ElevatedButton.icon(
+                  onPressed: () => _mostrarDialogoCrearTrabajador(),
+                  icon: const Icon(Icons.person_add, size: 20),
+                  label: const Text('Nuevo', style: TextStyle(fontSize: 14)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 3,
                   ),
                 ),
               ),
@@ -235,6 +244,32 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
                       ],
                       onChanged: (value) {
                         trabajadorProvider.setFiltroContratista(value);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: trabajadorProvider.filtroPorcentaje,
+                      decoration: const InputDecoration(
+                        labelText: 'Porcentaje',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('Todos los porcentajes'),
+                        ),
+                        ...trabajadorProvider.porcentajesUnicos.map((porcentaje) {
+                          return DropdownMenuItem<String>(
+                            value: porcentaje,
+                            child: Text(porcentaje),
+                          );
+                        }).toList(),
+                      ],
+                      onChanged: (value) {
+                        trabajadorProvider.setFiltroPorcentaje(value);
                       },
                     ),
                   ),
@@ -372,11 +407,9 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
   }
 
   Widget _buildTrabajadorCard(Trabajador trabajador) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final cardColor = theme.colorScheme.surface;
-    final borderColor = isDark ? Colors.grey[800]! : Colors.grey[200]!;
-    final textColor = theme.colorScheme.onSurface;
+    final cardColor = Theme.of(context).colorScheme.surface;
+    final borderColor = Colors.green[300]!;
+    final textColor = Theme.of(context).colorScheme.onSurface;
 
     return Card(
       color: cardColor,
@@ -394,6 +427,7 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Título del trabajador
               Row(
                 children: [
                   Container(
@@ -410,96 +444,144 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
+                    child: Text(
+                      trabajador.nombreCompleto,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Contenido en 4 columnas
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Columna 1: RUT
+                  Expanded(
+                    flex: 2,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          trabajador.nombreCompleto,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'RUT: ${trabajador.rutCompleto}',
-                          style: TextStyle(
-                            color: textColor.withOpacity(0.7),
-                            fontSize: 14,
-                          ),
+                        Row(
+                          children: [
+                            Icon(Icons.badge, color: Colors.blue, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'RUT: ${trabajador.rutCompleto}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: trabajador.idEstado == '1' ? Colors.green[100] : Colors.red[100],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: trabajador.idEstado == '1' ? Colors.green : Colors.red,
-                        width: 1,
-                      ),
-                    ),
-                    child: Text(
-                      trabajador.estadoText,
-                      style: TextStyle(
-                        color: trabajador.idEstado == '1' ? Colors.green[800] : Colors.red[800],
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.business, color: Colors.blue, size: 16),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
+                  // Columna 2: Contratista
                   Expanded(
-                    child: Text(
-                      'Contratista: ${trabajador.nombreContratista ?? 'No asignado'}',
-                      style: TextStyle(
-                        color: textColor.withOpacity(0.7),
-                        fontSize: 14,
-                      ),
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.business, color: Colors.purple, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Contratista: ${trabajador.nombreContratista ?? 'No asignado'}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.percent, color: Colors.orange, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Porcentaje: ${trabajador.porcentajeFormateado}',
-                    style: TextStyle(
-                      color: textColor.withOpacity(0.7),
-                      fontSize: 14,
+                  const SizedBox(width: 12),
+                  // Columna 3: Porcentaje
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.percent, color: Colors.orange, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Porcentaje: ${trabajador.porcentajeFormateado}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                                     const Spacer(),
-                   if (trabajador.idEstado == '1') ...[
-                     IconButton(
-                       onPressed: () => _confirmarDesactivarTrabajador(trabajador),
-                       icon: Icon(Icons.person_off, color: Colors.orange, size: 20),
-                       tooltip: 'Desactivar trabajador',
-                     ),
-                   ] else ...[
-                     IconButton(
-                       onPressed: () => _confirmarActivarTrabajador(trabajador),
-                       icon: Icon(Icons.person_add, color: Colors.green, size: 20),
-                       tooltip: 'Activar trabajador',
-                     ),
-                   ],
-                                       IconButton(
-                      onPressed: () => _mostrarDialogoEditarTrabajador(trabajador),
-                      icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
-                      tooltip: 'Editar trabajador',
+                  const SizedBox(width: 12),
+                  // Columna 4: Estado, Desactivar/Activar, Editar
+                  Expanded(
+                    flex: 2,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: trabajador.idEstado == '1' ? Colors.green[50] : Colors.red[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: trabajador.idEstado == '1' ? Colors.green : Colors.red,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            trabajador.estadoText,
+                            style: TextStyle(
+                              color: trabajador.idEstado == '1' ? Colors.green[800] : Colors.red[800],
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (trabajador.idEstado == '1') ...[
+                          IconButton(
+                            onPressed: () => _confirmarDesactivarTrabajador(trabajador),
+                            icon: Icon(Icons.person_off, color: Colors.orange, size: 20),
+                            tooltip: 'Desactivar trabajador',
+                          ),
+                        ] else ...[
+                          IconButton(
+                            onPressed: () => _confirmarActivarTrabajador(trabajador),
+                            icon: Icon(Icons.person_add, color: Colors.green, size: 20),
+                            tooltip: 'Activar trabajador',
+                          ),
+                        ],
+                        IconButton(
+                          onPressed: () => _mostrarDialogoEditarTrabajador(trabajador),
+                          icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
+                          tooltip: 'Editar trabajador',
+                        ),
+                      ],
                     ),
+                  ),
                 ],
               ),
             ],
@@ -1008,17 +1090,178 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
                 );
               }
 
-              return ListView.builder(
-                padding: const EdgeInsets.only(bottom: 16),
-                itemCount: trabajadoresFiltrados.length,
-                itemBuilder: (context, index) {
-                  return _buildTrabajadorCard(trabajadoresFiltrados[index]);
-                },
-              );
+              return _buildListaTrabajadores(trabajadorProvider);
             },
           ),
         ),
       ],
+    );
+  }
+
+  // Funciones para agrupación
+  void _resetExpansionState(int groupCount) {
+    _expansionState = List.generate(groupCount, (index) => true);
+  }
+
+  Map<String, List<Trabajador>> _agruparPorContratista(List<Trabajador> trabajadores) {
+    final grupos = <String, List<Trabajador>>{};
+    for (var trabajador in trabajadores) {
+      final contratista = trabajador.nombreContratista ?? 'Sin contratista';
+      if (!grupos.containsKey(contratista)) {
+        grupos[contratista] = [];
+      }
+      grupos[contratista]!.add(trabajador);
+    }
+    return grupos;
+  }
+
+  Widget _buildListaTrabajadores(TrabajadorProvider provider) {
+    final trabajadoresFiltrados = provider.trabajadoresFiltrados;
+    final gruposPorContratista = _agruparPorContratista(trabajadoresFiltrados);
+    final contratistasOrdenados = gruposPorContratista.keys.toList()..sort((a, b) {
+      if (a == 'Sin contratista') return 1;
+      if (b == 'Sin contratista') return -1;
+      return a.compareTo(b); // Orden alfabético
+    });
+
+    if (_expansionState.length != contratistasOrdenados.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _resetExpansionState(contratistasOrdenados.length);
+      });
+    }
+
+    if (provider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    if (provider.error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              provider.error!,
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => provider.cargarTrabajadores(),
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    if (trabajadoresFiltrados.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 64,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No se encontraron trabajadores que coincidan con los filtros',
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView(
+      key: _expansionKey,
+      padding: const EdgeInsets.all(16.0),
+      children: List.generate(contratistasOrdenados.length, (i) {
+        final contratista = contratistasOrdenados[i];
+        final trabajadores = gruposPorContratista[contratista]!;
+        final expanded = (_expansionState.length > i) ? _expansionState[i] : true;
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              dividerColor: Colors.transparent,
+              splashColor: AppTheme.primaryLightColor.withOpacity(0.1),
+              highlightColor: AppTheme.primaryLightColor.withOpacity(0.05),
+              colorScheme: Theme.of(context).colorScheme.copyWith(
+                primary: AppTheme.primaryColor,
+                secondary: AppTheme.primaryLightColor,
+              ),
+            ),
+            child: ExpansionTile(
+              key: ValueKey('expansion_$i'),
+              initiallyExpanded: expanded,
+              onExpansionChanged: (isExpanded) {
+                if (_expansionState.length > i) {
+                  setState(() {
+                    _expansionState[i] = isExpanded;
+                  });
+                }
+              },
+              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              collapsedBackgroundColor: Theme.of(context).brightness == Brightness.dark 
+                ? Colors.grey[800]!.withOpacity(0.3)
+                : AppTheme.primaryColor.withOpacity(0.07),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.business,
+                      color: AppTheme.primaryColor,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      contratista,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${trabajadores.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              children: trabajadores.map((trabajador) => _buildTrabajadorCard(trabajador)).toList(),
+            ),
+          ),
+        );
+      }),
     );
   }
 }

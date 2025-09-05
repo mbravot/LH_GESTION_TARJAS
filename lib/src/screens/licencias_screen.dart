@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../models/licencia.dart';
 import '../models/colaborador.dart';
 import '../providers/auth_provider.dart';
@@ -23,6 +24,10 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
   String _searchQuery = '';
   bool _showFiltros = false;
   String _filtroActivo = 'todos'; // 'todos', 'programadas', 'en_curso', 'completadas'
+  
+  // Variables para agrupación
+  List<bool> _expansionState = [];
+  final GlobalKey _expansionKey = GlobalKey();
 
   @override
   void initState() {
@@ -92,6 +97,95 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
     }
   }
 
+  // Funciones para agrupación
+  void _resetExpansionState(int groupCount) {
+    _expansionState = List.generate(groupCount, (index) => true);
+  }
+
+  Map<String, List<Licencia>> _agruparPorMesAno(List<Licencia> licencias) {
+    final grupos = <String, List<Licencia>>{};
+    for (var licencia in licencias) {
+      final fecha = licencia.fechaInicio;
+      if (fecha != null && fecha.isNotEmpty) {
+        // Usar el método _parseFecha del modelo Licencia
+        final date = _parseFecha(fecha);
+        if (date != null) {
+          final mesAno = '${date.year}-${date.month.toString().padLeft(2, '0')}';
+          if (!grupos.containsKey(mesAno)) {
+            grupos[mesAno] = [];
+          }
+          grupos[mesAno]!.add(licencia);
+        } else {
+          // Si no se puede parsear la fecha, usar 'Sin fecha'
+          const mesAno = 'Sin fecha';
+          if (!grupos.containsKey(mesAno)) {
+            grupos[mesAno] = [];
+          }
+          grupos[mesAno]!.add(licencia);
+        }
+      } else {
+        // Si no hay fecha, usar 'Sin fecha'
+        const mesAno = 'Sin fecha';
+        if (!grupos.containsKey(mesAno)) {
+          grupos[mesAno] = [];
+        }
+        grupos[mesAno]!.add(licencia);
+      }
+    }
+    return grupos;
+  }
+
+  // Método para parsear fechas (copiado del modelo Licencia)
+  DateTime? _parseFecha(String fechaStr) {
+    try {
+      // Intentar parsear como ISO primero
+      return DateTime.parse(fechaStr);
+    } catch (e) {
+      try {
+        // Si falla, intentar con el formato específico del backend
+        // "Mon, 18 Aug 2025 00:00:00 GMT"
+        final regex = RegExp(r'(\w{3}), (\d{1,2}) (\w{3}) (\d{4}) (\d{2}):(\d{2}):(\d{2}) GMT');
+        final match = regex.firstMatch(fechaStr);
+        
+        if (match != null) {
+          final day = int.parse(match.group(2)!);
+          final monthStr = match.group(3)!;
+          final year = int.parse(match.group(4)!);
+          final hour = int.parse(match.group(5)!);
+          final minute = int.parse(match.group(6)!);
+          final second = int.parse(match.group(7)!);
+          
+          // Mapear nombres de meses a números
+          final monthMap = {
+            'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+            'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+          };
+          
+          final month = monthMap[monthStr];
+          if (month != null) {
+            return DateTime(year, month, day, hour, minute, second);
+          }
+        }
+        return null;
+      } catch (e) {
+        return null;
+      }
+    }
+  }
+
+  String _formatearMesAno(String mesAno) {
+    if (mesAno == 'Sin fecha') return 'Sin fecha';
+    try {
+      final parts = mesAno.split('-');
+      final year = int.parse(parts[0]);
+      final month = int.parse(parts[1]);
+      final date = DateTime(year, month);
+      return DateFormat('MMMM yyyy', 'es').format(date);
+    } catch (e) {
+      return mesAno;
+    }
+  }
+
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -145,6 +239,7 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
           Row(
             children: [
               Expanded(
+                flex: 4,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     setState(() {
@@ -154,7 +249,7 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
                   icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                   label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: Colors.grey[600],
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -164,16 +259,20 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: () => _mostrarDialogoCrearLicencia(),
-                icon: const Icon(Icons.add, size: 20),
-                label: const Text('Nueva', style: TextStyle(fontSize: 14)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              Expanded(
+                flex: 1,
+                child: ElevatedButton.icon(
+                  onPressed: () => _mostrarDialogoCrearLicencia(),
+                  icon: const Icon(Icons.add, size: 20),
+                  label: const Text('Nueva', style: TextStyle(fontSize: 14)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 3,
                   ),
                 ),
               ),
@@ -401,7 +500,7 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = isDark ? DarkThemeColors.cardColor : Colors.white;
-    final borderColor = isDark ? DarkThemeColors.borderColor : Colors.grey[300]!;
+    final borderColor = Colors.green[300]!;
     final textColor = isDark ? DarkThemeColors.primaryTextColor : Colors.black87;
 
     // Determinar color del estado con mejor contraste
@@ -436,6 +535,7 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Título de la licencia
               Row(
                 children: [
                   Container(
@@ -452,71 +552,135 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          licencia.nombreCompletoColaborador,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          licencia.periodoFormateadoEspanol,
-                          style: TextStyle(
-                            color: isDark ? DarkThemeColors.secondaryTextColor : Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isDark ? DarkThemeColors.getBackgroundWithOpacity(estadoColor, 0.1) : estadoColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: estadoColor,
-                        width: 1,
-                      ),
-                    ),
                     child: Text(
-                      licencia.estado,
+                      licencia.nombreCompletoColaborador,
                       style: TextStyle(
-                        color: estadoColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: textColor,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+              // Contenido en 4 columnas
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.calendar_today, color: Colors.purple, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${licencia.duracionDias} días',
-                    style: TextStyle(
-                      color: isDark ? textColor.withOpacity(0.7) : Colors.grey[600],
-                      fontSize: 14,
+                  // Columna 1: Duración
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.schedule, color: Colors.purple, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Duración: ${licencia.duracionDias} días',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => _mostrarDialogoEditarLicencia(licencia),
-                    icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
-                    tooltip: 'Editar licencia',
+                  const SizedBox(width: 16),
+                  // Columna 2: Fecha inicio
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.calendar_today, color: Colors.green, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Inicio: ${licencia.fechaInicioFormateadaEspanol}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  IconButton(
-                    onPressed: () => _confirmarEliminarLicencia(licencia),
-                    icon: Icon(Icons.delete, color: Colors.red, size: 20),
-                    tooltip: 'Eliminar licencia',
+                  const SizedBox(width: 16),
+                  // Columna 3: Fecha fin
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.event, color: Colors.red, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Fin: ${licencia.fechaFinFormateadaEspanol}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 4: Estado, Editar, Eliminar
+                  Expanded(
+                    flex: 2,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isDark ? DarkThemeColors.getBackgroundWithOpacity(estadoColor, 0.1) : estadoColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: estadoColor,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            licencia.estado,
+                            style: TextStyle(
+                              color: estadoColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: () => _mostrarDialogoEditarLicencia(licencia),
+                          icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
+                          tooltip: 'Editar licencia',
+                        ),
+                        IconButton(
+                          onPressed: () => _confirmarEliminarLicencia(licencia),
+                          icon: Icon(Icons.delete, color: Colors.red, size: 20),
+                          tooltip: 'Eliminar licencia',
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -997,17 +1161,164 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
                 );
               }
 
-              return ListView.builder(
-                padding: const EdgeInsets.only(bottom: 16),
-                itemCount: licenciasFiltradas.length,
-                itemBuilder: (context, index) {
-                  return _buildLicenciaCard(licenciasFiltradas[index]);
-                },
-              );
+              return _buildListaLicencias(licenciaProvider);
             },
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildListaLicencias(LicenciaProvider licenciaProvider) {
+    final licenciasFiltradas = licenciaProvider.licenciasFiltradas.isNotEmpty 
+        ? licenciaProvider.licenciasFiltradas 
+        : licenciaProvider.licencias;
+    final gruposPorMesAno = _agruparPorMesAno(licenciasFiltradas);
+    final mesesOrdenados = gruposPorMesAno.keys.toList()..sort((a, b) {
+      if (a == 'Sin fecha') return 1;
+      if (b == 'Sin fecha') return -1;
+      return b.compareTo(a); // Orden descendente (más reciente primero)
+    });
+
+    // Solo reiniciar expansión si cambió la cantidad de grupos
+    if (_expansionState.length != mesesOrdenados.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _resetExpansionState(mesesOrdenados.length);
+      });
+    }
+
+    if (licenciaProvider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    if (licenciaProvider.error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              licenciaProvider.error!,
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => licenciaProvider.cargarLicencias(),
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    if (licenciasFiltradas.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              _searchQuery.isNotEmpty ? Icons.search_off : Icons.filter_list,
+              size: 64,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _searchQuery.isNotEmpty 
+                ? 'No se encontraron licencias que coincidan con "$_searchQuery"'
+                : 'No hay licencias que coincidan con los filtros',
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _searchQuery.isNotEmpty
+                ? 'Intenta con otros términos de búsqueda'
+                : 'Intenta cambiar los filtros o refrescar los datos',
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView(
+      key: _expansionKey,
+      padding: const EdgeInsets.all(16.0),
+      children: List.generate(mesesOrdenados.length, (i) {
+        final mesAno = mesesOrdenados[i];
+        final licencias = gruposPorMesAno[mesAno]!;
+        final expanded = (_expansionState.length > i) ? _expansionState[i] : true;
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              dividerColor: Colors.transparent,
+              splashColor: AppTheme.primaryLightColor.withOpacity(0.1),
+              highlightColor: AppTheme.primaryLightColor.withOpacity(0.05),
+              colorScheme: Theme.of(context).colorScheme.copyWith(
+                primary: AppTheme.primaryColor,
+                secondary: AppTheme.primaryLightColor,
+              ),
+            ),
+            child: ExpansionTile(
+              key: ValueKey('expansion_$i'),
+              initiallyExpanded: expanded,
+              onExpansionChanged: (isExpanded) {
+                if (_expansionState.length > i) {
+                  setState(() {
+                    _expansionState[i] = isExpanded;
+                  });
+                }
+              },
+              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              collapsedBackgroundColor: Theme.of(context).brightness == Brightness.dark 
+                ? Colors.grey[800]!.withOpacity(0.3)
+                : AppTheme.primaryColor.withOpacity(0.07),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _formatearMesAno(mesAno),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${licencias.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              children: licencias.map((licencia) => _buildLicenciaCard(licencia)).toList(),
+            ),
+          ),
+        );
+      }),
     );
   }
 }

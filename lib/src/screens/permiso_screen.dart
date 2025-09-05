@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../providers/permiso_provider.dart';
 import '../providers/colaborador_provider.dart';
 import '../providers/auth_provider.dart';
@@ -19,6 +20,10 @@ class _PermisoScreenState extends State<PermisoScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _showFiltros = false;
   String _filtroActivo = 'todos'; // 'todos', 'hoy', 'programados', 'completados'
+  
+  // Variables para agrupación
+  List<bool> _expansionState = [];
+  final GlobalKey _expansionKey = GlobalKey();
 
   @override
   void initState() {
@@ -86,6 +91,104 @@ class _PermisoScreenState extends State<PermisoScreen> {
     permisoProvider.filtrarPermisos(query);
   }
 
+  // Funciones para agrupación
+  void _resetExpansionState(int groupCount) {
+    _expansionState = List.generate(groupCount, (index) => true);
+  }
+
+  Map<String, List<Permiso>> _agruparPorMesAno(List<Permiso> permisos) {
+    final grupos = <String, List<Permiso>>{};
+    for (var permiso in permisos) {
+      final fecha = permiso.fecha;
+      if (fecha != null && fecha.isNotEmpty) {
+        // Usar el método _parseFecha del modelo Permiso
+        final date = _parseFecha(fecha);
+        if (date != null) {
+          final mesAno = '${date.year}-${date.month.toString().padLeft(2, '0')}';
+          if (!grupos.containsKey(mesAno)) {
+            grupos[mesAno] = [];
+          }
+          grupos[mesAno]!.add(permiso);
+        } else {
+          // Si no se puede parsear la fecha, usar 'Sin fecha'
+          const mesAno = 'Sin fecha';
+          if (!grupos.containsKey(mesAno)) {
+            grupos[mesAno] = [];
+          }
+          grupos[mesAno]!.add(permiso);
+        }
+      } else {
+        // Si no hay fecha, usar 'Sin fecha'
+        const mesAno = 'Sin fecha';
+        if (!grupos.containsKey(mesAno)) {
+          grupos[mesAno] = [];
+        }
+        grupos[mesAno]!.add(permiso);
+      }
+    }
+    return grupos;
+  }
+
+  // Método para parsear fechas (copiado del modelo Permiso)
+  DateTime? _parseFecha(String fechaStr) {
+    try {
+      // Intentar parsear formato ISO
+      if (fechaStr.contains('T') || fechaStr.contains('Z')) {
+        return DateTime.parse(fechaStr);
+      }
+      
+      // Intentar parsear formato específico del backend
+      if (fechaStr.contains(',')) {
+        final regex = RegExp(r'(\w{3}), (\d{1,2}) (\w{3}) (\d{4})');
+        final match = regex.firstMatch(fechaStr);
+        if (match != null) {
+          final diaSemana = match.group(1);
+          final dia = int.parse(match.group(2)!);
+          final mesStr = match.group(3)!;
+          final anio = int.parse(match.group(4)!);
+          
+          final monthMap = {
+            'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+            'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+          };
+          
+          final month = monthMap[mesStr];
+          if (month != null) {
+            return DateTime(anio, month, dia);
+          }
+        }
+      }
+      
+      // Intentar parsear formato YYYY-MM-DD
+      if (fechaStr.contains('-')) {
+        final parts = fechaStr.split('-');
+        if (parts.length == 3) {
+          final anio = int.parse(parts[0]);
+          final mes = int.parse(parts[1]);
+          final dia = int.parse(parts[2]);
+          return DateTime(anio, mes, dia);
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String _formatearMesAno(String mesAno) {
+    if (mesAno == 'Sin fecha') return 'Sin fecha';
+    try {
+      final parts = mesAno.split('-');
+      final year = int.parse(parts[0]);
+      final month = int.parse(parts[1]);
+      final date = DateTime(year, month);
+      return DateFormat('MMMM yyyy', 'es').format(date);
+    } catch (e) {
+      return mesAno;
+    }
+  }
+
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -142,6 +245,7 @@ class _PermisoScreenState extends State<PermisoScreen> {
           Row(
             children: [
               Expanded(
+                flex: 4,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     setState(() {
@@ -151,7 +255,7 @@ class _PermisoScreenState extends State<PermisoScreen> {
                   icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                   label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: Colors.grey[600],
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -161,16 +265,20 @@ class _PermisoScreenState extends State<PermisoScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: () => _mostrarDialogoCrearPermiso(),
-                icon: const Icon(Icons.add, size: 20),
-                label: const Text('Nuevo', style: TextStyle(fontSize: 14)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              Expanded(
+                flex: 1,
+                child: ElevatedButton.icon(
+                  onPressed: () => _mostrarDialogoCrearPermiso(),
+                  icon: const Icon(Icons.add, size: 20),
+                  label: const Text('Nuevo', style: TextStyle(fontSize: 14)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 3,
                   ),
                 ),
               ),
@@ -755,17 +863,160 @@ class _PermisoScreenState extends State<PermisoScreen> {
                 );
               }
 
-              return ListView.builder(
-                padding: const EdgeInsets.only(bottom: 16),
-                itemCount: permisosFiltrados.length,
-                itemBuilder: (context, index) {
-                  return _buildPermisoCard(permisosFiltrados[index]);
-                },
-              );
+              return _buildListaPermisos(permisoProvider);
             },
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildListaPermisos(PermisoProvider permisoProvider) {
+    final permisosFiltrados = permisoProvider.permisosFiltrados.isNotEmpty 
+        ? permisoProvider.permisosFiltrados 
+        : permisoProvider.permisos;
+    final gruposPorMesAno = _agruparPorMesAno(permisosFiltrados);
+    final mesesOrdenados = gruposPorMesAno.keys.toList()..sort((a, b) {
+      if (a == 'Sin fecha') return 1;
+      if (b == 'Sin fecha') return -1;
+      return b.compareTo(a); // Orden descendente (más reciente primero)
+    });
+
+    // Solo reiniciar expansión si cambió la cantidad de grupos
+    if (_expansionState.length != mesesOrdenados.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _resetExpansionState(mesesOrdenados.length);
+      });
+    }
+
+    if (permisoProvider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    if (permisoProvider.error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              permisoProvider.error!,
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => permisoProvider.cargarPermisos(),
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    if (permisosFiltrados.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 64,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No se encontraron permisos que coincidan con los filtros',
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Intenta cambiar los filtros o refrescar los datos',
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView(
+      key: _expansionKey,
+      padding: const EdgeInsets.all(16.0),
+      children: List.generate(mesesOrdenados.length, (i) {
+        final mesAno = mesesOrdenados[i];
+        final permisos = gruposPorMesAno[mesAno]!;
+        final expanded = (_expansionState.length > i) ? _expansionState[i] : true;
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              dividerColor: Colors.transparent,
+              splashColor: AppTheme.primaryLightColor.withOpacity(0.1),
+              highlightColor: AppTheme.primaryLightColor.withOpacity(0.05),
+              colorScheme: Theme.of(context).colorScheme.copyWith(
+                primary: AppTheme.primaryColor,
+                secondary: AppTheme.primaryLightColor,
+              ),
+            ),
+            child: ExpansionTile(
+              key: ValueKey('expansion_$i'),
+              initiallyExpanded: expanded,
+              onExpansionChanged: (isExpanded) {
+                if (_expansionState.length > i) {
+                  setState(() {
+                    _expansionState[i] = isExpanded;
+                  });
+                }
+              },
+              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              collapsedBackgroundColor: Theme.of(context).brightness == Brightness.dark 
+                ? Colors.grey[800]!.withOpacity(0.3)
+                : AppTheme.primaryColor.withOpacity(0.07),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _formatearMesAno(mesAno),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${permisos.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              children: permisos.map((permiso) => _buildPermisoCard(permiso)).toList(),
+            ),
+          ),
+        );
+      }),
     );
   }
 }

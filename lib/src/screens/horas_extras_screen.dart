@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../providers/horas_extras_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/horas_extras.dart';
@@ -18,6 +19,10 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
   bool _showFiltros = false;
   String _filtroActivo = 'todos'; // 'todos', 'con_horas_extras', 'sin_horas_extras'
   Set<String> _tarjetasExpandidas = {};
+  
+  // Variables para agrupación
+  List<bool> _expansionState = [];
+  final GlobalKey _expansionKey = GlobalKey();
 
   @override
   void initState() {

@@ -156,7 +156,7 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
                   icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                   label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: Colors.grey[600],
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(

@@ -136,6 +136,7 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
           Row(
             children: [
               Expanded(
+                flex: 4,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     setState(() {
@@ -145,7 +146,7 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
                   icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                   label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: Colors.grey[600],
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -155,21 +156,25 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ContratistaCrearScreen()),
-                  );
-                },
-                icon: const Icon(Icons.add, size: 20),
-                label: const Text('Nuevo', style: TextStyle(fontSize: 14)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.successColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              Expanded(
+                flex: 1,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ContratistaCrearScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.add, size: 20),
+                  label: const Text('Nuevo', style: TextStyle(fontSize: 14)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.successColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 3,
                   ),
                 ),
               ),
@@ -457,67 +462,76 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
   }
 
   Widget _buildContratistaCard(Contratista contratista) {
+    final cardColor = Theme.of(context).colorScheme.surface;
+    final borderColor = Colors.green[300]!;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 3,
+      color: cardColor,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: borderColor, width: 1),
       ),
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: InkWell(
         onTap: () => _mostrarDetallesContratista(contratista),
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: contratista.estadoColor.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
+        borderRadius: BorderRadius.circular(15),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Título del contratista
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: contratista.estadoColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      color: contratista.esActivo ? Colors.green[50] : Colors.red[50],
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    padding: const EdgeInsets.all(12),
                     child: Icon(
-                      contratista.estadoIcono,
-                      color: contratista.estadoColor,
-                      size: 20,
+                      contratista.esActivo ? Icons.groups : Icons.group_off,
+                      color: contratista.esActivo ? Colors.green : Colors.red,
+                      size: 24,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   Expanded(
+                    child: Text(
+                      contratista.nombreCompleto,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Contenido en 3 columnas
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Columna 1: RUT
+                  Expanded(
+                    flex: 2,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          contratista.nombreCompleto,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(
-                              Icons.badge,
-                              size: 14,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              contratista.rutCompleto,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
+                            Icon(Icons.badge, color: Colors.blue, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'RUT: ${contratista.rutCompleto}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -525,95 +539,88 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
                       ],
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: contratista.estadoColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 16),
+                  // Columna 2: Cantidad de trabajadores activos
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.people, color: Colors.purple, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                contratista.cantidadTrabajadoresTexto,
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        child: Text(
-                          contratista.estadoTexto,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: contratista.estadoColor,
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 3: Estado, Desactivar/Activar, Editar
+                  Expanded(
+                    flex: 2,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: contratista.esActivo ? Colors.green[50] : Colors.red[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: contratista.esActivo ? Colors.green : Colors.red,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            contratista.estadoTexto,
+                            style: TextStyle(
+                              color: contratista.esActivo ? Colors.green[800] : Colors.red[800],
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                                             Row(
-                         children: [
-                           if (contratista.esActivo) ...[
-                             IconButton(
-                               onPressed: () => _confirmarDesactivarContratista(contratista),
-                               icon: Icon(Icons.person_off, color: Colors.orange, size: 20),
-                               padding: EdgeInsets.zero,
-                               constraints: const BoxConstraints(),
-                               tooltip: 'Desactivar contratista',
-                             ),
-                           ] else ...[
-                             IconButton(
-                               onPressed: () => _confirmarActivarContratista(contratista),
-                               icon: Icon(Icons.person_add, color: Colors.green, size: 20),
-                               padding: EdgeInsets.zero,
-                               constraints: const BoxConstraints(),
-                               tooltip: 'Activar contratista',
-                             ),
-                           ],
-                           const SizedBox(width: 8),
-                           IconButton(
-                             onPressed: () {
-                               Navigator.push(
-                                 context,
-                                 MaterialPageRoute(
-                                   builder: (_) => ContratistaEditarScreen(contratista: contratista),
-                                 ),
-                               );
-                             },
-                             icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
-                             padding: EdgeInsets.zero,
-                             constraints: const BoxConstraints(),
-                             tooltip: 'Editar contratista',
-                           ),
-                         ],
-                       ),
-                    ],
+                        const SizedBox(width: 8),
+                        if (contratista.esActivo) ...[
+                          IconButton(
+                            onPressed: () => _confirmarDesactivarContratista(contratista),
+                            icon: Icon(Icons.person_off, color: Colors.orange, size: 20),
+                            tooltip: 'Desactivar contratista',
+                          ),
+                        ] else ...[
+                          IconButton(
+                            onPressed: () => _confirmarActivarContratista(contratista),
+                            icon: Icon(Icons.person_add, color: Colors.green, size: 20),
+                            tooltip: 'Activar contratista',
+                          ),
+                        ],
+                        IconButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ContratistaEditarScreen(contratista: contratista),
+                              ),
+                            );
+                          },
+                          icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
+                          tooltip: 'Editar contratista',
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-              if (contratista.tieneEmail || contratista.tieneTelefono) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: contratista.estadoColor.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.contact_phone,
-                        size: 16,
-                        color: contratista.estadoColor,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          contratista.informacionContacto,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: contratista.estadoColor,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -695,23 +702,23 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                             decoration: BoxDecoration(
-                              color: contratista.estadoTexto == 'ACTIVO' 
+                              color: contratista.esActivo 
                                 ? Colors.green.withOpacity(0.2) 
-                                : Colors.orange.withOpacity(0.2),
+                                : Colors.red.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: contratista.estadoTexto == 'ACTIVO' 
+                                color: contratista.esActivo 
                                   ? Colors.green 
-                                  : Colors.orange,
+                                  : Colors.red,
                                 width: 1,
                               ),
                             ),
                             child: Text(
                               contratista.estadoTexto,
                               style: TextStyle(
-                                color: contratista.estadoTexto == 'ACTIVO' 
+                                color: contratista.esActivo 
                                   ? Colors.green[700] 
-                                  : Colors.orange[700],
+                                  : Colors.red[700],
                                 fontWeight: FontWeight.w600,
                                 fontSize: 12,
                               ),
@@ -735,7 +742,8 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
                         'Información Básica',
                         Icons.business_outlined,
                         [
-                          _buildModernInfoRow('RUT', contratista.rutCompleto, Icons.badge),
+                          _buildModernInfoRow('RUT', contratista.rutCompleto, Icons.badge, color: Colors.blue),
+                          _buildModernInfoRow('Trabajadores Activos', contratista.cantidadTrabajadoresTexto, Icons.people, color: Colors.purple),
                         ],
                       ),
                       
@@ -897,7 +905,7 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
     );
   }
 
-  Widget _buildModernInfoRow(String label, String value, IconData icon) {
+  Widget _buildModernInfoRow(String label, String value, IconData icon, {Color? color}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -906,13 +914,13 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: color?.withOpacity(0.1) ?? Colors.grey[100],
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               icon,
               size: 16,
-              color: Colors.grey[600],
+              color: color ?? Colors.grey[600],
             ),
           ),
           const SizedBox(width: 12),

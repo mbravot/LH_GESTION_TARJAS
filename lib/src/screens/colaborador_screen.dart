@@ -142,6 +142,7 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
           Row(
             children: [
               Expanded(
+                flex: 4,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     setState(() {
@@ -151,7 +152,7 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
                   icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                   label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: Colors.grey[600],
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -161,12 +162,12 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              SizedBox(
-                width: 120,
+              Expanded(
+                flex: 1,
                 child: ElevatedButton.icon(
                   onPressed: () => _mostrarDialogoCrearColaborador(),
                   icon: const Icon(Icons.person_add, size: 20),
-                  label: const Text('Nuevo', style: TextStyle(fontSize: 14)),
+                  label: const Text('Nuevo Colaborador', style: TextStyle(fontSize: 14)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.successColor,
                     foregroundColor: Colors.white,
@@ -174,7 +175,7 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    elevation: 2,
+                    elevation: 3,
                   ),
                 ),
               ),
@@ -394,7 +395,7 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.colorScheme.surface;
-    final borderColor = isDark ? Colors.grey[800]! : Colors.grey[200]!;
+    final borderColor = Colors.green[300]!;
     final textColor = theme.colorScheme.onSurface;
 
     return Card(
@@ -413,6 +414,7 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Título de la actividad
               Row(
                 children: [
                   Container(
@@ -429,144 +431,207 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          colaborador.nombreCompleto,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'RUT: ${colaborador.rutCompleto}',
-                          style: TextStyle(
-                            color: textColor.withOpacity(0.7),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: colaborador.idEstado == '1' ? Colors.green[100] : Colors.red[100],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: colaborador.idEstado == '1' ? Colors.green : Colors.red,
-                        width: 1,
-                      ),
-                    ),
                     child: Text(
-                      colaborador.estadoText,
+                      colaborador.nombreCompleto,
                       style: TextStyle(
-                        color: colaborador.idEstado == '1' ? Colors.green[800] : Colors.red[800],
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: textColor,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              if (colaborador.cargoText != 'Sin cargo') ...[
-                Row(
-                  children: [
-                    Icon(Icons.work, color: Colors.blue, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Cargo: ${colaborador.cargoText}',
-                        style: TextStyle(
-                          color: textColor.withOpacity(0.7),
-                          fontSize: 14,
+              const SizedBox(height: 16),
+              // Contenido en 7 columnas
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Columna 1: RUT
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.badge, color: Colors.blue, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'RUT: ${colaborador.rutCompleto}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-              ],
-              if (colaborador.sucursalText != 'Sucursal ${colaborador.idSucursal}') ...[
-                Row(
-                  children: [
-                    Icon(Icons.location_on, color: Colors.purple, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Sucursal: ${colaborador.sucursalText}',
-                        style: TextStyle(
-                          color: textColor.withOpacity(0.7),
-                          fontSize: 14,
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 2: Cargo
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (colaborador.cargoText != 'Sin cargo') ...[
+                          Row(
+                            children: [
+                              Icon(Icons.work, color: Colors.purple, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Cargo: ${colaborador.cargoText}',
+                                  style: TextStyle(
+                                    color: textColor.withOpacity(0.7),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ] else ...[
+                          Row(
+                            children: [
+                              Icon(Icons.work, color: Colors.blue, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Cargo: Sin cargo',
+                                  style: TextStyle(
+                                    color: textColor.withOpacity(0.7),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 3: Fecha incorporación
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (colaborador.fechaIncorporacion != null) ...[
+                          Row(
+                            children: [
+                              Icon(Icons.calendar_today, color: Colors.orange, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Incorporación: ${colaborador.fechaIncorporacionFormateadaEspanol}',
+                                  style: TextStyle(
+                                    color: textColor.withOpacity(0.7),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ] else ...[
+                          Row(
+                            children: [
+                              Icon(Icons.calendar_today, color: Colors.orange, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Incorporación: Sin fecha',
+                                  style: TextStyle(
+                                    color: textColor.withOpacity(0.7),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 4: Fecha finiquito
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.event_busy, color: Colors.red, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Finiquito: ${colaborador.fechaFiniquitoFormateadaEspanol}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-              ],
-              if (colaborador.fechaIncorporacion != null) ...[
-                Row(
-                  children: [
-                    Icon(Icons.calendar_today, color: Colors.orange, size: 16),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Incorporación: ${colaborador.fechaIncorporacionFormateadaEspanol}',
-                      style: TextStyle(
-                        color: textColor.withOpacity(0.7),
-                        fontSize: 14,
-                      ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 5: Estado, Desactivar/Activar, Editar
+                  Expanded(
+                    flex: 2,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: colaborador.idEstado == '1' ? Colors.green[100] : Colors.red[100],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: colaborador.idEstado == '1' ? Colors.green : Colors.red,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            colaborador.estadoText,
+                            style: TextStyle(
+                              color: colaborador.idEstado == '1' ? Colors.green[800] : Colors.red[800],
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (colaborador.idEstado == '1') ...[
+                          IconButton(
+                            onPressed: () => _confirmarDesactivarColaborador(colaborador),
+                            icon: Icon(Icons.person_off, color: Colors.orange, size: 20),
+                            tooltip: 'Desactivar colaborador',
+                          ),
+                        ] else ...[
+                          IconButton(
+                            onPressed: () => _confirmarActivarColaborador(colaborador),
+                            icon: Icon(Icons.person_add, color: Colors.green, size: 20),
+                            tooltip: 'Activar colaborador',
+                          ),
+                        ],
+                        IconButton(
+                          onPressed: () => _mostrarDialogoEditarColaborador(colaborador),
+                          icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
+                          tooltip: 'Editar colaborador',
+                        ),
+                      ],
                     ),
-                    const Spacer(),
-                    if (colaborador.idEstado == '1') ...[
-                      IconButton(
-                        onPressed: () => _confirmarDesactivarColaborador(colaborador),
-                        icon: Icon(Icons.person_off, color: Colors.orange, size: 20),
-                        tooltip: 'Desactivar colaborador',
-                      ),
-                    ] else ...[
-                      IconButton(
-                        onPressed: () => _confirmarActivarColaborador(colaborador),
-                        icon: Icon(Icons.person_add, color: Colors.green, size: 20),
-                        tooltip: 'Activar colaborador',
-                      ),
-                    ],
-                    IconButton(
-                      onPressed: () => _mostrarDialogoEditarColaborador(colaborador),
-                      icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
-                      tooltip: 'Editar colaborador',
-                    ),
-                  ],
-                ),
-              ] else ...[
-                Row(
-                  children: [
-                    const Spacer(),
-                    if (colaborador.idEstado == '1') ...[
-                      IconButton(
-                        onPressed: () => _confirmarDesactivarColaborador(colaborador),
-                        icon: Icon(Icons.person_off, color: Colors.orange, size: 20),
-                        tooltip: 'Desactivar colaborador',
-                      ),
-                    ] else ...[
-                      IconButton(
-                        onPressed: () => _confirmarActivarColaborador(colaborador),
-                        icon: Icon(Icons.person_add, color: Colors.green, size: 20),
-                        tooltip: 'Activar colaborador',
-                      ),
-                    ],
-                    IconButton(
-                      onPressed: () => _mostrarDialogoEditarColaborador(colaborador),
-                      icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
-                      tooltip: 'Editar colaborador',
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ],
           ),
         ),

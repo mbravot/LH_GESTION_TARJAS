@@ -15,6 +15,7 @@ class Contratista {
   final String estado;
   final String? observaciones;
   final DateTime timestamp;
+  final int cantidadTrabajadoresActivos;
 
   Contratista({
     required this.id,
@@ -31,6 +32,7 @@ class Contratista {
     required this.estado,
     this.observaciones,
     required this.timestamp,
+    this.cantidadTrabajadoresActivos = 0,
   });
 
   factory Contratista.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,7 @@ class Contratista {
         estado: _getEstadoFromId(json['id_estado']),
         observaciones: json['observaciones']?.toString(),
         timestamp: _parseFecha(json['timestamp']) ?? DateTime.now(),
+        cantidadTrabajadoresActivos: int.tryParse(json['cantidad_trabajadores_activos']?.toString() ?? '0') ?? 0,
       );
     } catch (e) {
       rethrow;
@@ -248,4 +251,15 @@ class Contratista {
   bool get tieneDireccion => direccion != null && direccion!.isNotEmpty;
   bool get tieneFechaNacimiento => fechaNacimiento != null;
   bool get tieneFechaIncorporacion => fechaIncorporacion != null;
+
+  // Getter para cantidad de trabajadores activos
+  String get cantidadTrabajadoresTexto {
+    if (cantidadTrabajadoresActivos == 0) {
+      return 'Sin trabajadores activos';
+    } else if (cantidadTrabajadoresActivos == 1) {
+      return '1 trabajador activo';
+    } else {
+      return '$cantidadTrabajadoresActivos trabajadores activos';
+    }
+  }
 }

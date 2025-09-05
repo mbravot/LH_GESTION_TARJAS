@@ -456,6 +456,7 @@ class _ColaboradorEditarScreenState extends State<ColaboradorEditarScreen> {
     required TextEditingController controller,
     required String titulo,
     bool isRequired = false,
+    bool allowClear = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -483,7 +484,26 @@ class _ColaboradorEditarScreenState extends State<ColaboradorEditarScreen> {
           readOnly: true,
           decoration: InputDecoration(
             hintText: 'Seleccionar $label',
-            suffixIcon: const Icon(Icons.calendar_today),
+            suffixIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (allowClear && controller.text.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.clear, color: Colors.red),
+                    onPressed: () {
+                      setState(() {
+                        controller.clear();
+                      });
+                    },
+                    tooltip: 'Limpiar fecha',
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () => _seleccionarFecha(controller, titulo),
+                  tooltip: 'Seleccionar fecha',
+                ),
+              ],
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -883,6 +903,7 @@ class _ColaboradorEditarScreenState extends State<ColaboradorEditarScreen> {
                                   label: 'Fecha de Finiquito',
                                   controller: _fechaFiniquitoController,
                                   titulo: 'Seleccionar Fecha de Finiquito',
+                                  allowClear: true,
                                 ),
                               ],
                             ),
