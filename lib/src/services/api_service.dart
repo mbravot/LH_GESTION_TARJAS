@@ -2439,6 +2439,40 @@ class ApiService {
     }
   }
 
+  // Método para actualizar el estado de un permiso
+  static Future<Map<String, dynamic>> actualizarEstadoPermiso(String permisoId, String nuevoEstado) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('Token no encontrado');
+      }
+
+      // Usar el endpoint para actualizar el estado del permiso
+      final url = '$baseUrl/permisos-ausencia/$permisoId/estado';
+
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'estado': nuevoEstado,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        return responseData;
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al actualizar estado del permiso');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
   // Método para actualizar horas trabajadas de un colaborador en una actividad
   static Future<Map<String, dynamic>> actualizarHorasColaborador({
     required String rendimientoId,

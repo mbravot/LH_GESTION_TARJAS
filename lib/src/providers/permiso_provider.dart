@@ -256,14 +256,11 @@ class PermisoProvider extends ChangeNotifier {
   Map<String, int> get estadisticas {
     final creados = _permisos.where((p) => p.estado == 'Creado').length;
     final aprobados = _permisos.where((p) => p.estado == 'Aprobado').length;
-    // Los permisos "Por Aprobar" son los mismos que "Creado" pero para aprobación
-    final porAprobar = _permisos.where((p) => p.estado == 'Creado').length;
     final total = _permisos.length;
 
     return {
       'creados': creados,
       'aprobados': aprobados,
-      'porAprobar': porAprobar,
       'total': total,
     };
   }
@@ -307,6 +304,19 @@ class PermisoProvider extends ChangeNotifier {
   Future<Map<String, dynamic>?> aprobarPermiso(String id) async {
     try {
       final response = await ApiService.aprobarPermiso(id);
+      await cargarPermisos(); // Recargar la lista
+      return response;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
+
+  // Método para actualizar el estado de un permiso
+  Future<Map<String, dynamic>?> actualizarEstadoPermiso(String permisoId, String nuevoEstado) async {
+    try {
+      final response = await ApiService.actualizarEstadoPermiso(permisoId, nuevoEstado);
       await cargarPermisos(); // Recargar la lista
       return response;
     } catch (e) {

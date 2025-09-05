@@ -440,7 +440,7 @@ class _PermisoScreenState extends State<PermisoScreen> {
                   'Creados',
                   stats['creados']?.toString() ?? '0',
                   Icons.create,
-                  Colors.blue,
+                  Colors.orange,
                   'creados',
                   (stats['creados'] ?? 0) > 0,
                 ),
@@ -454,17 +454,6 @@ class _PermisoScreenState extends State<PermisoScreen> {
                   Colors.green,
                   'aprobados',
                   (stats['aprobados'] ?? 0) > 0,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildTarjetaEstadistica(
-                  'Por Aprobar',
-                  stats['porAprobar']?.toString() ?? '0',
-                  Icons.pending,
-                  Colors.orange,
-                  'porAprobar',
-                  (stats['porAprobar'] ?? 0) > 0,
                 ),
               ),
             ],
@@ -539,89 +528,196 @@ class _PermisoScreenState extends State<PermisoScreen> {
   }
 
   Widget _buildPermisoCard(Permiso permiso) {
+    final cardColor = Theme.of(context).colorScheme.surface;
+    final borderColor = Colors.green[300]!;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
+      color: cardColor,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: borderColor, width: 1),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          backgroundColor: _getColorEstado(permiso.estadoPermiso),
-          child: Icon(
-            _getIconEstado(permiso.estadoPermiso),
-            color: Colors.white,
-            size: 20,
-          ),
-        ),
-        title: Text(
-          permiso.nombreCompletoColaborador,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              'Tipo: ${permiso.tipoPermiso ?? 'N/A'}',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Fecha: ${permiso.fechaFormateadaEspanol}',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Horas: ${permiso.horas}',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Estado: ${permiso.estadoPermiso ?? 'N/A'}',
-              style: TextStyle(
-                color: _getColorEstado(permiso.estadoPermiso),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) => _manejarAccionPermiso(value, permiso),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'editar',
-              child: Row(
-                children: [
-                  Icon(Icons.edit, size: 18),
-                  SizedBox(width: 8),
-                  Text('Editar'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'eliminar',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, size: 18),
-                  SizedBox(width: 8),
-                  Text('Eliminar'),
-                ],
-              ),
-            ),
-          ],
-        ),
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
         onTap: () => _mostrarDetallesPermiso(permiso),
+        borderRadius: BorderRadius.circular(15),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Título del permiso
+              Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _getColorEstado(permiso.estadoPermiso).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: Icon(
+                      _getIconEstado(permiso.estadoPermiso),
+                      color: _getColorEstado(permiso.estadoPermiso),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      permiso.nombreCompletoColaborador,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Contenido en 4 columnas
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Columna 1: Tipo de permiso
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.category, color: Colors.blue, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Tipo: ${permiso.tipoPermiso ?? 'N/A'}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Columna 2: Fecha
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.calendar_today, color: Colors.purple, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Fecha: ${permiso.fechaFormateadaEspanol}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Columna 3: Horas
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.access_time, color: Colors.orange, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Horas: ${permiso.horas}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Columna 4: Estado, Editar, Eliminar
+                  Expanded(
+                    flex: 2,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getColorEstado(permiso.estadoPermiso).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _getColorEstado(permiso.estadoPermiso),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            permiso.estadoPermiso ?? 'N/A',
+                            style: TextStyle(
+                              color: _getColorEstado(permiso.estadoPermiso),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Botón para cambiar estado (solo si es Creado o Aprobado)
+                        if (permiso.estadoPermiso?.toLowerCase() == 'creado' || 
+                            permiso.estadoPermiso?.toLowerCase() == 'aprobado')
+                          IconButton(
+                            onPressed: () => _cambiarEstadoPermiso(permiso),
+                            icon: Icon(
+                              permiso.estadoPermiso?.toLowerCase() == 'creado' 
+                                ? Icons.check_circle 
+                                : Icons.replay,
+                              color: permiso.estadoPermiso?.toLowerCase() == 'creado' 
+                                ? Colors.green 
+                                : Colors.orange,
+                              size: 20,
+                            ),
+                            tooltip: permiso.estadoPermiso?.toLowerCase() == 'creado' 
+                              ? 'Aprobar permiso' 
+                              : 'Marcar como creado',
+                          ),
+                        IconButton(
+                          onPressed: () => _manejarAccionPermiso('editar', permiso),
+                          icon: Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
+                          tooltip: 'Editar permiso',
+                        ),
+                        IconButton(
+                          onPressed: () => _manejarAccionPermiso('eliminar', permiso),
+                          icon: Icon(Icons.delete, color: Colors.red, size: 20),
+                          tooltip: 'Eliminar permiso',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -633,8 +729,9 @@ class _PermisoScreenState extends State<PermisoScreen> {
       case 'rechazado':
         return Colors.red;
       case 'creado':
-      case 'por aprobar':
         return Colors.orange;
+      case 'por aprobar':
+        return Colors.blue;
       default:
         return Colors.grey;
     }
@@ -667,6 +764,111 @@ class _PermisoScreenState extends State<PermisoScreen> {
       case 'eliminar':
         _mostrarDialogoConfirmarEliminacion(permiso);
         break;
+    }
+  }
+
+  void _cambiarEstadoPermiso(Permiso permiso) {
+    final nuevoEstado = permiso.estadoPermiso?.toLowerCase() == 'creado' ? 'Aprobado' : 'Creado';
+    final accion = permiso.estadoPermiso?.toLowerCase() == 'creado' ? 'aprobar' : 'desaprobar';
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${accion == 'aprobar' ? 'Aprobar' : 'Desaprobar'} Permiso'),
+        content: Text(
+          '¿Está seguro de que desea ${accion == 'aprobar' ? 'aprobar' : 'desaprobar'} el permiso de ${permiso.nombreCompletoColaborador}?'
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _actualizarEstadoPermiso(permiso, nuevoEstado);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: accion == 'aprobar' ? Colors.green : Colors.orange,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(accion == 'aprobar' ? 'Aprobar' : 'Desaprobar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _actualizarEstadoPermiso(Permiso permiso, String nuevoEstado) async {
+    try {
+      final permisoProvider = context.read<PermisoProvider>();
+      
+      // Mostrar loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      Map<String, dynamic>? response;
+      
+      // Usar el método apropiado según el estado
+      if (nuevoEstado.toLowerCase() == 'aprobado') {
+        // Usar el método existente para aprobar
+        response = await permisoProvider.aprobarPermiso(permiso.id);
+      } else if (nuevoEstado.toLowerCase() == 'creado') {
+        // Para cambiar a "Creado", usar el método de edición
+        final datosEdicion = {
+          'id_estadopermiso': '1', // ID para estado "Creado"
+          'id_tipopermiso': permiso.idTipopermiso,
+          'fecha': permiso.fecha,
+          'horas': permiso.horas,
+          'id_colaborador': permiso.idColaborador,
+          'id_usuario': permiso.idUsuario,
+        };
+        final exito = await permisoProvider.editarPermiso(permiso.id, datosEdicion);
+        response = exito ? {'success': true} : null;
+      } else {
+        // Para otros estados, usar el método de actualización genérico
+        response = await permisoProvider.actualizarEstadoPermiso(permiso.id, nuevoEstado);
+      }
+      
+      // Cerrar loading
+      Navigator.pop(context);
+      
+      if (response != null) {
+        // Mostrar mensaje de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Permiso ${nuevoEstado.toLowerCase()} exitosamente'),
+            backgroundColor: nuevoEstado.toLowerCase() == 'aprobado' ? Colors.green : Colors.orange,
+          ),
+        );
+      } else {
+        // Mostrar error del provider
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${permisoProvider.error ?? 'Error desconocido'}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      
+    } catch (e) {
+      // Cerrar loading si está abierto
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      // Mostrar error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al actualizar el permiso: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

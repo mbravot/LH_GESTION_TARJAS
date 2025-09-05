@@ -77,9 +77,26 @@ class _PermisoEditarScreenState extends State<PermisoEditarScreen> {
       
       // Establecer valores de los dropdowns después de cargar los datos
       setState(() {
-        // Verificar que el colaborador existe en la lista
+        // Siempre establecer el colaborador del permiso, incluso si no está activo
+        _colaboradorSeleccionado = widget.permiso.idColaborador;
+        
+        // Si el colaborador no está en la lista de activos, agregarlo
         final colaboradorExiste = _colaboradores.any((c) => c.id == widget.permiso.idColaborador);
-        _colaboradorSeleccionado = colaboradorExiste ? widget.permiso.idColaborador : null;
+        if (!colaboradorExiste) {
+          // Buscar el colaborador en la lista completa
+          final colaboradorCompleto = colaboradorProvider.colaboradores.firstWhere(
+            (c) => c.id == widget.permiso.idColaborador,
+            orElse: () => Colaborador(
+              id: widget.permiso.idColaborador,
+              nombre: widget.permiso.nombreColaborador ?? 'Colaborador',
+              apellidoPaterno: widget.permiso.apellidoPaterno ?? '',
+              apellidoMaterno: widget.permiso.apellidoMaterno,
+              idSucursal: '',
+              idEstado: '1',
+            ),
+          );
+          _colaboradores.add(colaboradorCompleto);
+        }
         
         // Verificar que el tipo de permiso existe en la lista
         final tipoExiste = _tiposPermiso.any((t) => t['id'].toString() == widget.permiso.idTipopermiso);
@@ -452,55 +469,6 @@ class _PermisoEditarScreenState extends State<PermisoEditarScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      'Información del Permiso',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppTheme.primaryColor,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: Colors.blue.withOpacity(0.3),
-                                        ),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'ID: ${widget.permiso.id}',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.blue[700],
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            'Creado: ${widget.permiso.timestampFormateadoEspanol}',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.blue[600],
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            'Colaborador: ${widget.permiso.nombreCompletoColaborador}',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.blue[600],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
                                     _buildDropdownColaborador(
                                       label: 'Colaborador',
                                       value: _colaboradorSeleccionado,
