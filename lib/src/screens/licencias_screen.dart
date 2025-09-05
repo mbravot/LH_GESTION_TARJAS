@@ -1288,6 +1288,12 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
               collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               title: Row(
                 children: [
+                  Icon(
+                    Icons.calendar_month,
+                    color: AppTheme.primaryColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _formatearMesAno(mesAno),

@@ -19,6 +19,10 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
   bool _showFiltros = false;
   String _filtroActivo = 'todos'; // 'todos', 'mas_horas', 'menos_horas', 'exactas'
   Set<String> _tarjetasExpandidas = {}; // Para controlar qué tarjetas están expandidas
+  
+  // Variables para agrupación por mes-año
+  List<bool> _expansionState = [];
+  final GlobalKey _expansionKey = GlobalKey();
 
   @override
   void initState() {
@@ -45,6 +49,89 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
       default: // 'todos'
         provider.setFiltroEstado('');
         break;
+    }
+  }
+
+  // Funciones helper para agrupación por mes-año
+  void _resetExpansionState(int length) {
+    _expansionState = List.generate(length, (index) => true);
+  }
+
+  Map<String, List<HorasTrabajadas>> _agruparPorMesAno(List<HorasTrabajadas> horas) {
+    final Map<String, List<HorasTrabajadas>> grupos = {};
+    
+    for (final hora in horas) {
+      // Usar el método del modelo para parsear la fecha
+      final fecha = _parseFechaModelo(hora.fecha);
+      if (fecha != null) {
+        final mesAno = '${fecha.year}-${fecha.month.toString().padLeft(2, '0')}';
+        grupos.putIfAbsent(mesAno, () => []).add(hora);
+      } else {
+        // Si no se puede parsear la fecha, agrupar como "Sin fecha"
+        grupos.putIfAbsent('sin_fecha', () => []).add(hora);
+      }
+    }
+    
+    return grupos;
+  }
+
+  String _formatearMesAno(String mesAno) {
+    if (mesAno == 'sin_fecha') return 'Sin fecha';
+    
+    try {
+      final parts = mesAno.split('-');
+      if (parts.length == 2) {
+        final anio = int.parse(parts[0]);
+        final mes = int.parse(parts[1]);
+        
+        final meses = [
+          '', 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+          'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+        ];
+        
+        return '${meses[mes]} ${anio}';
+      }
+    } catch (e) {
+      // Error al parsear
+    }
+    
+    return mesAno;
+  }
+
+  DateTime? _parseFechaModelo(String fechaStr) {
+    try {
+      // Intentar parsear como ISO primero
+      return DateTime.parse(fechaStr);
+    } catch (e) {
+      try {
+        // Si falla, intentar con el formato específico del backend
+        // "Mon, 18 Aug 2025 00:00:00 GMT"
+        final regex = RegExp(r'(\w{3}), (\d{1,2}) (\w{3}) (\d{4}) (\d{2}):(\d{2}):(\d{2}) GMT');
+        final match = regex.firstMatch(fechaStr);
+        
+        if (match != null) {
+          final day = int.parse(match.group(2)!);
+          final monthStr = match.group(3)!;
+          final year = int.parse(match.group(4)!);
+          final hour = int.parse(match.group(5)!);
+          final minute = int.parse(match.group(6)!);
+          final second = int.parse(match.group(7)!);
+          
+          // Mapear nombres de meses a números
+          final monthMap = {
+            'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+            'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+          };
+          
+          final month = monthMap[monthStr];
+          if (month != null) {
+            return DateTime(year, month, day, hour, minute, second);
+          }
+        }
+        return null;
+      } catch (e) {
+        return null;
+      }
     }
   }
 
@@ -543,12 +630,86 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
       );
     }
 
+    // Agrupar por mes-año
+    final gruposPorMesAno = _agruparPorMesAno(provider.horasTrabajadasFiltradas);
+    final mesesOrdenados = gruposPorMesAno.keys.toList()..sort((a, b) {
+      if (a == 'sin_fecha') return 1;
+      if (b == 'sin_fecha') return -1;
+      return b.compareTo(a); // Orden descendente (más reciente primero)
+    });
+
+    // Resetear estado de expansión si es necesario
+    if (_expansionState.length != mesesOrdenados.length) {
+      _resetExpansionState(mesesOrdenados.length);
+    }
+
     return ListView.builder(
+      key: _expansionKey,
       padding: const EdgeInsets.all(16),
-      itemCount: provider.horasTrabajadasFiltradas.length,
+      itemCount: mesesOrdenados.length,
       itemBuilder: (context, index) {
-        final hora = provider.horasTrabajadasFiltradas[index];
-        return _buildHorasCard(hora);
+        final mesAno = mesesOrdenados[index];
+        final horas = gruposPorMesAno[mesAno]!;
+        final expanded = (_expansionState.length > index) ? _expansionState[index] : true;
+
+        return ExpansionTile(
+          initiallyExpanded: expanded,
+          onExpansionChanged: (isExpanded) {
+            if (_expansionState.length > index) {
+              setState(() {
+                _expansionState[index] = isExpanded;
+              });
+            }
+          },
+          tilePadding: const EdgeInsets.symmetric(horizontal: 0),
+          childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+          collapsedShape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          collapsedBackgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey[800]
+              : Colors.grey[100],
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          iconColor: AppTheme.primaryColor,
+          collapsedIconColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          title: Row(
+            children: [
+              Icon(
+                Icons.calendar_month,
+                color: AppTheme.primaryColor,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _formatearMesAno(mesAno),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${horas.length}',
+                  style: TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          children: horas.map((hora) => _buildHorasCard(hora)).toList(),
+        );
       },
     );
   }
@@ -556,68 +717,78 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
   Widget _buildHorasCard(HorasTrabajadas hora) {
     final idTarjeta = '${hora.idColaborador}_${hora.fecha}';
     final estaExpandida = _estaExpandida(idTarjeta);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.colorScheme.surface;
+    final borderColor = Colors.green[300]!;
+    final textColor = theme.colorScheme.onSurface;
     
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 3,
+      color: cardColor,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: borderColor, width: 1),
       ),
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: InkWell(
         onTap: () => _alternarExpansion(idTarjeta),
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _getEstadoColor(hora.estadoTrabajo).withOpacity(0.2),
-              width: 1,
-            ),
-          ),
+        borderRadius: BorderRadius.circular(15),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Título de la actividad
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: _getEstadoColor(hora.estadoTrabajo).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    padding: const EdgeInsets.all(12),
                     child: Icon(
                       _getEstadoIcono(hora.estadoTrabajo),
                       color: _getEstadoColor(hora.estadoTrabajo),
-                      size: 20,
+                      size: 24,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   Expanded(
+                    child: Text(
+                      hora.colaborador,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Contenido en 5 columnas
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Columna 1: Fecha
+                  Expanded(
+                    flex: 2,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          hora.colaborador,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 14,
-                              color: Colors.purple,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              hora.fechaFormateadaEspanolCompleta,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
+                            Icon(Icons.calendar_today, color: Colors.purple, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Fecha: ${hora.fechaFormateadaEspanolCompleta}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -625,84 +796,113 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
                       ],
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '${hora.totalHorasFormateadas}h',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: _getEstadoColor(hora.estadoTrabajo),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            estaExpandida ? Icons.expand_less : Icons.expand_more,
-                            color: _getEstadoColor(hora.estadoTrabajo),
-                            size: 20,
-                          ),
-                        ],
-                      ),
-                      Text(
-                        'vs ${hora.horasEsperadasFormateadas}h',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: _getEstadoColor(hora.estadoTrabajo).withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
+                  const SizedBox(width: 16),
+                  // Columna 2: Horas trabajadas
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.trending_up,
-                          size: 16,
-                          color: _getEstadoColor(hora.estadoTrabajo),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Diferencia: ${hora.diferenciaHorasFormateadas}h',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: _getEstadoColor(hora.estadoTrabajo),
-                          ),
+                        Row(
+                          children: [
+                            Icon(Icons.access_time, color: Colors.orange, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Trabajadas: ${hora.totalHorasFormateadas}h',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _getEstadoColor(hora.estadoTrabajo).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        hora.estadoTexto,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: _getEstadoColor(hora.estadoTrabajo),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 3: Horas esperadas
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.schedule, color: Colors.blue, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Esperadas: ${hora.horasEsperadasFormateadas}h',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 4: Diferencia
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.trending_up, color: Colors.green, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Diferencia: ${hora.diferenciaHorasFormateadas}h',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 5: Estado y acciones
+                  Expanded(
+                    flex: 2,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getEstadoColor(hora.estadoTrabajo).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            hora.estadoTexto,
+                            style: TextStyle(
+                              color: _getEstadoColor(hora.estadoTrabajo),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          estaExpandida ? Icons.expand_less : Icons.expand_more,
+                          color: _getEstadoColor(hora.estadoTrabajo),
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               
               // Sección expandible con detalles de actividades
@@ -966,6 +1166,15 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
                                fontWeight: FontWeight.w500,
                              ),
                            ),
+                           const SizedBox(height: 2),
+                           Text(
+                             'Rendimiento: ${actividad.rendimientoFormateado}',
+                             style: TextStyle(
+                               fontSize: 12,
+                               color: isDark ? Colors.grey[400] : Colors.grey[600],
+                               fontWeight: FontWeight.w500,
+                             ),
+                           ),
                          ],
                      ],
                    ),
@@ -1017,7 +1226,7 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
              ),
             const SizedBox(height: 8),
            
-           // Información de horas
+           // Información de horas - Solo Horas Trabajadas
            Row(
              children: [
                Expanded(
@@ -1026,22 +1235,6 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
                    '${actividad.horasTrabajadasFormateadas}h',
                    Icons.access_time,
                    Colors.blue,
-                 ),
-               ),
-               Expanded(
-                 child: _buildActividadInfo(
-                   'Horas Extras',
-                   '${actividad.horasExtrasFormateadas}h',
-                   Icons.add_circle,
-                   Colors.orange,
-                 ),
-               ),
-               Expanded(
-                 child: _buildActividadInfo(
-                   'Total',
-                   '${actividad.totalHorasFormateadas}h',
-                   Icons.trending_up,
-                   _getActividadEstadoColor(actividad),
                  ),
                ),
              ],
