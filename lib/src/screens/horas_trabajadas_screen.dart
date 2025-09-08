@@ -85,11 +85,11 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
         final mes = int.parse(parts[1]);
         
         final meses = [
-          '', 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-          'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+          'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
         ];
         
-        return '${meses[mes]} ${anio}';
+        return '${meses[mes - 1]} ${anio}';
       }
     } catch (e) {
       // Error al parsear
@@ -653,7 +653,7 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
         final expanded = (_expansionState.length > index) ? _expansionState[index] : true;
 
         return ExpansionTile(
-          initiallyExpanded: expanded,
+          initiallyExpanded: true,
           onExpansionChanged: (isExpanded) {
             if (_expansionState.length > index) {
               setState(() {
@@ -661,20 +661,12 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
               });
             }
           },
-          tilePadding: const EdgeInsets.symmetric(horizontal: 0),
-          childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
-          collapsedShape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          collapsedBackgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? Colors.grey[800]
-              : Colors.grey[100],
-          backgroundColor: Theme.of(context).colorScheme.surface,
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: EdgeInsets.zero,
+          shape: Border(),
+          collapsedShape: Border(),
+          collapsedIconColor: AppTheme.primaryColor,
           iconColor: AppTheme.primaryColor,
-          collapsedIconColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           title: Row(
             children: [
               Icon(
@@ -685,14 +677,14 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
               const SizedBox(width: 8),
               Text(
                 _formatearMesAno(mesAno),
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
+                  fontSize: 16,
                 ),
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -700,9 +692,9 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
                 child: Text(
                   '${horas.length}',
                   style: TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontWeight: FontWeight.bold,
                     fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
                   ),
                 ),
               ),
@@ -1159,20 +1151,11 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
                                                  if (actividad.ceco.isNotEmpty) ...[
                            const SizedBox(height: 2),
                            Text(
-                             'CECO: ${actividad.ceco}',
+                             'CECO: ${actividad.nombreCeco.isNotEmpty ? actividad.nombreCeco : actividad.ceco}',
                              style: TextStyle(
+                              fontWeight: FontWeight.bold,
                                fontSize: 12,
                                color: isDark ? Colors.grey[400] : Colors.grey[600],
-                               fontWeight: FontWeight.w500,
-                             ),
-                           ),
-                           const SizedBox(height: 2),
-                           Text(
-                             'Rendimiento: ${actividad.rendimientoFormateado}',
-                             style: TextStyle(
-                               fontSize: 12,
-                               color: isDark ? Colors.grey[400] : Colors.grey[600],
-                               fontWeight: FontWeight.w500,
                              ),
                            ),
                          ],
@@ -1180,30 +1163,37 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
                    ),
                  ),
                  Row(
+                   mainAxisAlignment: MainAxisAlignment.end,
                    children: [
-                     Container(
-                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                       decoration: BoxDecoration(
-                         color: _getActividadEstadoColor(actividad).withOpacity(0.1),
-                         borderRadius: BorderRadius.circular(12),
-                       ),
-                       child: Text(
-                         _getActividadEstadoTexto(actividad),
-                         style: TextStyle(
-                           fontSize: 12,
-                           fontWeight: FontWeight.w500,
-                           color: _getActividadEstadoColor(actividad),
+                     GestureDetector(
+                       onTap: () => _mostrarDialogoEditarHoras(actividad),
+                       child: Container(
+                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                         decoration: BoxDecoration(
+                           color: Colors.green.withOpacity(0.1),
+                           borderRadius: BorderRadius.circular(12),
+                         ),
+                         child: Row(
+                           mainAxisSize: MainAxisSize.min,
+                           children: [
+                             Icon(
+                               Icons.edit,
+                               size: 14,
+                               color: Colors.green,
+                             ),
+                             const SizedBox(width: 4),
+                             Text(
+                               'EDITAR',
+                               style: TextStyle(
+                                 fontSize: 12,
+                                 fontWeight: FontWeight.w500,
+                                 color: Colors.green,
+                               ),
+                             ),
+                           ],
                          ),
                        ),
                      ),
-                     const SizedBox(width: 8),
-                                           IconButton(
-                        icon: Icon(Icons.edit, size: 16, color: Colors.green),
-                        onPressed: () => _mostrarDialogoEditarHoras(actividad),
-                        tooltip: 'Editar horas',
-                      ),
-
-
                    ],
                  ),
                ],
@@ -1327,26 +1317,6 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Ingrese las horas trabajadas';
-                    }
-                    final horas = double.tryParse(value);
-                    if (horas == null || horas < 0) {
-                      return 'Ingrese un valor válido';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: horasExtrasController,
-                  decoration: const InputDecoration(
-                    labelText: 'Horas Extras',
-                    border: OutlineInputBorder(),
-                    suffixText: 'horas',
-                  ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Ingrese las horas extras';
                     }
                     final horas = double.tryParse(value);
                     if (horas == null || horas < 0) {

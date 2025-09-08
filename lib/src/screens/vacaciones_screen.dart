@@ -179,8 +179,13 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
       final parts = mesAno.split('-');
       final year = int.parse(parts[0]);
       final month = int.parse(parts[1]);
-      final date = DateTime(year, month);
-      return DateFormat('MMMM yyyy', 'es').format(date);
+      
+      final meses = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+      ];
+      
+      return '${meses[month - 1]} $year';
     } catch (e) {
       return mesAno;
     }
@@ -1212,7 +1217,7 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
             ),
             child: ExpansionTile(
               key: ValueKey('expansion_$i'),
-              initiallyExpanded: expanded,
+              initiallyExpanded: true,
               onExpansionChanged: (isExpanded) {
                 if (_expansionState.length > i) {
                   setState(() {
@@ -1220,13 +1225,12 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
                   });
                 }
               },
-              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              collapsedBackgroundColor: Theme.of(context).brightness == Brightness.dark 
-                ? Colors.grey[800]!.withOpacity(0.3)
-                : AppTheme.primaryColor.withOpacity(0.07),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: EdgeInsets.zero,
+              shape: Border(),
+              collapsedShape: Border(),
+              collapsedIconColor: AppTheme.primaryColor,
+              iconColor: AppTheme.primaryColor,
               title: Row(
                 children: [
                   Icon(
@@ -1235,27 +1239,26 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
                     size: 20,
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _formatearMesAno(mesAno),
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
-                      ),
+                  Text(
+                    _formatearMesAno(mesAno),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor,
+                      color: AppTheme.primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       '${vacaciones.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                      style: TextStyle(
                         fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryColor,
                       ),
                     ),
                   ),

@@ -23,6 +23,10 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
   // Variables para agrupación
   List<bool> _expansionState = [];
   final GlobalKey _expansionKey = GlobalKey();
+  
+  // Variables para agrupación por mes-año
+  Map<String, List<HorasExtras>> _horasExtrasAgrupadas = {};
+  List<String> _mesesAnos = [];
 
   @override
   void initState() {
@@ -75,6 +79,86 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
         _tarjetasExpandidas.add(rendimientoId);
       }
     });
+  }
+
+  // Función para parsear fechas (similar a horas trabajadas)
+  DateTime? _parseFecha(String fechaStr) {
+    try {
+      // Intentar parsear como ISO primero
+      return DateTime.parse(fechaStr);
+    } catch (e) {
+      try {
+        // Si falla, intentar con el formato específico del backend
+        // "Mon, 18 Aug 2025 00:00:00 GMT"
+        final regex = RegExp(r'(\w{3}), (\d{1,2}) (\w{3}) (\d{4}) (\d{2}):(\d{2}):(\d{2}) GMT');
+        final match = regex.firstMatch(fechaStr);
+        
+        if (match != null) {
+          final day = int.parse(match.group(2)!);
+          final monthStr = match.group(3)!;
+          final year = int.parse(match.group(4)!);
+          final hour = int.parse(match.group(5)!);
+          final minute = int.parse(match.group(6)!);
+          final second = int.parse(match.group(7)!);
+          
+          // Mapear nombres de meses a números
+          final monthMap = {
+            'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+            'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+          };
+          
+          final month = monthMap[monthStr];
+          if (month != null) {
+            return DateTime(year, month, day, hour, minute, second);
+          }
+        }
+        return null;
+      } catch (e) {
+        return null;
+      }
+    }
+  }
+
+  // Función para formatear mes-año
+  String _formatearMesAno(DateTime fecha) {
+    final meses = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    return '${meses[fecha.month - 1]} ${fecha.year}';
+  }
+
+  // Función para agrupar por mes-año
+  void _agruparPorMesAno(List<HorasExtras> horasExtras) {
+    _horasExtrasAgrupadas.clear();
+    _mesesAnos.clear();
+    
+    for (final hora in horasExtras) {
+      final fecha = _parseFecha(hora.fecha);
+      if (fecha != null) {
+        final mesAno = _formatearMesAno(fecha);
+        if (!_horasExtrasAgrupadas.containsKey(mesAno)) {
+          _horasExtrasAgrupadas[mesAno] = [];
+          _mesesAnos.add(mesAno);
+        }
+        _horasExtrasAgrupadas[mesAno]!.add(hora);
+      }
+    }
+    
+    // Ordenar meses de más reciente a más antiguo
+    _mesesAnos.sort((a, b) {
+      final fechaA = _parseFecha(_horasExtrasAgrupadas[a]!.first.fecha);
+      final fechaB = _parseFecha(_horasExtrasAgrupadas[b]!.first.fecha);
+      if (fechaA != null && fechaB != null) {
+        return fechaB.compareTo(fechaA);
+      }
+      return 0;
+    });
+  }
+
+  // Función para resetear estado de expansión
+  void _resetExpansionState() {
+    _expansionState = List.filled(_mesesAnos.length, false);
   }
 
 
@@ -163,6 +247,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
           Row(
             children: [
               Expanded(
+                flex: 4,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     setState(() {
@@ -172,7 +257,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                   icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                   label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: Colors.grey[600],
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -556,12 +641,72 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
       );
     }
 
+    // Agrupar por mes-año
+    _agruparPorMesAno(rendimientos);
+    _resetExpansionState();
+
+    return _buildListaHorasExtrasAgrupadas();
+  }
+
+  Widget _buildListaHorasExtrasAgrupadas() {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: rendimientos.length,
+      itemCount: _mesesAnos.length,
       itemBuilder: (context, index) {
-        final rendimiento = rendimientos[index];
-        return _buildHorasCard(rendimiento);
+        final mesAno = _mesesAnos[index];
+        final horasExtras = _horasExtrasAgrupadas[mesAno]!;
+        
+        return ExpansionTile(
+          key: ValueKey(mesAno),
+          initiallyExpanded: true,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              if (index < _expansionState.length) {
+                _expansionState[index] = expanded;
+              }
+            });
+          },
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: EdgeInsets.zero,
+          shape: Border(),
+          collapsedShape: Border(),
+          collapsedIconColor: AppTheme.primaryColor,
+          iconColor: AppTheme.primaryColor,
+          title: Row(
+            children: [
+              Icon(
+                Icons.calendar_month,
+                size: 20,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                mesAno,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${horasExtras.length}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          children: horasExtras.map((hora) => _buildHorasCard(hora)).toList(),
+        );
       },
     );
   }
@@ -633,7 +778,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: _getEstadoColor(rendimiento.estadoTrabajo).withOpacity(0.2),
+            color: Colors.green[300]!,
             width: 1,
           ),
         ),

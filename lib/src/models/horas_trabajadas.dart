@@ -216,6 +216,7 @@ class ActividadDetalle {
   final String rendimientoId;
   final String labor;
   final String ceco;
+  final String nombreCeco; // Nombre completo del CECO
   final double horasTrabajadas;
   final double horasExtras;
   final double rendimiento;
@@ -227,6 +228,7 @@ class ActividadDetalle {
     required this.rendimientoId,
     required this.labor,
     required this.ceco,
+    required this.nombreCeco,
     required this.horasTrabajadas,
     required this.horasExtras,
     required this.rendimiento,
@@ -243,6 +245,7 @@ class ActividadDetalle {
       rendimientoId: rendimientoId,
       labor: json['labor']?.toString() ?? '',
       ceco: json['ceco']?.toString() ?? '',
+      nombreCeco: json['nombre_ceco']?.toString() ?? json['ceco']?.toString() ?? '', // Fallback al código si no hay nombre
       horasTrabajadas: HorasTrabajadas._toDouble(json['horas_trabajadas']),
       horasExtras: HorasTrabajadas._toDouble(json['horas_extras']),
       rendimiento: HorasTrabajadas._toDouble(json['rendimiento']),
