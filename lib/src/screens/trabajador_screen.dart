@@ -1201,7 +1201,7 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
             ),
             child: ExpansionTile(
               key: ValueKey('expansion_$i'),
-              initiallyExpanded: expanded,
+              initiallyExpanded: true,
               onExpansionChanged: (isExpanded) {
                 if (_expansionState.length > i) {
                   setState(() {
@@ -1209,13 +1209,12 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
                   });
                 }
               },
-              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              collapsedBackgroundColor: Theme.of(context).brightness == Brightness.dark 
-                ? Colors.grey[800]!.withOpacity(0.3)
-                : AppTheme.primaryColor.withOpacity(0.07),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: EdgeInsets.zero,
+              shape: Border(),
+              collapsedShape: Border(),
+              collapsedIconColor: AppTheme.primaryColor,
+              iconColor: AppTheme.primaryColor,
               title: Row(
                 children: [
                   Container(
@@ -1230,28 +1229,27 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
                       size: 20,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      contratista,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
-                      ),
+                  const SizedBox(width: 8),
+                  Text(
+                    contratista,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor,
+                      color: AppTheme.primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       '${trabajadores.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                      style: TextStyle(
                         fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryColor,
                       ),
                     ),
                   ),
