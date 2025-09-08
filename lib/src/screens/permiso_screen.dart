@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import '../providers/permiso_provider.dart';
 import '../providers/colaborador_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/horas_trabajadas_provider.dart';
+import '../providers/horas_extras_provider.dart';
+import '../providers/tarja_provider.dart';
 import '../models/permiso.dart';
 import '../theme/app_theme.dart';
 import 'permiso_crear_screen.dart';
@@ -47,13 +50,21 @@ class _PermisoScreenState extends State<PermisoScreen> {
     });
   }
 
-  // Método para refrescar datos desde el AppBar
   Future<void> _refrescarDatos() async {
-    final permisoProvider = context.read<PermisoProvider>();
-    final colaboradorProvider = context.read<ColaboradorProvider>();
+    // Actualizar todos los providers relevantes
+    final permisoProvider = Provider.of<PermisoProvider>(context, listen: false);
+    final colaboradorProvider = Provider.of<ColaboradorProvider>(context, listen: false);
+    final horasTrabajadasProvider = Provider.of<HorasTrabajadasProvider>(context, listen: false);
+    final horasExtrasProvider = Provider.of<HorasExtrasProvider>(context, listen: false);
+    final tarjaProvider = Provider.of<TarjaProvider>(context, listen: false);
+    
+    // Cargar datos en paralelo para mejor rendimiento
     await Future.wait([
       permisoProvider.inicializar(),
       colaboradorProvider.cargarColaboradores(),
+      horasTrabajadasProvider.cargarHorasTrabajadas(),
+      horasExtrasProvider.cargarRendimientos(),
+      tarjaProvider.cargarTarjas(),
     ]);
   }
 

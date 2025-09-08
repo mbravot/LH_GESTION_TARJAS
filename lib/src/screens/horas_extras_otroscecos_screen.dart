@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/horas_extras_otroscecos_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/horas_trabajadas_provider.dart';
+import '../providers/horas_extras_provider.dart';
+import '../providers/tarja_provider.dart';
+import 'horas_extras_otroscecos_crear_screen.dart';
+import 'horas_extras_otroscecos_editar_screen.dart';
 import '../models/horas_extras_otroscecos.dart';
+import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/dark_theme_colors.dart';
 
@@ -17,6 +23,7 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
   String _searchQuery = '';
   bool _showFiltros = false;
   String _filtroActivo = 'todos'; // 'todos', 'futuras', 'hoy', 'pasadas'
+  
 
   @override
   void initState() {
@@ -30,60 +37,108 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
     });
     
     final provider = Provider.of<HorasExtrasOtrosCecosProvider>(context, listen: false);
-    switch (filtro) {
-      case 'futuras':
-        // Filtrar por futuras
-        break;
-      case 'hoy':
-        // Filtrar por hoy
-        break;
-      case 'pasadas':
-        // Filtrar por pasadas
-        break;
-      default: // 'todos'
-        // No aplicar filtro de estado
-        break;
-    }
+    provider.setFiltroEstado(filtro);
   }
 
-  Future<void> _cargarDatosIniciales() async {
-    final provider = Provider.of<HorasExtrasOtrosCecosProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
-    provider.setAuthProvider(authProvider);
-    
-    // Usar Future.delayed para evitar el error de setState durante build
-    Future.delayed(Duration.zero, () async {
-      await provider.cargarHorasExtras();
-      await provider.cargarOpciones();
+
+  void _cargarDatosIniciales() {
+    print('🔍 DEBUG: Iniciando carga de datos...');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = context.read<AuthProvider>();
+      final provider = context.read<HorasExtrasOtrosCecosProvider>();
+      
+      print('🔍 DEBUG: Configurando provider...');
+      // Configurar el provider para escuchar cambios de sucursal
+      provider.setAuthProvider(authProvider);
+      
+      print('🔍 DEBUG: Cargando horas extras...');
+      // Cargar datos
+      provider.cargarHorasExtras();
+      print('🔍 DEBUG: Cargando opciones...');
+      provider.cargarOpciones();
     });
   }
 
   Future<void> _refrescarDatos() async {
-    final provider = Provider.of<HorasExtrasOtrosCecosProvider>(context, listen: false);
-    await provider.cargarHorasExtras();
+    // Actualizar todos los providers relevantes
+    final horasExtrasOtrosCecosProvider = Provider.of<HorasExtrasOtrosCecosProvider>(context, listen: false);
+    final horasTrabajadasProvider = Provider.of<HorasTrabajadasProvider>(context, listen: false);
+    final horasExtrasProvider = Provider.of<HorasExtrasProvider>(context, listen: false);
+    final tarjaProvider = Provider.of<TarjaProvider>(context, listen: false);
+    
+    // Cargar datos en paralelo para mejor rendimiento
+    await Future.wait([
+      horasExtrasOtrosCecosProvider.cargarHorasExtras(),
+      horasExtrasOtrosCecosProvider.cargarOpciones(),
+      horasTrabajadasProvider.cargarHorasTrabajadas(),
+      horasExtrasProvider.cargarRendimientos(),
+      tarjaProvider.cargarTarjas(),
+    ]);
   }
+
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<HorasExtrasOtrosCecosProvider>(
-      builder: (context, provider, child) {
-        return Scaffold(
-          body: Column(
-            children: [
-              _buildSearchBar(),
-              if (_showFiltros) ...[
-                const SizedBox(height: 12),
-                _buildFiltrosAvanzados(),
-              ],
-              _buildEstadisticas(provider),
-              Expanded(
-                child: _buildListaHorasExtrasOtrosCecos(provider),
-              ),
-            ],
+    return Column(
+      children: [
+        _buildSearchBar(),
+        if (_showFiltros) ...[
+          const SizedBox(height: 12),
+          _buildFiltrosAvanzados(),
+        ],
+        _buildEstadisticas(),
+        Expanded(
+          child: Consumer<HorasExtrasOtrosCecosProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+
+              if (provider.error != null && provider.error!.isNotEmpty) {
+                print('🔍 DEBUG: Mostrando error: ${provider.error}');
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 80,
+                        color: Colors.red.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error al cargar horas extras otros CECOs',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        provider.error!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.red.withOpacity(0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => provider.cargarHorasExtras(),
+                        child: const Text('Reintentar'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return _buildListaHorasExtrasOtrosCecos(provider);
+            },
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 
@@ -147,6 +202,7 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
           Row(
             children: [
               Expanded(
+                flex: 4,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     setState(() {
@@ -157,6 +213,33 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
                   label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey[600],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 1,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const HorasExtrasOtrosCecosCrearScreen(),
+                      ),
+                    );
+                    if (result == true) {
+                      await _refrescarDatos();
+                    }
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Nuevo'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -396,54 +479,58 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
     );
   }
 
-  Widget _buildEstadisticas(HorasExtrasOtrosCecosProvider provider) {
-    final stats = provider.estadisticas;
-    
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Futuras',
-              valor: stats['futuras'].toString(),
-              color: Colors.blue,
-              icono: Icons.schedule,
-              filtro: 'futuras',
-            ),
+  Widget _buildEstadisticas() {
+    return Consumer<HorasExtrasOtrosCecosProvider>(
+      builder: (context, provider, child) {
+        final stats = provider.estadisticas;
+        
+        return Container(
+          margin: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  titulo: 'Total',
+                  valor: stats['total']?.toString() ?? '0',
+                  color: Colors.purple,
+                  icono: Icons.list,
+                  filtro: 'todos',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  titulo: 'Futuras',
+                  valor: stats['futuras']?.toString() ?? '0',
+                  color: Colors.blue,
+                  icono: Icons.schedule,
+                  filtro: 'futuras',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  titulo: 'Hoy',
+                  valor: stats['hoy']?.toString() ?? '0',
+                  color: Colors.green,
+                  icono: Icons.today,
+                  filtro: 'hoy',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  titulo: 'Pasadas',
+                  valor: stats['pasadas']?.toString() ?? '0',
+                  color: Colors.grey,
+                  icono: Icons.history,
+                  filtro: 'pasadas',
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Hoy',
-              valor: stats['hoy'].toString(),
-              color: Colors.green,
-              icono: Icons.today,
-              filtro: 'hoy',
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Pasadas',
-              valor: stats['pasadas'].toString(),
-              color: Colors.grey,
-              icono: Icons.history,
-              filtro: 'pasadas',
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Total',
-              valor: stats['total'].toString(),
-              color: Colors.orange,
-              icono: Icons.list,
-              filtro: 'todos',
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -513,27 +600,47 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
     );
   }
 
+
   Widget _buildListaHorasExtrasOtrosCecos(HorasExtrasOtrosCecosProvider provider) {
     final horasExtras = provider.horasExtrasFiltradas;
     
+    print('🔍 DEBUG: Pantalla - Total registros: ${provider.horasExtras.length}');
+    print('🔍 DEBUG: Pantalla - Registros filtrados: ${horasExtras.length}');
+    print('🔍 DEBUG: Pantalla - Estado de carga: ${provider.isLoading}');
+    print('🔍 DEBUG: Pantalla - Error: ${provider.error}');
+    
     if (horasExtras.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.work_off,
+              _searchQuery.isNotEmpty ? Icons.search_off : Icons.work_off,
               size: 64,
               color: Colors.grey,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
-              'No hay horas extras disponibles',
-              style: TextStyle(
+              _searchQuery.isNotEmpty 
+                  ? 'No se encontraron resultados para "$_searchQuery"'
+                  : 'No hay horas extras otros CECOs disponibles',
+              style: const TextStyle(
                 fontSize: 18,
                 color: Colors.grey,
               ),
             ),
+            if (_searchQuery.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _searchQuery = '';
+                  });
+                  provider.setFiltroBusqueda('');
+                },
+                child: const Text('Limpiar búsqueda'),
+              ),
+            ],
           ],
         ),
       );
@@ -550,67 +657,78 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
   }
 
   Widget _buildHorasExtraCard(HorasExtrasOtrosCecos horasExtra) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.colorScheme.surface;
+    final borderColor = Colors.green[300]!;
+    final textColor = theme.colorScheme.onSurface;
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 3,
+      color: cardColor,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: borderColor, width: 1),
       ),
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: InkWell(
         onTap: () => _mostrarDetallesHorasExtra(horasExtra),
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: horasExtra.estadoColor.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
+        borderRadius: BorderRadius.circular(15),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header con icono y nombre del colaborador
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: horasExtra.estadoColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    padding: const EdgeInsets.all(12),
                     child: Icon(
                       horasExtra.estadoIcono,
                       color: horasExtra.estadoColor,
-                      size: 20,
+                      size: 24,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   Expanded(
+                    child: Text(
+                      horasExtra.nombreColaborador,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Contenido en 5 columnas
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Columna 1: Fecha
+                  Expanded(
+                    flex: 2,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          horasExtra.nombreColaborador,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 14,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              horasExtra.fechaFormateadaEspanolCompleta,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
+                            Icon(Icons.calendar_today, color: Colors.blue, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Fecha: ${horasExtra.fechaFormateadaEspanolCompleta}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -618,63 +736,124 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
                       ],
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        horasExtra.cantidadFormateada,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: horasExtra.estadoColor,
+                  const SizedBox(width: 16),
+                  // Columna 2: Cantidad
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.access_time, color: Colors.orange, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Cantidad: ${horasExtra.cantidadFormateada}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: horasExtra.estadoColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 3: Tipo CECO
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.category, color: Colors.purple, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Tipo: ${horasExtra.nombreCecoTipo}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        child: Text(
-                          horasExtra.estadoTexto,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: horasExtra.estadoColor,
-                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 4: CECO
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.business, color: Colors.green, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'CECO: ${horasExtra.nombreCeco}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 5: Acciones
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            IconButton(
+                              onPressed: () async {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => HorasExtrasOtrosCecosEditarScreen(
+                                      horasExtrasOtrosCecos: horasExtra,
+                                    ),
+                                  ),
+                                );
+                                if (result == true) {
+                                  await _refrescarDatos();
+                                }
+                              },
+                              icon: const Icon(Icons.edit, color: Colors.green, size: 20),
+                              tooltip: 'Editar',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () => _confirmarEliminar(horasExtra),
+                              icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                              tooltip: 'Eliminar',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: horasExtra.estadoColor.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.category,
-                      size: 16,
-                      color: horasExtra.estadoColor,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '${horasExtra.nombreCecoTipo} - ${horasExtra.nombreCeco}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: horasExtra.estadoColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ],
           ),
@@ -804,6 +983,66 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
         ],
       ),
     );
+  }
+
+  Future<void> _confirmarEliminar(HorasExtrasOtrosCecos horasExtra) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Confirmar eliminación'),
+          ],
+        ),
+        content: Text(
+          '¿Está seguro de que desea eliminar las horas extras de ${horasExtra.nombreColaborador} del ${horasExtra.fechaFormateadaCorta}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await ApiService.eliminarHorasExtrasOtrosCecos(horasExtra.id);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Horas extras otros CECOs eliminadas exitosamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          await _refrescarDatos();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al eliminar horas extras otros CECOs: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 }
 

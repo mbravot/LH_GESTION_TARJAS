@@ -213,9 +213,11 @@ class HorasExtras {
 // Modelo para el detalle de actividades
 class ActividadDetalle {
   final String idActividad;
+  final String idRendimiento;
   final String nombreActividad;
   final String labor;
   final String ceco;
+  final String nombreCeco;
   final double horasTrabajadas;
   final double horasExtras;
   final double rendimiento;
@@ -224,9 +226,11 @@ class ActividadDetalle {
 
   ActividadDetalle({
     required this.idActividad,
+    required this.idRendimiento,
     required this.nombreActividad,
     required this.labor,
     required this.ceco,
+    required this.nombreCeco,
     required this.horasTrabajadas,
     required this.horasExtras,
     required this.rendimiento,
@@ -237,9 +241,11 @@ class ActividadDetalle {
   factory ActividadDetalle.fromJson(Map<String, dynamic> json) {
     return ActividadDetalle(
       idActividad: json['id_actividad']?.toString() ?? '',
+      idRendimiento: json['id_rendimiento']?.toString() ?? '',
       nombreActividad: json['nombre_actividad']?.toString() ?? '',
       labor: json['labor']?.toString() ?? '',
       ceco: json['ceco']?.toString() ?? '',
+      nombreCeco: json['nombre_ceco']?.toString() ?? json['ceco']?.toString() ?? '',
       horasTrabajadas: HorasExtras._toDouble(json['horas_trabajadas']),
       horasExtras: HorasExtras._toDouble(json['horas_extras']),
       rendimiento: HorasExtras._toDouble(json['rendimiento']),

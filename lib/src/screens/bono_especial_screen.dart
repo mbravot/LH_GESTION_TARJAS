@@ -139,6 +139,7 @@ class _BonoEspecialScreenState extends State<BonoEspecialScreen> {
           Row(
             children: [
               Expanded(
+                flex: 4,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     setState(() {
@@ -149,6 +150,33 @@ class _BonoEspecialScreenState extends State<BonoEspecialScreen> {
                   label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey[600],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 1,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BonoEspecialCrearScreen(),
+                      ),
+                    );
+                    if (result == true) {
+                      await _refrescarDatos();
+                    }
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Nuevo'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -511,67 +539,78 @@ class _BonoEspecialScreenState extends State<BonoEspecialScreen> {
   }
 
   Widget _buildBonoEspecialCard(BonoEspecial bonoEspecial) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.colorScheme.surface;
+    final borderColor = Colors.orange[300]!;
+    final textColor = theme.colorScheme.onSurface;
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 3,
+      color: cardColor,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: borderColor, width: 1),
       ),
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: InkWell(
         onTap: () => _mostrarDetallesBonoEspecial(bonoEspecial),
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: bonoEspecial.estadoColor.withValues(alpha: 0.2),
-              width: 1,
-            ),
-          ),
+        borderRadius: BorderRadius.circular(15),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header con icono y nombre del colaborador
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: bonoEspecial.estadoColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      color: bonoEspecial.estadoColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    padding: const EdgeInsets.all(12),
                     child: Icon(
                       bonoEspecial.estadoIcono,
                       color: bonoEspecial.estadoColor,
-                      size: 20,
+                      size: 24,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   Expanded(
+                    child: Text(
+                      bonoEspecial.nombreColaborador,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Contenido en 3 columnas
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Columna 1: Fecha
+                  Expanded(
+                    flex: 2,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          bonoEspecial.nombreColaborador,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 14,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              bonoEspecial.fechaFormateadaEspanolCompleta,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
+                            Icon(Icons.calendar_today, color: Colors.blue, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Fecha: ${bonoEspecial.fechaFormateadaEspanolCompleta}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -579,63 +618,74 @@ class _BonoEspecialScreenState extends State<BonoEspecialScreen> {
                       ],
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        bonoEspecial.cantidadFormateada,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: bonoEspecial.estadoColor,
+                  const SizedBox(width: 16),
+                  // Columna 2: Cantidad
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.access_time, color: Colors.orange, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Cantidad: ${bonoEspecial.cantidadFormateada}',
+                                style: TextStyle(
+                                  color: textColor.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: bonoEspecial.estadoColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 3: Acciones
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            IconButton(
+                              onPressed: () async {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => BonoEspecialEditarScreen(
+                                      bonoEspecial: bonoEspecial,
+                                    ),
+                                  ),
+                                );
+                                if (result == true) {
+                                  await _refrescarDatos();
+                                }
+                              },
+                              icon: const Icon(Icons.edit, color: Colors.green, size: 20),
+                              tooltip: 'Editar',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () => _confirmarEliminar(bonoEspecial),
+                              icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                              tooltip: 'Eliminar',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
                         ),
-                        child: Text(
-                          bonoEspecial.estadoTexto,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: bonoEspecial.estadoColor,
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: bonoEspecial.estadoColor.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.card_giftcard,
-                      size: 16,
-                      color: bonoEspecial.estadoColor,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Bono Especial - Horas Sobrantes',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: bonoEspecial.estadoColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ],
           ),
@@ -763,6 +813,78 @@ class _BonoEspecialScreenState extends State<BonoEspecialScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmarEliminar(BonoEspecial bonoEspecial) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Confirmar eliminación'),
+          ],
+        ),
+        content: Text(
+          '¿Está seguro de que desea eliminar el bono especial de ${bonoEspecial.nombreColaborador} del ${bonoEspecial.fechaFormateadaCorta}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final provider = context.read<BonoEspecialProvider>();
+        final resultado = await provider.eliminarBonoEspecial(bonoEspecial.id);
+        
+        if (resultado) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Bono especial eliminado exitosamente'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            await _refrescarDatos();
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(provider.error),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al eliminar bono especial: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 }
 

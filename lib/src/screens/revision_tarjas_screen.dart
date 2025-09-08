@@ -5,6 +5,8 @@ import 'dart:developer' as developer;
 import '../models/tarja.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tarja_provider.dart';
+import '../providers/horas_trabajadas_provider.dart';
+import '../providers/horas_extras_provider.dart';
 
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
@@ -40,6 +42,20 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     } else {
       return lightColor ?? theme.colorScheme.onSurface;
     }
+  }
+
+  Future<void> _refrescarDatos() async {
+    // Actualizar todos los providers relevantes
+    final tarjaProvider = Provider.of<TarjaProvider>(context, listen: false);
+    final horasTrabajadasProvider = Provider.of<HorasTrabajadasProvider>(context, listen: false);
+    final horasExtrasProvider = Provider.of<HorasExtrasProvider>(context, listen: false);
+    
+    // Cargar datos en paralelo para mejor rendimiento
+    await Future.wait([
+      tarjaProvider.cargarTarjas(),
+      horasTrabajadasProvider.cargarHorasTrabajadas(),
+      horasExtrasProvider.cargarRendimientos(),
+    ]);
   }
 
   // Método para filtrar rendimientos que pertenecen a una tarja específica
@@ -141,26 +157,6 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     }
   }
 
-  // Método para refrescar datos desde el AppBar
-  Future<void> _refrescarDatos() async {
-    final tarjaProvider = context.read<TarjaProvider>();
-    
-    // Limpiar cache de rendimientos antes de cargar nuevos datos
-    setState(() {
-      _rendimientosCache.clear();
-      _rendimientosExpansionState.clear();
-      _rendimientosLoadingState.clear();
-    });
-    
-    await tarjaProvider.cargarTarjas();
-    
-    // Resetear el estado de expansión después de cargar los datos
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final tarjasFiltradas = _filtrarTarjas(tarjaProvider.tarjas);
-      final gruposPorFecha = _agruparPorFecha(tarjasFiltradas);
-      _resetExpansionState(gruposPorFecha.length);
-    });
-  }
 
   void _resetExpansionState(int groupCount) {
     setState(() {

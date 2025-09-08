@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/horas_trabajadas_provider.dart';
+import '../providers/horas_extras_provider.dart';
+import '../providers/tarja_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/horas_trabajadas.dart';
 import '../theme/app_theme.dart';
@@ -148,9 +150,19 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
   }
 
   Future<void> _refrescarDatos() async {
-    final provider = Provider.of<HorasTrabajadasProvider>(context, listen: false);
-    await provider.cargarHorasTrabajadas();
+    // Actualizar todos los providers relevantes
+    final horasTrabajadasProvider = Provider.of<HorasTrabajadasProvider>(context, listen: false);
+    final horasExtrasProvider = Provider.of<HorasExtrasProvider>(context, listen: false);
+    final tarjaProvider = Provider.of<TarjaProvider>(context, listen: false);
+    
+    // Cargar datos en paralelo para mejor rendimiento
+    await Future.wait([
+      horasTrabajadasProvider.cargarHorasTrabajadas(),
+      horasExtrasProvider.cargarRendimientos(),
+      tarjaProvider.cargarTarjas(),
+    ]);
   }
+
 
   // Método para alternar la expansión de una tarjeta
   void _alternarExpansion(String idTarjeta) {

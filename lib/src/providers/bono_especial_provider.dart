@@ -53,16 +53,23 @@ class BonoEspecialProvider extends ChangeNotifier {
   Future<void> cargarBonosEspeciales() async {
     _setLoading(true);
     try {
+      print('🔍 DEBUG: Cargando bonos especiales...');
       final response = await ApiService.obtenerBonosEspeciales(
         idColaborador: _filtroColaborador.isNotEmpty ? _filtroColaborador : null,
         fechaInicio: _fechaInicio?.toIso8601String().split('T')[0],
         fechaFin: _fechaFin?.toIso8601String().split('T')[0],
       );
 
+      print('🔍 DEBUG: Respuesta del API bonos especiales: ${response.length} registros');
+      print('🔍 DEBUG: Primer registro: ${response.isNotEmpty ? response.first : "No hay registros"}');
+
       _bonosEspeciales = response.map((json) => BonoEspecial.fromJson(json)).toList();
       _aplicarFiltros();
       _error = '';
+      print('🔍 DEBUG: Bonos especiales cargados: ${_bonosEspeciales.length}');
+      print('🔍 DEBUG: Bonos especiales filtrados: ${_bonosEspecialesFiltradas.length}');
     } catch (e) {
+      print('🔍 DEBUG: Error al cargar bonos especiales: $e');
       _error = 'Error al cargar bonos especiales: $e';
       _bonosEspeciales = [];
       _bonosEspecialesFiltradas = [];
@@ -175,6 +182,7 @@ class BonoEspecialProvider extends ChangeNotifier {
   }
 
   void _aplicarFiltros() {
+    print('🔍 DEBUG: Aplicando filtros a ${_bonosEspeciales.length} registros');
     _bonosEspecialesFiltradas = _bonosEspeciales.where((bono) {
       // Filtro de búsqueda
       if (_filtroBusqueda.isNotEmpty) {
@@ -206,6 +214,7 @@ class BonoEspecialProvider extends ChangeNotifier {
       return true;
     }).toList();
 
+    print('🔍 DEBUG: Registros después del filtrado: ${_bonosEspecialesFiltradas.length}');
     notifyListeners();
   }
 
@@ -216,11 +225,14 @@ class BonoEspecialProvider extends ChangeNotifier {
   }
 
   void setAuthProvider(AuthProvider authProvider) {
+    print('🔍 DEBUG: Configurando AuthProvider...');
     // Configurar el provider para escuchar cambios de sucursal
     authProvider.addListener(_onSucursalChanged);
+    print('🔍 DEBUG: AuthProvider configurado correctamente');
   }
 
   void _onSucursalChanged() {
+    print('🔍 DEBUG: Sucursal cambiada, recargando datos...');
     // Recargar datos cuando cambie la sucursal
     cargarBonosEspeciales();
     cargarResumenes();

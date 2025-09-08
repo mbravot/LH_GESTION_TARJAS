@@ -6,6 +6,9 @@ import '../models/colaborador.dart';
 import '../providers/auth_provider.dart';
 import '../providers/vacacion_provider.dart';
 import '../providers/colaborador_provider.dart';
+import '../providers/horas_trabajadas_provider.dart';
+import '../providers/horas_extras_provider.dart';
+import '../providers/tarja_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/dark_theme_colors.dart';
 import '../services/api_service.dart';
@@ -53,11 +56,20 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
 
   // Método para refrescar datos desde el AppBar
   Future<void> _refrescarDatos() async {
-    final vacacionProvider = context.read<VacacionProvider>();
-    final colaboradorProvider = context.read<ColaboradorProvider>();
+    // Actualizar todos los providers relevantes
+    final vacacionProvider = Provider.of<VacacionProvider>(context, listen: false);
+    final colaboradorProvider = Provider.of<ColaboradorProvider>(context, listen: false);
+    final horasTrabajadasProvider = Provider.of<HorasTrabajadasProvider>(context, listen: false);
+    final horasExtrasProvider = Provider.of<HorasExtrasProvider>(context, listen: false);
+    final tarjaProvider = Provider.of<TarjaProvider>(context, listen: false);
+    
+    // Cargar datos en paralelo para mejor rendimiento
     await Future.wait([
       vacacionProvider.cargarVacaciones(),
       colaboradorProvider.cargarColaboradores(),
+      horasTrabajadasProvider.cargarHorasTrabajadas(),
+      horasExtrasProvider.cargarRendimientos(),
+      tarjaProvider.cargarTarjas(),
     ]);
   }
 

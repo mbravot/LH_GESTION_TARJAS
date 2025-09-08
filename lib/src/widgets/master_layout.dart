@@ -331,13 +331,13 @@ class _MasterLayoutState extends State<MasterLayout>
                                       screenKey: 'horas_trabajadas',
                                     ),
                                     _buildMenuItem(
-                                      icon: Icons.more_time,
+                                      icon: Icons.add_circle_outline,
                                       title: 'Horas Extras',
                                       onTap: () => _navigateToScreen('horas_extras'),
                                       screenKey: 'horas_extras',
                                     ),
                                     _buildMenuItem(
-                                      icon: Icons.add_circle_outline,
+                                      icon: Icons.more_time,
                                       title: 'Horas Extras Otros Cecos',
                                       onTap: () => _navigateToScreen('horas_extras_otroscecos'),
                                       screenKey: 'horas_extras_otroscecos',

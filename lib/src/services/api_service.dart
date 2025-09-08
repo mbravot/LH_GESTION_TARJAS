@@ -1816,32 +1816,47 @@ class ApiService {
     int? idCecoTipo,
     int? idCeco,
   }) async {
-    final token = await _authService.getToken();
-    if (token == null) throw Exception('No hay token de autenticación');
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('Token no encontrado');
+      }
 
-    final queryParams = <String, String>{};
-    if (idColaborador != null) queryParams['id_colaborador'] = idColaborador;
-    if (fechaInicio != null) queryParams['fecha_inicio'] = fechaInicio;
-    if (fechaFin != null) queryParams['fecha_fin'] = fechaFin;
-    if (idCecoTipo != null) queryParams['id_cecotipo'] = idCecoTipo.toString();
-    if (idCeco != null) queryParams['id_ceco'] = idCeco.toString();
+      final queryParams = <String, String>{};
+      if (idColaborador != null) queryParams['id_colaborador'] = idColaborador;
+      if (fechaInicio != null) queryParams['fecha_inicio'] = fechaInicio;
+      if (fechaFin != null) queryParams['fecha_fin'] = fechaFin;
+      if (idCecoTipo != null) queryParams['id_cecotipo'] = idCecoTipo.toString();
+      if (idCeco != null) queryParams['id_ceco'] = idCeco.toString();
 
-    final uri = Uri.parse('${ApiService.baseUrl}/horas-extras-otroscecos')
-        .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      String url = '$baseUrl/horas-extras-otroscecos/';
+      if (queryParams.isNotEmpty) {
+        url += '?' + queryParams.entries.map((e) => '${e.key}=${e.value}').join('&');
+      }
 
-    final response = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
+      print('🔍 DEBUG: Llamando a: $url');
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      return data.cast<Map<String, dynamic>>();
-    } else {
-      throw Exception('Error al obtener horas extras otros CECOs: ${response.statusCode}');
+      print('🔍 DEBUG: Status Code: ${response.statusCode}');
+      print('🔍 DEBUG: Response Body: ${response.body}');
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        print('🔍 DEBUG: Data length: ${data.length}');
+        return data.map((item) => Map<String, dynamic>.from(item)).toList();
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al obtener horas extras otros CECOs: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
     }
   }
 
@@ -1849,7 +1864,7 @@ class ApiService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/horas-extras-otroscecos/$id');
+    final uri = Uri.parse('$baseUrl/horas-extras-otroscecos/$id');
 
     final response = await http.get(
       uri,
@@ -1870,7 +1885,7 @@ class ApiService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/horas-extras-otroscecos/');
+    final uri = Uri.parse('$baseUrl/horas-extras-otroscecos/');
 
     final response = await http.post(
       uri,
@@ -1890,7 +1905,7 @@ class ApiService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/horas-extras-otroscecos/$id');
+    final uri = Uri.parse('$baseUrl/horas-extras-otroscecos/$id');
 
     final response = await http.put(
       uri,
@@ -1910,7 +1925,7 @@ class ApiService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/horas-extras-otroscecos/$id');
+    final uri = Uri.parse('$baseUrl/horas-extras-otroscecos/$id');
 
     final response = await http.delete(
       uri,
@@ -1929,7 +1944,7 @@ class ApiService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/horas-extras-otroscecos/opciones');
+    final uri = Uri.parse('$baseUrl/horas-extras-otroscecos/opciones');
 
     final response = await http.get(
       uri,
@@ -1952,29 +1967,47 @@ class ApiService {
     String? fechaInicio,
     String? fechaFin,
   }) async {
-    final token = await _authService.getToken();
-    if (token == null) throw Exception('No hay token de autenticación');
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('Token no encontrado');
+      }
 
-    final queryParams = <String, String>{};
-    if (idColaborador != null) queryParams['id_colaborador'] = idColaborador;
-    if (fechaInicio != null) queryParams['fecha_inicio'] = fechaInicio;
-    if (fechaFin != null) queryParams['fecha_fin'] = fechaFin;
+      final queryParams = <String, String>{};
+      if (idColaborador != null) queryParams['id_colaborador'] = idColaborador;
+      if (fechaInicio != null) queryParams['fecha_inicio'] = fechaInicio;
+      if (fechaFin != null) queryParams['fecha_fin'] = fechaFin;
 
-    final uri = Uri.parse('${ApiService.baseUrl}/bono-especial').replace(queryParameters: queryParams);
+      String url = '$baseUrl/bono-especial';
+      if (queryParams.isNotEmpty) {
+        url += '?' + queryParams.entries.map((e) => '${e.key}=${e.value}').join('&');
+      } else {
+        url += '/';
+      }
 
-    final response = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
+      print('🔍 DEBUG: Llamando a bono-especial: $url');
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> jsonList = json.decode(response.body);
-      return jsonList.cast<Map<String, dynamic>>();
-    } else {
-      throw Exception('Error al obtener bonos especiales: ${response.statusCode}');
+      print('🔍 DEBUG: Status Code bono-especial: ${response.statusCode}');
+      print('🔍 DEBUG: Response Body bono-especial: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        print('🔍 DEBUG: Data length bono-especial: ${data.length}');
+        return data.map((item) => Map<String, dynamic>.from(item)).toList();
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al obtener bonos especiales: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
     }
   }
 
@@ -1982,7 +2015,7 @@ class ApiService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/bono-especial/$id');
+    final uri = Uri.parse('$baseUrl/bono-especial/$id');
 
     final response = await http.get(
       uri,
@@ -2003,7 +2036,7 @@ class ApiService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/bono-especial/');
+    final uri = Uri.parse('$baseUrl/bono-especial/');
 
     final response = await http.post(
       uri,
@@ -2023,7 +2056,7 @@ class ApiService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/bono-especial/$id');
+    final uri = Uri.parse('$baseUrl/bono-especial/$id');
 
     final response = await http.put(
       uri,
@@ -2043,7 +2076,7 @@ class ApiService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/bono-especial/$id');
+    final uri = Uri.parse('$baseUrl/bono-especial/$id');
 
     final response = await http.delete(
       uri,
@@ -2069,7 +2102,7 @@ class ApiService {
     if (fechaInicio != null) queryParams['fecha_inicio'] = fechaInicio;
     if (fechaFin != null) queryParams['fecha_fin'] = fechaFin;
 
-    final uri = Uri.parse('${ApiService.baseUrl}/bono-especial/resumen-colaborador').replace(queryParameters: queryParams);
+    final uri = Uri.parse('$baseUrl/bono-especial/resumen-colaborador').replace(queryParameters: queryParams);
 
     final response = await http.get(
       uri,
@@ -2092,7 +2125,7 @@ class ApiService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/contratistas');
+    final uri = Uri.parse('$baseUrl/contratistas');
 
     final response = await http.get(
       uri,
@@ -2114,7 +2147,7 @@ class ApiService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/contratistas/$id');
+    final uri = Uri.parse('$baseUrl/contratistas/$id');
 
     final response = await http.get(
       uri,
@@ -2135,7 +2168,7 @@ class ApiService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/contratistas/');
+    final uri = Uri.parse('$baseUrl/contratistas/');
 
     final response = await http.post(
       uri,
@@ -2155,7 +2188,7 @@ class ApiService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/contratistas/$id');
+    final uri = Uri.parse('$baseUrl/contratistas/$id');
 
     final response = await http.put(
       uri,
@@ -2177,7 +2210,7 @@ class ApiService {
     final token = await _authService.getToken();
     if (token == null) throw Exception('No hay token de autenticación');
 
-    final uri = Uri.parse('${ApiService.baseUrl}/contratistas/opciones');
+    final uri = Uri.parse('$baseUrl/contratistas/opciones');
 
     final response = await http.get(
       uri,
@@ -2522,6 +2555,60 @@ class ApiService {
       }
     } catch (e) {
       print('🔧 Debug - Exception: $e');
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Obtener tipos de CECO
+  static Future<List<Map<String, dynamic>>> obtenerTiposCeco() async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('No hay token de autenticación');
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/horas-extras-otroscecos/tipos-ceco'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return List<Map<String, dynamic>>.from(data);
+      } else {
+        throw Exception('Error al obtener tipos de CECO: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Obtener CECOs por tipo
+  static Future<List<Map<String, dynamic>>> obtenerCecosPorTipo(String tipoCecoId) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('No hay token de autenticación');
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/horas-extras-otroscecos/cecos-por-tipo/$tipoCecoId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return List<Map<String, dynamic>>.from(data);
+      } else {
+        throw Exception('Error al obtener CECOs por tipo: ${response.statusCode}');
+      }
+    } catch (e) {
       throw Exception('Error de conexión: $e');
     }
   }

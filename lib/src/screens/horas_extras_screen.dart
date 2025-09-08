@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/horas_extras_provider.dart';
+import '../providers/horas_trabajadas_provider.dart';
+import '../providers/tarja_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/horas_extras.dart';
 import '../theme/app_theme.dart';
@@ -67,8 +69,17 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
   }
 
   Future<void> _refrescarDatos() async {
-    final provider = Provider.of<HorasExtrasProvider>(context, listen: false);
-    await provider.cargarRendimientos();
+    // Actualizar todos los providers relevantes
+    final horasExtrasProvider = Provider.of<HorasExtrasProvider>(context, listen: false);
+    final horasTrabajadasProvider = Provider.of<HorasTrabajadasProvider>(context, listen: false);
+    final tarjaProvider = Provider.of<TarjaProvider>(context, listen: false);
+    
+    // Cargar datos en paralelo para mejor rendimiento
+    await Future.wait([
+      horasExtrasProvider.cargarRendimientos(),
+      horasTrabajadasProvider.cargarHorasTrabajadas(),
+      tarjaProvider.cargarTarjas(),
+    ]);
   }
 
   void _alternarExpansion(String rendimientoId) {
@@ -792,13 +803,13 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: _getEstadoColor(rendimiento.estadoTrabajo).withOpacity(0.1),
+                      color: _getColorHorasExtras(rendimiento.totalHorasExtras).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     padding: const EdgeInsets.all(12),
                     child: Icon(
-                      _getEstadoIcono(rendimiento.estadoTrabajo),
-                      color: _getEstadoColor(rendimiento.estadoTrabajo),
+                      Icons.person,
+                      color: _getColorHorasExtras(rendimiento.totalHorasExtras),
                       size: 24,
                     ),
                   ),
@@ -895,7 +906,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  // Columna 4: Diferencia
+                  // Columna 4: Horas extras
                   Expanded(
                     flex: 2,
                     child: Column(
@@ -903,36 +914,15 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.trending_up, color: Colors.green, size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Diferencia: ${rendimiento.diferenciaHorasFormateadas}h',
-                                style: TextStyle(
-                                  color: textColor.withOpacity(0.7),
-                                  fontSize: 14,
-                                ),
-                              ),
+                            Icon(
+                              Icons.add_circle_outline, 
+                              color: _getColorHorasExtras(rendimiento.totalHorasExtras), 
+                              size: 16
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Columna 5: Estado
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.info_outline, color: _getEstadoColor(rendimiento.estadoTrabajo), size: 16),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Estado: ${rendimiento.estadoTexto}',
+                                'Extras: ${rendimiento.totalHorasExtras.toStringAsFixed(1)}h',
                                 style: TextStyle(
                                   color: textColor.withOpacity(0.7),
                                   fontSize: 14,
@@ -1040,10 +1030,10 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                           color: isDark ? DarkThemeColors.primaryTextColor : Colors.black87,
                         ),
                       ),
-                     if (actividad.ceco.isNotEmpty) ...[
+                     if (actividad.nombreCeco.isNotEmpty) ...[
                        const SizedBox(height: 2),
                        Text(
-                         'CECO: ${actividad.ceco}',
+                         'CECO: ${actividad.nombreCeco}',
                          style: TextStyle(
                            fontSize: 12,
                            color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -1054,64 +1044,42 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                    ],
                  ),
                ),
-               Container(
-                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                 decoration: BoxDecoration(
-                   color: Colors.blue.withOpacity(0.1),
-                   borderRadius: BorderRadius.circular(12),
-                 ),
-                 child: Text(
-                   '${actividad.rendimientoFormateado}%',
-                   style: TextStyle(
-                     fontSize: 12,
-                     fontWeight: FontWeight.bold,
-                     color: Colors.blue[700],
-                   ),
-                 ),
-               ),
              ],
            ),
           const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
-                child: Row(
-                  children: [
-                                       Icon(Icons.access_time, size: 14, color: isDark ? Colors.grey[400] : Colors.grey[600]),
-                   const SizedBox(width: 4),
-                   Text(
-                     '${actividad.horasTrabajadasFormateadas}h',
-                     style: TextStyle(
-                       fontSize: 12,
-                       color: isDark ? Colors.grey[400] : Colors.grey[600],
-                     ),
-                   ),
-                   const SizedBox(width: 12),
-                   Icon(Icons.timer, size: 14, color: isDark ? Colors.grey[400] : Colors.grey[600]),
-                   const SizedBox(width: 4),
-                   Text(
-                     '${actividad.horasExtrasFormateadas}h',
-                     style: TextStyle(
-                       fontSize: 12,
-                       color: isDark ? Colors.grey[400] : Colors.grey[600],
-                     ),
-                   ),
-                  ],
+                child: _buildActividadInfo(
+                  'Horas Trabajadas',
+                  '${actividad.horasTrabajadasFormateadas}h',
+                  Icons.access_time,
+                  Colors.blue,
                 ),
               ),
-                                                               Row(
-                    children: [
-                                    Icon(Icons.schedule, size: 14, color: isDark ? Colors.grey[400] : Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${actividad.horaInicioFormateada} - ${actividad.horaFinFormateada}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                    ),
-                  ],
-               ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildActividadInfo(
+                  'Horas Extras',
+                  '${actividad.horasExtrasFormateadas}h',
+                  Icons.timer,
+                  Colors.orange,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.schedule, size: 14, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+              const SizedBox(width: 4),
+              Text(
+                '${actividad.horaInicioFormateada} - ${actividad.horaFinFormateada}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -1186,10 +1154,10 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                  fontSize: 16,
                ),
              ),
-             if (actividad.ceco.isNotEmpty) ...[
+             if (actividad.nombreCeco.isNotEmpty) ...[
                const SizedBox(height: 4),
                Text(
-                 'CECO: ${actividad.ceco}',
+                 'CECO: ${actividad.nombreCeco}',
                  style: TextStyle(
                    fontSize: 14,
                    color: Colors.grey[600],
@@ -1229,17 +1197,30 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
           ElevatedButton(
             onPressed: () async {
               final horasExtras = double.tryParse(horasController.text) ?? 0.0;
-              if (horasExtras >= 0) {
-                Navigator.of(context).pop();
-                await _asignarHorasExtras(actividad, horasExtras);
-              } else {
+              
+              // Validaciones
+              if (horasExtras < 0) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Las horas extras deben ser un número positivo'),
                     backgroundColor: Colors.red,
                   ),
                 );
+                return;
               }
+              
+              if (horasExtras > 2.0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('El máximo legal de horas extras en Chile es de 2 horas por día'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+              
+              Navigator.of(context).pop();
+              await _asignarHorasExtras(actividad, horasExtras);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
@@ -1255,10 +1236,45 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
     );
   }
 
+  Widget _buildActividadInfo(String label, String value, IconData icon, Color color) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: isDark ? color.withOpacity(0.2) : color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _asignarHorasExtras(ActividadDetalle actividad, double horasExtras) async {
     try {
       final provider = Provider.of<HorasExtrasProvider>(context, listen: false);
-      final success = await provider.asignarHorasExtras(actividad.idActividad, horasExtras);
+      final success = await provider.asignarHorasExtras(actividad.idRendimiento, horasExtras);
       
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1270,9 +1286,10 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
         // Recargar datos
         await _refrescarDatos();
       } else {
+        final errorMessage = provider.error ?? 'Error desconocido';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error al asignar horas extras'),
+          SnackBar(
+            content: Text('Error al asignar horas extras: $errorMessage'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1310,6 +1327,17 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
         return Icons.check_circle;
       default:
         return Icons.help;
+    }
+  }
+
+  // Función para determinar el color según las horas extras y límite legal
+  Color _getColorHorasExtras(double horasExtras) {
+    if (horasExtras <= 0) {
+      return Colors.red; // No hay horas extras
+    } else if (horasExtras <= 2.0) {
+      return Colors.green; // Horas extras legales (máximo 2h por día)
+    } else {
+      return Colors.orange; // Excede el límite legal (más de 2h por día)
     }
   }
 }

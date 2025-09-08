@@ -25,6 +25,7 @@ class HorasExtrasOtrosCecos {
   });
 
   factory HorasExtrasOtrosCecos.fromJson(Map<String, dynamic> json) {
+    print('🔍 DEBUG: Parseando JSON: $json');
     return HorasExtrasOtrosCecos(
       id: json['id'] ?? '',
       idColaborador: json['id_colaborador'] ?? '',
@@ -39,25 +40,50 @@ class HorasExtrasOtrosCecos {
   }
 
   static DateTime _parseFecha(dynamic fecha) {
+    print('🔍 DEBUG: Parseando fecha: $fecha (tipo: ${fecha.runtimeType})');
     if (fecha == null) return DateTime.now();
     if (fecha is DateTime) return fecha;
     if (fecha is String) {
       try {
         // Intentar parsear formato ISO
-        return DateTime.parse(fecha);
+        final parsed = DateTime.parse(fecha);
+        print('🔍 DEBUG: Fecha parseada exitosamente: $parsed');
+        return parsed;
       } catch (e) {
+        print('🔍 DEBUG: Error parseando fecha ISO: $e');
         try {
-          // Intentar parsear formato GMT
+          // Intentar parsear formato GMT específico: "Mon, 08 Sep 2025 00:00:00 GMT"
           if (fecha.contains('GMT')) {
-            final cleanFecha = fecha.replaceAll('GMT', '').trim();
-            return DateTime.parse(cleanFecha);
+            // Formato: "Mon, 08 Sep 2025 00:00:00 GMT"
+            // Extraer solo la parte de fecha y hora: "08 Sep 2025 00:00:00"
+            final parts = fecha.split(', ');
+            if (parts.length >= 2) {
+              final dateTimePart = parts[1].replaceAll('GMT', '').trim();
+              // Convertir formato "08 Sep 2025 00:00:00" a formato parseable
+              final dateTimeParts = dateTimePart.split(' ');
+              if (dateTimeParts.length >= 4) {
+                final day = dateTimeParts[0];
+                final month = _convertMonthName(dateTimeParts[1]);
+                final year = dateTimeParts[2];
+                final time = dateTimeParts[3];
+                
+                // Crear fecha en formato ISO
+                final isoString = '$year-$month-$day $time';
+                final parsed = DateTime.parse(isoString);
+                print('🔍 DEBUG: Fecha GMT parseada exitosamente: $parsed');
+                return parsed;
+              }
+            }
           }
           // Intentar parsear formato DD/MM/YYYY
           final parts = fecha.split('/');
           if (parts.length == 3) {
-            return DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+            final parsed = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+            print('🔍 DEBUG: Fecha DD/MM/YYYY parseada exitosamente: $parsed');
+            return parsed;
           }
         } catch (e) {
+          print('🔍 DEBUG: Error parsing fecha: $fecha, error: $e');
           return DateTime.now();
         }
       }
@@ -65,12 +91,26 @@ class HorasExtrasOtrosCecos {
     return DateTime.now();
   }
 
+  static String _convertMonthName(String monthName) {
+    const monthMap = {
+      'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+      'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+      'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+    };
+    final result = monthMap[monthName] ?? '01';
+    print('🔍 DEBUG: Convirtiendo mes: $monthName -> $result');
+    return result;
+  }
+
   static double _toDouble(dynamic value) {
+    print('🔍 DEBUG: Parseando cantidad: $value (tipo: ${value.runtimeType})');
     if (value == null) return 0.0;
     if (value is double) return value;
     if (value is int) return value.toDouble();
     if (value is String) {
-      return double.tryParse(value) ?? 0.0;
+      final parsed = double.tryParse(value) ?? 0.0;
+      print('🔍 DEBUG: Cantidad parseada: $parsed');
+      return parsed;
     }
     return 0.0;
   }
@@ -96,13 +136,11 @@ class HorasExtrasOtrosCecos {
   }
 
   String get fechaFormateadaEspanolCompleta {
-    final dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
     final meses = [
       'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
     ];
-    final diaSemana = dias[(fecha.weekday - 1) % 7];
-    return '$diaSemana, ${fecha.day} de ${meses[fecha.month - 1]} de ${fecha.year}';
+    return '${fecha.day} de ${meses[fecha.month - 1]} de ${fecha.year}';
   }
 
   String get fechaFormateadaCorta {
@@ -189,16 +227,25 @@ class CecoTipo {
 class Ceco {
   final int id;
   final String nombre;
+  final int idCecoTipo;
+  final int idSucursal;
+  final int idEstado;
 
   Ceco({
     required this.id,
     required this.nombre,
+    required this.idCecoTipo,
+    required this.idSucursal,
+    required this.idEstado,
   });
 
   factory Ceco.fromJson(Map<String, dynamic> json) {
     return Ceco(
       id: json['id'] ?? 0,
       nombre: json['nombre'] ?? '',
+      idCecoTipo: json['id_cecotipo'] ?? 0,
+      idSucursal: json['id_sucursal'] ?? 0,
+      idEstado: json['id_estado'] ?? 0,
     );
   }
 }
