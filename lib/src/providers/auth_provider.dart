@@ -158,21 +158,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Método para manejar sesión expirada
-  Future<void> handleSessionExpired() async {
-    developer.log('🔄 Manejando sesión expirada...');
-    
-    // Limpiar el estado de autenticación
-    _isAuthenticated = false;
-    _userData = null;
-    _error = null;
-    
-    // Notificar a los listeners
-    notifyListeners();
-    
-    // El logout ya se realizó en el ApiService, solo necesitamos limpiar el estado local
-    developer.log('✅ Sesión expirada manejada correctamente');
-  }
 
   // Obtener las sucursales disponibles del usuario
   Future<List<Map<String, dynamic>>> getSucursalesDisponibles() async {
