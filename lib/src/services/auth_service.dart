@@ -84,6 +84,33 @@ class AuthService {
     }
   }
 
+  // Validar si el token actual es válido
+  Future<bool> validateToken() async {
+    try {
+      final token = await getToken();
+      if (token == null) return false;
+
+      // Usar un endpoint que sabemos que existe para validar el token
+      // Si el token es válido, debería devolver 200 o 401 (pero no 403)
+      // Si es inválido, devolverá 401 o 403
+      final response = await http.get(
+        Uri.parse('$baseUrl/colaboradores'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      // Si el token es válido, debería devolver 200
+      // Si es inválido, devolverá 401 o 403
+      return response.statusCode == 200;
+    } catch (e) {
+      developer.log('Error al validar token: $e');
+      return false;
+    }
+  }
+
 //Cambiar contraseña
   Future<void> cambiarClave(String claveActual, String nuevaClave) async {
     developer.log('Intentando cambiar contraseña');

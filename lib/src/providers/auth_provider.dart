@@ -22,8 +22,28 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _loadUserData() async {
-    _userData = await _authService.getCurrentUser();
-    _isAuthenticated = _userData != null;
+    try {
+      _userData = await _authService.getCurrentUser();
+      if (_userData != null) {
+        // Validar que el token siga siendo válido haciendo una petición de prueba
+        final isValid = await _authService.validateToken();
+        if (isValid) {
+          _isAuthenticated = true;
+        } else {
+          // Token expirado, limpiar datos
+          _isAuthenticated = false;
+          _userData = null;
+          await _authService.logout();
+        }
+      } else {
+        _isAuthenticated = false;
+      }
+    } catch (e) {
+      // Si hay error al validar, asumir que la sesión expiró
+      _isAuthenticated = false;
+      _userData = null;
+      await _authService.logout();
+    }
     notifyListeners();
   }
 
@@ -63,6 +83,21 @@ class AuthProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  // Método para manejar sesión expirada automáticamente
+  Future<void> handleSessionExpired() async {
+    developer.log('🔐 Manejando sesión expirada automáticamente...');
+    
+    try {
+      await _authService.logout();
+      _isAuthenticated = false;
+      _userData = null;
+      _error = null;
+      notifyListeners();
+    } catch (e) {
+      developer.log('Error al manejar sesión expirada: $e');
     }
   }
 
