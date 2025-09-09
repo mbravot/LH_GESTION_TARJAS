@@ -317,38 +317,28 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: provider.filtroColaborador.isEmpty ? null : provider.filtroColaborador,
-                      decoration: const InputDecoration(
-                        labelText: 'Colaborador',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      ),
-                      items: [
-                        const DropdownMenuItem<String>(
-                          value: null,
-                          child: Text('Todos los colaboradores'),
-                        ),
-                        ...provider.colaboradoresUnicos.map((colaborador) {
-                          return DropdownMenuItem<String>(
-                            value: colaborador,
-                            child: Text(colaborador),
-                          );
-                        }),
-                      ],
-                      onChanged: (value) {
-                        provider.setFiltroColaborador(value ?? '');
-                      },
-                    ),
+              DropdownButtonFormField<String>(
+                value: provider.filtroColaborador.isEmpty ? null : provider.filtroColaborador,
+                decoration: const InputDecoration(
+                  labelText: 'Colaborador',
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                items: [
+                  const DropdownMenuItem<String>(
+                    value: null,
+                    child: Text('Todos los colaboradores'),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Container(), // Espacio vacío para mantener el layout
-                  ),
+                  ...provider.colaboradoresUnicos.map((colaborador) {
+                    return DropdownMenuItem<String>(
+                      value: colaborador,
+                      child: Text(colaborador),
+                    );
+                  }),
                 ],
+                onChanged: (value) {
+                  provider.setFiltroColaborador(value ?? '');
+                },
               ),
               const SizedBox(height: 12),
               Row(
