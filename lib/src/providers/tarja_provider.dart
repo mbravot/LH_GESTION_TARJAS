@@ -22,6 +22,7 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
   String _filtroContratista = '';
   String _filtroTipoRendimiento = '';
   String _filtroUsuario = '';
+  String _filtroTipoCeco = '';
 
   // Getters
   List<Tarja> get tarjas => _tarjas;
@@ -33,6 +34,7 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
   String get filtroContratista => _filtroContratista;
   String get filtroTipoRendimiento => _filtroTipoRendimiento;
   String get filtroUsuario => _filtroUsuario;
+  String get filtroTipoCeco => _filtroTipoCeco;
 
   // Listas únicas para filtros
   List<String> get contratistasUnicos {
@@ -71,6 +73,16 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
       }
     }
     return usuarios.toList()..sort();
+  }
+
+  List<String> get tiposCecoUnicos {
+    final tiposCeco = <String>{};
+    for (var tarja in _tarjas) {
+      if (tarja.nombreTipoceco != null && tarja.nombreTipoceco!.isNotEmpty) {
+        tiposCeco.add(tarja.nombreTipoceco!);
+      }
+    }
+    return tiposCeco.toList()..sort();
   }
 
   // Helper para convertir nombre de usuario corto a nombre completo
@@ -228,10 +240,16 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
     _aplicarFiltros();
   }
 
+  void setFiltroTipoCeco(String value) {
+    _filtroTipoCeco = value;
+    _aplicarFiltros();
+  }
+
   void limpiarFiltros() {
     _filtroContratista = '';
     _filtroTipoRendimiento = '';
     _filtroUsuario = '';
+    _filtroTipoCeco = '';
     _aplicarFiltros();
   }
 
@@ -276,6 +294,13 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
       if (_filtroUsuario.isNotEmpty) {
         final nombreCompletoUsuario = _getNombreCompletoUsuario(tarja.nombreUsuario);
         if (nombreCompletoUsuario != _filtroUsuario) {
+          return false;
+        }
+      }
+
+      // Filtro por tipo de CECO
+      if (_filtroTipoCeco.isNotEmpty) {
+        if (tarja.nombreTipoceco != _filtroTipoCeco) {
           return false;
         }
       }

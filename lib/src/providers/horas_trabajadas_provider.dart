@@ -14,10 +14,11 @@ class HorasTrabajadasProvider extends ChangeNotifier {
   
   // Variables para filtros
   String _filtroBusqueda = '';
-  String _filtroEstado = '';
   String _filtroColaborador = '';
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
+  int? _filtroMes;
+  int? _filtroAno;
 
   // Getters
   List<HorasTrabajadas> get horasTrabajadas => _horasTrabajadas;
@@ -27,10 +28,11 @@ class HorasTrabajadasProvider extends ChangeNotifier {
   
   // Getters para filtros
   String get filtroBusqueda => _filtroBusqueda;
-  String get filtroEstado => _filtroEstado;
   String get filtroColaborador => _filtroColaborador;
   DateTime? get fechaInicio => _fechaInicio;
   DateTime? get fechaFin => _fechaFin;
+  int? get filtroMes => _filtroMes;
+  int? get filtroAno => _filtroAno;
 
   // Método para configurar el AuthProvider
   void setAuthProvider(AuthProvider authProvider) {
@@ -82,12 +84,6 @@ class HorasTrabajadasProvider extends ChangeNotifier {
     _aplicarFiltros();
   }
 
-  // Método para establecer filtro de estado
-  void setFiltroEstado(String estado) {
-    _filtroEstado = estado;
-    _aplicarFiltros();
-  }
-
   // Método para establecer filtro de colaborador
   void setFiltroColaborador(String colaborador) {
     _filtroColaborador = colaborador;
@@ -103,6 +99,18 @@ class HorasTrabajadasProvider extends ChangeNotifier {
   // Método para establecer filtro de fecha fin
   void setFechaFin(DateTime? fecha) {
     _fechaFin = fecha;
+    _aplicarFiltros();
+  }
+
+  // Método para establecer filtro de mes
+  void setFiltroMes(int? mes) {
+    _filtroMes = mes;
+    _aplicarFiltros();
+  }
+
+  // Método para establecer filtro de año
+  void setFiltroAno(int? ano) {
+    _filtroAno = ano;
     _aplicarFiltros();
   }
 
@@ -123,13 +131,6 @@ class HorasTrabajadasProvider extends ChangeNotifier {
       }).toList();
     }
 
-    // Aplicar filtro de estado
-    if (_filtroEstado.isNotEmpty && _filtroEstado != 'todos') {
-      filtrados = filtrados.where((horas) {
-        return horas.estadoTrabajo == _filtroEstado;
-      }).toList();
-    }
-
     // Aplicar filtro de colaborador
     if (_filtroColaborador.isNotEmpty) {
       filtrados = filtrados.where((horas) {
@@ -137,17 +138,51 @@ class HorasTrabajadasProvider extends ChangeNotifier {
       }).toList();
     }
 
+    // Filtrar por mes
+    if (_filtroMes != null) {
+      filtrados = filtrados.where((horas) => horas.fechaDateTime?.month == _filtroMes).toList();
+    }
+
+    // Filtrar por año
+    if (_filtroAno != null) {
+      filtrados = filtrados.where((horas) => horas.fechaDateTime?.year == _filtroAno).toList();
+    }
+
     _horasTrabajadasFiltradas = filtrados;
     notifyListeners();
+  }
+
+  // Listas únicas para filtros
+  List<int> get mesesUnicos {
+    final meses = <int>{};
+    for (var horas in _horasTrabajadas) {
+      final fecha = horas.fechaDateTime;
+      if (fecha != null) {
+        meses.add(fecha.month);
+      }
+    }
+    return meses.toList()..sort();
+  }
+
+  List<int> get anosUnicos {
+    final anos = <int>{};
+    for (var horas in _horasTrabajadas) {
+      final fecha = horas.fechaDateTime;
+      if (fecha != null) {
+        anos.add(fecha.year);
+      }
+    }
+    return anos.toList()..sort((a, b) => b.compareTo(a)); // Orden descendente
   }
 
   // Método para limpiar filtros
   void limpiarFiltros() {
     _filtroBusqueda = '';
-    _filtroEstado = '';
     _filtroColaborador = '';
     _fechaInicio = null;
     _fechaFin = null;
+    _filtroMes = null;
+    _filtroAno = null;
     _horasTrabajadasFiltradas = List.from(_horasTrabajadas);
     notifyListeners();
   }
@@ -178,16 +213,6 @@ class HorasTrabajadasProvider extends ChangeNotifier {
     return colaboradores;
   }
 
-  // Método para obtener estados únicos
-  List<String> get estadosUnicos {
-    final estados = _horasTrabajadas
-        .map((h) => h.estadoTrabajo)
-        .where((estado) => estado.isNotEmpty)
-        .toSet()
-        .toList();
-    estados.sort();
-    return estados;
-  }
 
   // Método privado para establecer loading
   void _setLoading(bool loading) {

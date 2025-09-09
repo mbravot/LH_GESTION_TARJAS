@@ -87,6 +87,12 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
     licenciaProvider.setFiltroBusqueda(query);
   }
 
+  bool _tieneFiltrosActivos(LicenciaProvider licenciaProvider) {
+    return licenciaProvider.filtroColaborador != null ||
+           licenciaProvider.filtroMes != null ||
+           licenciaProvider.filtroAno != null;
+  }
+
   void _aplicarFiltro(String filtro) {
     setState(() {
       _filtroActivo = filtro;
@@ -257,22 +263,30 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
             children: [
               Expanded(
                 flex: 4,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _showFiltros = !_showFiltros;
-                    });
+                child: Consumer<LicenciaProvider>(
+                  builder: (context, licenciaProvider, child) {
+                    final tieneFiltrosActivos = _tieneFiltrosActivos(licenciaProvider);
+                    
+                    return Container(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _showFiltros = !_showFiltros;
+                          });
+                        },
+                        icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
+                        label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    );
                   },
-                  icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
-                  label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -355,6 +369,66 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
                       ],
                       onChanged: (value) {
                         licenciaProvider.setFiltroColaborador(value);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      value: licenciaProvider.filtroMes,
+                      decoration: const InputDecoration(
+                        labelText: 'Mes',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Todos los meses'),
+                        ),
+                        ...licenciaProvider.mesesUnicos.map((mes) {
+                          final nombresMeses = [
+                            '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                          ];
+                          return DropdownMenuItem<int>(
+                            value: mes,
+                            child: Text(nombresMeses[mes]),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        licenciaProvider.setFiltroMes(value);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      value: licenciaProvider.filtroAno,
+                      decoration: const InputDecoration(
+                        labelText: 'Año',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Todos los años'),
+                        ),
+                        ...licenciaProvider.anosUnicos.map((ano) {
+                          return DropdownMenuItem<int>(
+                            value: ano,
+                            child: Text(ano.toString()),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        licenciaProvider.setFiltroAno(value);
                       },
                     ),
                   ),

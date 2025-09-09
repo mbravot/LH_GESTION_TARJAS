@@ -14,8 +14,8 @@ class BonoEspecialProvider extends ChangeNotifier {
   String _filtroBusqueda = '';
   String _filtroColaborador = '';
   String _filtroEstado = 'todos'; // 'todos', 'futuras', 'hoy', 'pasadas'
-  DateTime? _fechaInicio;
-  DateTime? _fechaFin;
+  int? _filtroMes;
+  int? _filtroAno;
 
   // Getters
   List<BonoEspecial> get bonosEspeciales => _bonosEspeciales;
@@ -28,12 +28,12 @@ class BonoEspecialProvider extends ChangeNotifier {
   String get filtroBusqueda => _filtroBusqueda;
   String get filtroColaborador => _filtroColaborador;
   String get filtroEstado => _filtroEstado;
-  DateTime? get fechaInicio => _fechaInicio;
-  DateTime? get fechaFin => _fechaFin;
+  int? get filtroMes => _filtroMes;
+  int? get filtroAno => _filtroAno;
 
   // Estadísticas - se calculan sobre todos los datos, no sobre los filtrados
   Map<String, int> get estadisticas {
-    // Aplicar filtros de búsqueda, colaborador y fechas, pero NO el filtro de estado
+    // Aplicar filtros de búsqueda, colaborador, mes y año, pero NO el filtro de estado
     final datosParaEstadisticas = _bonosEspeciales.where((bono) {
       // Filtro de búsqueda
       if (_filtroBusqueda.isNotEmpty) {
@@ -52,13 +52,13 @@ class BonoEspecialProvider extends ChangeNotifier {
         return false;
       }
 
-      // Filtro de fecha inicio
-      if (_fechaInicio != null && bono.fecha.isBefore(_fechaInicio!)) {
+      // Filtro de mes
+      if (_filtroMes != null && bono.fecha.month != _filtroMes) {
         return false;
       }
 
-      // Filtro de fecha fin
-      if (_fechaFin != null && bono.fecha.isAfter(_fechaFin!)) {
+      // Filtro de año
+      if (_filtroAno != null && bono.fecha.year != _filtroAno) {
         return false;
       }
 
@@ -83,14 +83,29 @@ class BonoEspecialProvider extends ChangeNotifier {
     return _bonosEspeciales.map((b) => b.nombreColaborador).toSet().toList()..sort();
   }
 
+  // Listas únicas para filtros de mes y año
+  List<int> get mesesUnicos {
+    final meses = <int>{};
+    for (var bono in _bonosEspeciales) {
+      meses.add(bono.fecha.month);
+    }
+    return meses.toList()..sort();
+  }
+
+  List<int> get anosUnicos {
+    final anos = <int>{};
+    for (var bono in _bonosEspeciales) {
+      anos.add(bono.fecha.year);
+    }
+    return anos.toList()..sort((a, b) => b.compareTo(a)); // Orden descendente
+  }
+
   // Métodos para cargar datos
   Future<void> cargarBonosEspeciales() async {
     _setLoading(true);
     try {
       final response = await ApiService.obtenerBonosEspeciales(
         idColaborador: _filtroColaborador.isNotEmpty ? _filtroColaborador : null,
-        fechaInicio: _fechaInicio?.toIso8601String().split('T')[0],
-        fechaFin: _fechaFin?.toIso8601String().split('T')[0],
       );
 
       _bonosEspeciales = response.map((json) => BonoEspecial.fromJson(json)).toList();
@@ -107,10 +122,7 @@ class BonoEspecialProvider extends ChangeNotifier {
 
   Future<void> cargarResumenes() async {
     try {
-      final response = await ApiService.obtenerResumenBonosEspeciales(
-        fechaInicio: _fechaInicio?.toIso8601String().split('T')[0],
-        fechaFin: _fechaFin?.toIso8601String().split('T')[0],
-      );
+      final response = await ApiService.obtenerResumenBonosEspeciales();
 
       _resumenes = response.map((json) => ResumenBonoEspecial.fromJson(json)).toList();
       notifyListeners();
@@ -195,22 +207,23 @@ class BonoEspecialProvider extends ChangeNotifier {
     _aplicarFiltros();
   }
 
-  void setFechaInicio(DateTime? date) {
-    _fechaInicio = date;
+  void setFiltroMes(int? value) {
+    _filtroMes = value;
     _aplicarFiltros();
   }
 
-  void setFechaFin(DateTime? date) {
-    _fechaFin = date;
+  void setFiltroAno(int? value) {
+    _filtroAno = value;
     _aplicarFiltros();
   }
+
 
   void limpiarFiltros() {
     _filtroBusqueda = '';
     _filtroColaborador = '';
     _filtroEstado = 'todos';
-    _fechaInicio = null;
-    _fechaFin = null;
+    _filtroMes = null;
+    _filtroAno = null;
     _aplicarFiltros();
   }
 
@@ -233,13 +246,13 @@ class BonoEspecialProvider extends ChangeNotifier {
         return false;
       }
 
-      // Filtro de fecha inicio
-      if (_fechaInicio != null && bono.fecha.isBefore(_fechaInicio!)) {
+      // Filtro de mes
+      if (_filtroMes != null && bono.fecha.month != _filtroMes) {
         return false;
       }
 
-      // Filtro de fecha fin
-      if (_fechaFin != null && bono.fecha.isAfter(_fechaFin!)) {
+      // Filtro de año
+      if (_filtroAno != null && bono.fecha.year != _filtroAno) {
         return false;
       }
 

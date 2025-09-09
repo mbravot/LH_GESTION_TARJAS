@@ -78,6 +78,10 @@ class Permiso {
     }
   }
 
+  // Getters para fechas parseadas
+  DateTime? get fechaDateTime => _parseFecha(fecha);
+  DateTime? get timestampDateTime => _parseFecha(timestamp);
+
   // Método para formatear la fecha en formato español
   String get fechaFormateadaEspanol {
     final fecha = _parseFecha(this.fecha);

@@ -55,6 +55,10 @@ class Vacacion {
     return '${nombreColaborador ?? 'Sin nombre'} ${apellidoPaterno ?? ''}$apellidoMaternoStr';
   }
 
+  // Getters para fechas parseadas
+  DateTime? get fechaInicioDateTime => _parseFecha(fechaInicio);
+  DateTime? get fechaFinDateTime => _parseFecha(fechaFin);
+
   // Método para parsear fechas en formato "Mon, 18 Aug 2025 00:00:00 GMT"
   DateTime? _parseFecha(String fechaStr) {
     try {

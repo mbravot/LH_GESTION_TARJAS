@@ -109,6 +109,12 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
     vacacionProvider.setFiltroBusqueda(query);
   }
 
+  bool _tieneFiltrosActivos(VacacionProvider vacacionProvider) {
+    return vacacionProvider.filtroColaborador != null ||
+           vacacionProvider.filtroMes != null ||
+           vacacionProvider.filtroAno != null;
+  }
+
   // Funciones para agrupación
   void _resetExpansionState(int groupCount) {
     _expansionState = List.generate(groupCount, (index) => true);
@@ -260,22 +266,30 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
             children: [
               Expanded(
                 flex: 4,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _showFiltros = !_showFiltros;
-                    });
+                child: Consumer<VacacionProvider>(
+                  builder: (context, vacacionProvider, child) {
+                    final tieneFiltrosActivos = _tieneFiltrosActivos(vacacionProvider);
+                    
+                    return Container(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _showFiltros = !_showFiltros;
+                          });
+                        },
+                        icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
+                        label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    );
                   },
-                  icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
-                  label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -358,6 +372,66 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
                       ],
                       onChanged: (value) {
                         vacacionProvider.setFiltroColaborador(value);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      value: vacacionProvider.filtroMes,
+                      decoration: const InputDecoration(
+                        labelText: 'Mes',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Todos los meses'),
+                        ),
+                        ...vacacionProvider.mesesUnicos.map((mes) {
+                          final nombresMeses = [
+                            '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                          ];
+                          return DropdownMenuItem<int>(
+                            value: mes,
+                            child: Text(nombresMeses[mes]),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        vacacionProvider.setFiltroMes(value);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      value: vacacionProvider.filtroAno,
+                      decoration: const InputDecoration(
+                        labelText: 'Año',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Todos los años'),
+                        ),
+                        ...vacacionProvider.anosUnicos.map((ano) {
+                          return DropdownMenuItem<int>(
+                            value: ano,
+                            child: Text(ano.toString()),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        vacacionProvider.setFiltroAno(value);
                       },
                     ),
                   ),

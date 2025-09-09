@@ -36,23 +36,19 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
     _cargarDatosIniciales();
   }
 
+  bool _tieneFiltrosActivos(HorasExtrasProvider provider) {
+    return provider.filtroColaborador.isNotEmpty ||
+           provider.filtroMes != null ||
+           provider.filtroAno != null;
+  }
+
   void _aplicarFiltro(String filtro) {
     setState(() {
       _filtroActivo = filtro;
     });
     
-    final provider = Provider.of<HorasExtrasProvider>(context, listen: false);
-    switch (filtro) {
-      case 'con_horas_extras':
-        provider.setFiltroEstado('CON_HORAS_EXTRAS');
-        break;
-      case 'sin_horas_extras':
-        provider.setFiltroEstado('SIN_HORAS_EXTRAS');
-        break;
-      default: // 'todos'
-        provider.setFiltroEstado('');
-        break;
-    }
+    // El filtro de estado ya no se aplica, solo se mantiene para la UI
+    // Los filtros ahora se manejan a través de los filtros avanzados
   }
 
   Future<void> _cargarDatosIniciales() async {
@@ -259,46 +255,52 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
             children: [
               Expanded(
                 flex: 4,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _showFiltros = !_showFiltros;
-                    });
+                child: Consumer<HorasExtrasProvider>(
+                  builder: (context, provider, child) {
+                    final tieneFiltrosActivos = _tieneFiltrosActivos(provider);
+
+                    return Container(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _showFiltros = !_showFiltros;
+                          });
+                        },
+                        icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
+                        label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    );
                   },
-                  icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
-                  label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                 ),
               ),
             ],
           ),
-          if (_showFiltros) ...[
-            const SizedBox(height: 12),
-            _buildFiltrosAvanzados(),
-          ],
         ],
       ),
     );
   }
 
   Widget _buildFiltrosAvanzados() {
-    final theme = Theme.of(context);
     return Consumer<HorasExtrasProvider>(
       builder: (context, provider, child) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: theme.cardTheme.color,
+            color: isDark ? Colors.grey[800] : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: theme.dividerColor,
+              color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
             ),
           ),
           child: Column(
@@ -343,89 +345,63 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: provider.filtroEstado.isEmpty ? null : provider.filtroEstado,
-                      decoration: InputDecoration(
-                        labelText: 'Estado',
-                        labelStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        fillColor: theme.colorScheme.surface,
-                        filled: true,
-                      ),
-                      items: [
-                        const DropdownMenuItem<String>(
-                          value: null,
-                          child: Text('Todos los estados'),
-                        ),
-                        ...provider.estadosUnicos.map((estado) {
-                          return DropdownMenuItem<String>(
-                            value: estado,
-                            child: Text(estado == 'CON_HORAS_EXTRAS' ? 'Con horas extras' : 'Sin horas extras'),
-                          );
-                        }),
-                      ],
-                      onChanged: (value) {
-                        provider.setFiltroEstado(value ?? '');
-                      },
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: provider.filtroActividad.isEmpty ? null : provider.filtroActividad,
-                      decoration: InputDecoration(
-                        labelText: 'Actividad',
-                        labelStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                    child: DropdownButtonFormField<int>(
+                      value: provider.filtroMes,
+                      decoration: const InputDecoration(
+                        labelText: 'Mes',
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        fillColor: theme.colorScheme.surface,
-                        filled: true,
                       ),
                       items: [
-                        const DropdownMenuItem<String>(
+                        const DropdownMenuItem<int>(
                           value: null,
-                          child: Text('Todas las actividades'),
+                          child: Text('Todos los meses'),
                         ),
-                        ...provider.actividadesUnicas.map((actividad) {
-                          return DropdownMenuItem<String>(
-                            value: actividad,
-                            child: Text(actividad),
+                        ...provider.mesesUnicos.map((mes) {
+                          final nombresMeses = [
+                            '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                          ];
+                          return DropdownMenuItem<int>(
+                            value: mes,
+                            child: Text(nombresMeses[mes]),
                           );
                         }),
                       ],
                       onChanged: (value) {
-                        provider.setFiltroActividad(value ?? '');
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildDatePicker(
-                      label: 'Fecha Inicio',
-                      value: provider.fechaInicio,
-                      onChanged: (date) {
-                        provider.setFechaInicio(date);
+                        provider.setFiltroMes(value);
                       },
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildDatePicker(
-                      label: 'Fecha Fin',
-                      value: provider.fechaFin,
-                      onChanged: (date) {
-                        provider.setFechaFin(date);
+                    child: DropdownButtonFormField<int>(
+                      value: provider.filtroAno,
+                      decoration: const InputDecoration(
+                        labelText: 'Año',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Todos los años'),
+                        ),
+                        ...provider.anosUnicos.map((ano) {
+                          return DropdownMenuItem<int>(
+                            value: ano,
+                            child: Text(ano.toString()),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        provider.setFiltroAno(value);
                       },
                     ),
                   ),
@@ -479,45 +455,6 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
     );
   }
 
-  Widget _buildDatePicker({
-    required String label,
-    required DateTime? value,
-    required Function(DateTime?) onChanged,
-  }) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: () async {
-        final date = await showDatePicker(
-          context: context,
-          initialDate: value ?? DateTime.now(),
-          firstDate: DateTime.now().subtract(const Duration(days: 365)),
-          lastDate: DateTime.now().add(const Duration(days: 365)),
-          locale: const Locale('es', 'ES'),
-        );
-        onChanged(date);
-      },
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          suffixIcon: const Icon(Icons.calendar_today),
-          fillColor: theme.colorScheme.surface,
-          filled: true,
-        ),
-        child: Text(
-          value != null
-              ? '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}'
-              : 'Seleccionar fecha',
-          style: TextStyle(
-            color: value != null ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withOpacity(0.6),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildEstadisticas(HorasExtrasProvider provider) {
     final stats = provider.estadisticas;

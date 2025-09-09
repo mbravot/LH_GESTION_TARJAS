@@ -15,11 +15,9 @@ class HorasExtrasProvider extends ChangeNotifier {
   
   // Variables para filtros
   String _filtroBusqueda = '';
-  String _filtroEstado = '';
   String _filtroColaborador = '';
-  String _filtroActividad = '';
-  DateTime? _fechaInicio;
-  DateTime? _fechaFin;
+  int? _filtroMes;
+  int? _filtroAno;
 
   // Getters
   List<HorasExtras> get rendimientos => _rendimientos;
@@ -30,11 +28,9 @@ class HorasExtrasProvider extends ChangeNotifier {
   
   // Getters para filtros
   String get filtroBusqueda => _filtroBusqueda;
-  String get filtroEstado => _filtroEstado;
   String get filtroColaborador => _filtroColaborador;
-  String get filtroActividad => _filtroActividad;
-  DateTime? get fechaInicio => _fechaInicio;
-  DateTime? get fechaFin => _fechaFin;
+  int? get filtroMes => _filtroMes;
+  int? get filtroAno => _filtroAno;
 
   // Método para configurar el AuthProvider
   void setAuthProvider(AuthProvider authProvider) {
@@ -66,9 +62,6 @@ class HorasExtrasProvider extends ChangeNotifier {
     try {
       final response = await _apiService.obtenerRendimientosHorasExtras(
         idColaborador: _filtroColaborador.isNotEmpty ? _filtroColaborador : null,
-        idActividad: _filtroActividad.isNotEmpty ? _filtroActividad : null,
-        fechaInicio: _fechaInicio?.toIso8601String().split('T')[0],
-        fechaFin: _fechaFin?.toIso8601String().split('T')[0],
       );
       
       _rendimientos = response.map((json) => HorasExtras.fromJson(json)).toList();
@@ -140,33 +133,21 @@ class HorasExtrasProvider extends ChangeNotifier {
     _aplicarFiltros();
   }
 
-  // Método para establecer filtro de estado
-  void setFiltroEstado(String estado) {
-    _filtroEstado = estado;
-    _aplicarFiltros();
-  }
-
   // Método para establecer filtro de colaborador
   void setFiltroColaborador(String colaborador) {
     _filtroColaborador = colaborador;
     _aplicarFiltros();
   }
 
-  // Método para establecer filtro de actividad
-  void setFiltroActividad(String actividad) {
-    _filtroActividad = actividad;
+  // Método para establecer filtro de mes
+  void setFiltroMes(int? mes) {
+    _filtroMes = mes;
     _aplicarFiltros();
   }
 
-  // Método para establecer filtro de fecha inicio
-  void setFechaInicio(DateTime? fecha) {
-    _fechaInicio = fecha;
-    _aplicarFiltros();
-  }
-
-  // Método para establecer filtro de fecha fin
-  void setFechaFin(DateTime? fecha) {
-    _fechaFin = fecha;
+  // Método para establecer filtro de año
+  void setFiltroAno(int? ano) {
+    _filtroAno = ano;
     _aplicarFiltros();
   }
 
@@ -187,18 +168,6 @@ class HorasExtrasProvider extends ChangeNotifier {
       }).toList();
     }
 
-    // Aplicar filtro de estado
-    if (_filtroEstado.isNotEmpty && _filtroEstado != 'todos') {
-      filtrados = filtrados.where((rendimiento) {
-        if (_filtroEstado == 'CON_HORAS_EXTRAS') {
-          return rendimiento.actividadesDetalle.any((actividad) => actividad.horasExtras > 0);
-        } else if (_filtroEstado == 'SIN_HORAS_EXTRAS') {
-          return rendimiento.actividadesDetalle.every((actividad) => actividad.horasExtras == 0);
-        }
-        return true;
-      }).toList();
-    }
-
     // Aplicar filtro de colaborador
     if (_filtroColaborador.isNotEmpty) {
       filtrados = filtrados.where((rendimiento) {
@@ -206,12 +175,14 @@ class HorasExtrasProvider extends ChangeNotifier {
       }).toList();
     }
 
-    // Aplicar filtro de actividad
-    if (_filtroActividad.isNotEmpty) {
-      filtrados = filtrados.where((rendimiento) {
-        return rendimiento.actividadesDetalle.any((actividad) => 
-          actividad.nombreActividad.contains(_filtroActividad));
-      }).toList();
+    // Filtrar por mes
+    if (_filtroMes != null) {
+      filtrados = filtrados.where((rendimiento) => rendimiento.fechaDateTime?.month == _filtroMes).toList();
+    }
+
+    // Filtrar por año
+    if (_filtroAno != null) {
+      filtrados = filtrados.where((rendimiento) => rendimiento.fechaDateTime?.year == _filtroAno).toList();
     }
 
     _rendimientosFiltrados = filtrados;
@@ -221,11 +192,9 @@ class HorasExtrasProvider extends ChangeNotifier {
   // Método para limpiar filtros
   void limpiarFiltros() {
     _filtroBusqueda = '';
-    _filtroEstado = '';
     _filtroColaborador = '';
-    _filtroActividad = '';
-    _fechaInicio = null;
-    _fechaFin = null;
+    _filtroMes = null;
+    _filtroAno = null;
     _rendimientosFiltrados = List.from(_rendimientos);
     notifyListeners();
   }
@@ -256,27 +225,27 @@ class HorasExtrasProvider extends ChangeNotifier {
     return colaboradores;
   }
 
-  // Método para obtener actividades únicas
-  List<String> get actividadesUnicas {
-    final actividades = _rendimientos
-        .expand((r) => r.actividadesDetalle)
-        .map((actividad) => actividad.nombreActividad)
-        .where((actividad) => actividad.isNotEmpty)
-        .toSet()
-        .toList();
-    actividades.sort();
-    return actividades;
+  // Listas únicas para filtros
+  List<int> get mesesUnicos {
+    final meses = <int>{};
+    for (var rendimiento in _rendimientos) {
+      final fecha = rendimiento.fechaDateTime;
+      if (fecha != null) {
+        meses.add(fecha.month);
+      }
+    }
+    return meses.toList()..sort();
   }
 
-  // Método para obtener estados únicos
-  List<String> get estadosUnicos {
-    final estados = _rendimientos
-        .map((r) => r.estadoTrabajo)
-        .where((estado) => estado.isNotEmpty)
-        .toSet()
-        .toList();
-    estados.sort();
-    return estados;
+  List<int> get anosUnicos {
+    final anos = <int>{};
+    for (var rendimiento in _rendimientos) {
+      final fecha = rendimiento.fechaDateTime;
+      if (fecha != null) {
+        anos.add(fecha.year);
+      }
+    }
+    return anos.toList()..sort((a, b) => b.compareTo(a)); // Orden descendente
   }
 
   // Método privado para establecer loading

@@ -15,10 +15,9 @@ class HorasExtrasOtrosCecosProvider extends ChangeNotifier {
   String _filtroBusqueda = '';
   String _filtroColaborador = '';
   String _filtroCecoTipo = '';
-  String _filtroCeco = '';
   String _filtroEstado = 'todos'; // 'todos', 'futuras', 'hoy', 'pasadas'
-  DateTime? _fechaInicio;
-  DateTime? _fechaFin;
+  int? _filtroMes;
+  int? _filtroAno;
 
   // Getters
   List<HorasExtrasOtrosCecos> get horasExtras => _horasExtras;
@@ -32,17 +31,55 @@ class HorasExtrasOtrosCecosProvider extends ChangeNotifier {
   String get filtroBusqueda => _filtroBusqueda;
   String get filtroColaborador => _filtroColaborador;
   String get filtroCecoTipo => _filtroCecoTipo;
-  String get filtroCeco => _filtroCeco;
   String get filtroEstado => _filtroEstado;
-  DateTime? get fechaInicio => _fechaInicio;
-  DateTime? get fechaFin => _fechaFin;
+  int? get filtroMes => _filtroMes;
+  int? get filtroAno => _filtroAno;
 
   // Estadísticas
   Map<String, int> get estadisticas {
-    final futuras = _horasExtrasFiltradas.where((h) => h.esFuturo).length;
-    final hoy = _horasExtrasFiltradas.where((h) => h.esHoy).length;
-    final pasadas = _horasExtrasFiltradas.where((h) => h.esPasado).length;
-    final total = _horasExtrasFiltradas.length;
+    // Calcular estadísticas sobre datos filtrados por búsqueda, colaborador, tipo CECO, mes y año
+    // pero sin aplicar el filtro de estado
+    final datosParaEstadisticas = _horasExtras.where((horasExtras) {
+      // Filtro de búsqueda
+      if (_filtroBusqueda.isNotEmpty) {
+        final busqueda = _filtroBusqueda.toLowerCase();
+        final matchColaborador = horasExtras.nombreColaborador.toLowerCase().contains(busqueda);
+        final matchCecoTipo = horasExtras.nombreCecoTipo.toLowerCase().contains(busqueda);
+        final matchCeco = horasExtras.nombreCeco.toLowerCase().contains(busqueda);
+        final matchFecha = horasExtras.fechaFormateadaCorta.contains(busqueda);
+        
+        if (!matchColaborador && !matchCecoTipo && !matchCeco && !matchFecha) {
+          return false;
+        }
+      }
+
+      // Filtro de colaborador
+      if (_filtroColaborador.isNotEmpty && horasExtras.nombreColaborador != _filtroColaborador) {
+        return false;
+      }
+
+      // Filtro de tipo CECO
+      if (_filtroCecoTipo.isNotEmpty && horasExtras.nombreCecoTipo != _filtroCecoTipo) {
+        return false;
+      }
+
+      // Filtro de mes
+      if (_filtroMes != null && horasExtras.fecha.month != _filtroMes) {
+        return false;
+      }
+
+      // Filtro de año
+      if (_filtroAno != null && horasExtras.fecha.year != _filtroAno) {
+        return false;
+      }
+
+      return true;
+    }).toList();
+
+    final futuras = datosParaEstadisticas.where((h) => h.esFuturo).length;
+    final hoy = datosParaEstadisticas.where((h) => h.esHoy).length;
+    final pasadas = datosParaEstadisticas.where((h) => h.esPasado).length;
+    final total = datosParaEstadisticas.length;
 
     return {
       'futuras': futuras,
@@ -61,8 +98,21 @@ class HorasExtrasOtrosCecosProvider extends ChangeNotifier {
     return _horasExtras.map((h) => h.nombreCecoTipo).toSet().toList()..sort();
   }
 
-  List<String> get cecosUnicos {
-    return _horasExtras.map((h) => h.nombreCeco).toSet().toList()..sort();
+  // Listas únicas para filtros de mes y año
+  List<int> get mesesUnicos {
+    final meses = <int>{};
+    for (var horas in _horasExtras) {
+      meses.add(horas.fecha.month);
+    }
+    return meses.toList()..sort();
+  }
+
+  List<int> get anosUnicos {
+    final anos = <int>{};
+    for (var horas in _horasExtras) {
+      anos.add(horas.fecha.year);
+    }
+    return anos.toList()..sort((a, b) => b.compareTo(a)); // Orden descendente
   }
 
   // Métodos para cargar datos
@@ -177,23 +227,18 @@ class HorasExtrasOtrosCecosProvider extends ChangeNotifier {
     _aplicarFiltros();
   }
 
-  void setFiltroCeco(String value) {
-    _filtroCeco = value;
-    _aplicarFiltros();
-  }
-
   void setFiltroEstado(String value) {
     _filtroEstado = value;
     _aplicarFiltros();
   }
 
-  void setFechaInicio(DateTime? date) {
-    _fechaInicio = date;
+  void setFiltroMes(int? value) {
+    _filtroMes = value;
     _aplicarFiltros();
   }
 
-  void setFechaFin(DateTime? date) {
-    _fechaFin = date;
+  void setFiltroAno(int? value) {
+    _filtroAno = value;
     _aplicarFiltros();
   }
 
@@ -201,10 +246,9 @@ class HorasExtrasOtrosCecosProvider extends ChangeNotifier {
     _filtroBusqueda = '';
     _filtroColaborador = '';
     _filtroCecoTipo = '';
-    _filtroCeco = '';
     _filtroEstado = 'todos';
-    _fechaInicio = null;
-    _fechaFin = null;
+    _filtroMes = null;
+    _filtroAno = null;
     _aplicarFiltros();
   }
 
@@ -233,18 +277,13 @@ class HorasExtrasOtrosCecosProvider extends ChangeNotifier {
         return false;
       }
 
-      // Filtro de CECO
-      if (_filtroCeco.isNotEmpty && horasExtras.nombreCeco != _filtroCeco) {
+      // Filtro de mes
+      if (_filtroMes != null && horasExtras.fecha.month != _filtroMes) {
         return false;
       }
 
-      // Filtro de fecha inicio
-      if (_fechaInicio != null && horasExtras.fecha.isBefore(_fechaInicio!)) {
-        return false;
-      }
-
-      // Filtro de fecha fin
-      if (_fechaFin != null && horasExtras.fecha.isAfter(_fechaFin!)) {
+      // Filtro de año
+      if (_filtroAno != null && horasExtras.fecha.year != _filtroAno) {
         return false;
       }
 

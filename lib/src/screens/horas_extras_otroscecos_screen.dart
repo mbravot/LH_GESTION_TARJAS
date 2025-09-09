@@ -39,6 +39,13 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
     _cargarDatosIniciales();
   }
 
+  bool _tieneFiltrosActivos(HorasExtrasOtrosCecosProvider provider) {
+    return provider.filtroColaborador.isNotEmpty ||
+           provider.filtroCecoTipo.isNotEmpty ||
+           provider.filtroMes != null ||
+           provider.filtroAno != null;
+  }
+
   void _aplicarFiltro(String filtro) {
     setState(() {
       _filtroActivo = filtro;
@@ -242,22 +249,30 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
             children: [
               Expanded(
                 flex: 4,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _showFiltros = !_showFiltros;
-                    });
+                child: Consumer<HorasExtrasOtrosCecosProvider>(
+                  builder: (context, provider, child) {
+                    final tieneFiltrosActivos = _tieneFiltrosActivos(provider);
+
+                    return Container(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _showFiltros = !_showFiltros;
+                          });
+                        },
+                        icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
+                        label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    );
                   },
-                  icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
-                  label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -289,10 +304,6 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
               ),
             ],
           ),
-          if (_showFiltros) ...[
-            const SizedBox(height: 12),
-            _buildFiltrosAvanzados(),
-          ],
         ],
       ),
     );
@@ -384,51 +395,57 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
               Row(
                 children: [
                   Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: provider.filtroCeco.isEmpty ? null : provider.filtroCeco,
+                    child: DropdownButtonFormField<int>(
+                      value: provider.filtroMes,
                       decoration: const InputDecoration(
-                        labelText: 'CECO',
+                        labelText: 'Mes',
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
                       items: [
-                        const DropdownMenuItem<String>(
+                        const DropdownMenuItem<int>(
                           value: null,
-                          child: Text('Todos los CECOs'),
+                          child: Text('Todos los meses'),
                         ),
-                        ...provider.cecosUnicos.map((ceco) {
-                          return DropdownMenuItem<String>(
-                            value: ceco,
-                            child: Text(ceco),
+                        ...provider.mesesUnicos.map((mes) {
+                          final nombresMeses = [
+                            '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                          ];
+                          return DropdownMenuItem<int>(
+                            value: mes,
+                            child: Text(nombresMeses[mes]),
                           );
                         }),
                       ],
                       onChanged: (value) {
-                        provider.setFiltroCeco(value ?? '');
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildDatePicker(
-                      label: 'Fecha Inicio',
-                      value: provider.fechaInicio,
-                      onChanged: (date) {
-                        provider.setFechaInicio(date);
+                        provider.setFiltroMes(value);
                       },
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildDatePicker(
-                      label: 'Fecha Fin',
-                      value: provider.fechaFin,
-                      onChanged: (date) {
-                        provider.setFechaFin(date);
+                    child: DropdownButtonFormField<int>(
+                      value: provider.filtroAno,
+                      decoration: const InputDecoration(
+                        labelText: 'Año',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Todos los años'),
+                        ),
+                        ...provider.anosUnicos.map((ano) {
+                          return DropdownMenuItem<int>(
+                            value: ano,
+                            child: Text(ano.toString()),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        provider.setFiltroAno(value);
                       },
                     ),
                   ),
@@ -482,41 +499,6 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
     );
   }
 
-  Widget _buildDatePicker({
-    required String label,
-    required DateTime? value,
-    required Function(DateTime?) onChanged,
-  }) {
-    return InkWell(
-      onTap: () async {
-        final date = await showDatePicker(
-          context: context,
-          initialDate: value ?? DateTime.now(),
-          firstDate: DateTime.now().subtract(const Duration(days: 365)),
-          lastDate: DateTime.now().add(const Duration(days: 365)),
-          locale: const Locale('es', 'ES'),
-        );
-        onChanged(date);
-      },
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          suffixIcon: const Icon(Icons.calendar_today),
-        ),
-        child: Text(
-          value != null
-              ? '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}'
-              : 'Seleccionar fecha',
-          style: TextStyle(
-            color: value != null ? Colors.black : Colors.grey,
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildEstadisticas() {
     return Consumer<HorasExtrasOtrosCecosProvider>(

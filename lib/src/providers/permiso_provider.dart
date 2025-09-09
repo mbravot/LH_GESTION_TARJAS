@@ -18,6 +18,8 @@ class PermisoProvider extends ChangeNotifier {
   String _filtroBusqueda = '';
   String _filtroColaborador = '';
   String _filtroTipo = '';
+  int? _filtroMes;
+  int? _filtroAno;
 
   // Getters
   List<Permiso> get permisos => _permisos;
@@ -31,6 +33,8 @@ class PermisoProvider extends ChangeNotifier {
   String get filtroBusqueda => _filtroBusqueda;
   String get filtroColaborador => _filtroColaborador;
   String get filtroTipo => _filtroTipo;
+  int? get filtroMes => _filtroMes;
+  int? get filtroAno => _filtroAno;
 
   // Método para configurar el AuthProvider
   void setAuthProvider(AuthProvider authProvider) {
@@ -184,6 +188,18 @@ class PermisoProvider extends ChangeNotifier {
     _aplicarFiltros();
   }
 
+  // Método para establecer filtro de mes
+  void setFiltroMes(int? mes) {
+    _filtroMes = mes;
+    _aplicarFiltros();
+  }
+
+  // Método para establecer filtro de año
+  void setFiltroAno(int? ano) {
+    _filtroAno = ano;
+    _aplicarFiltros();
+  }
+
   // Método para aplicar todos los filtros
   void _aplicarFiltros() {
     List<Permiso> filtrados = List.from(_permisos);
@@ -217,6 +233,16 @@ class PermisoProvider extends ChangeNotifier {
       }).toList();
     }
 
+    // Filtrar por mes
+    if (_filtroMes != null) {
+      filtrados = filtrados.where((permiso) => permiso.fechaDateTime?.month == _filtroMes).toList();
+    }
+
+    // Filtrar por año
+    if (_filtroAno != null) {
+      filtrados = filtrados.where((permiso) => permiso.fechaDateTime?.year == _filtroAno).toList();
+    }
+
     _permisosFiltrados = filtrados;
     notifyListeners();
   }
@@ -248,6 +274,8 @@ class PermisoProvider extends ChangeNotifier {
     _filtroBusqueda = '';
     _filtroColaborador = '';
     _filtroTipo = '';
+    _filtroMes = null;
+    _filtroAno = null;
     _permisosFiltrados = List.from(_permisos);
     notifyListeners();
   }
@@ -263,6 +291,29 @@ class PermisoProvider extends ChangeNotifier {
       'aprobados': aprobados,
       'total': total,
     };
+  }
+
+  // Listas únicas para filtros
+  List<int> get mesesUnicos {
+    final meses = <int>{};
+    for (var permiso in _permisos) {
+      final fecha = permiso.fechaDateTime;
+      if (fecha != null) {
+        meses.add(fecha.month);
+      }
+    }
+    return meses.toList()..sort();
+  }
+
+  List<int> get anosUnicos {
+    final anos = <int>{};
+    for (var permiso in _permisos) {
+      final fecha = permiso.fechaDateTime;
+      if (fecha != null) {
+        anos.add(fecha.year);
+      }
+    }
+    return anos.toList()..sort((a, b) => b.compareTo(a)); // Orden descendente
   }
 
   // Método para obtener tipos de permiso únicos

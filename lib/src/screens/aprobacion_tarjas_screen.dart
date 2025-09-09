@@ -42,6 +42,14 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
     }
   }
 
+  // Método para verificar si hay filtros activos
+  bool _tieneFiltrosActivos(TarjaProvider tarjaProvider) {
+    return tarjaProvider.filtroContratista.isNotEmpty ||
+           tarjaProvider.filtroTipoRendimiento.isNotEmpty ||
+           tarjaProvider.filtroUsuario.isNotEmpty ||
+           tarjaProvider.filtroTipoCeco.isNotEmpty;
+  }
+
   Future<void> _refrescarDatos() async {
     // Actualizar todos los providers relevantes
     final tarjaProvider = Provider.of<TarjaProvider>(context, listen: false);
@@ -1739,22 +1747,30 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
           Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _showFiltros = !_showFiltros;
-                    });
+                child: Consumer<TarjaProvider>(
+                  builder: (context, tarjaProvider, child) {
+                    final tieneFiltrosActivos = _tieneFiltrosActivos(tarjaProvider);
+                    
+                    return Container(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _showFiltros = !_showFiltros;
+                          });
+                        },
+                        icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
+                        label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    );
                   },
-                  icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
-                  label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                 ),
               ),
             ],
@@ -1879,7 +1895,31 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(child: SizedBox()), // Espacio vacío para mantener el layout
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: tarjaProvider.filtroTipoCeco.isEmpty ? null : tarjaProvider.filtroTipoCeco,
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo de CECO',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('Todos los tipos'),
+                        ),
+                        ...tarjaProvider.tiposCecoUnicos.map((tipoCeco) {
+                          return DropdownMenuItem<String>(
+                            value: tipoCeco,
+                            child: Text(tipoCeco),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        tarjaProvider.setFiltroTipoCeco(value ?? '');
+                      },
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),

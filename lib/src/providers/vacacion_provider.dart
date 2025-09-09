@@ -11,6 +11,8 @@ class VacacionProvider extends ChangeNotifier {
   String _filtroEstado = 'todos';
   String _filtroBusqueda = '';
   String? _filtroColaborador;
+  int? _filtroMes;
+  int? _filtroAno;
 
   List<Vacacion> get vacaciones => _vacaciones;
   bool get isLoading => _isLoading;
@@ -18,6 +20,8 @@ class VacacionProvider extends ChangeNotifier {
   String get filtroEstado => _filtroEstado;
   String get filtroBusqueda => _filtroBusqueda;
   String? get filtroColaborador => _filtroColaborador;
+  int? get filtroMes => _filtroMes;
+  int? get filtroAno => _filtroAno;
 
   // Vacaciones filtradas
   List<Vacacion> get vacacionesFiltradas {
@@ -42,6 +46,16 @@ class VacacionProvider extends ChangeNotifier {
       }).toList();
     }
 
+    // Filtrar por mes
+    if (_filtroMes != null) {
+      filtradas = filtradas.where((v) => v.fechaInicioDateTime?.month == _filtroMes).toList();
+    }
+
+    // Filtrar por año
+    if (_filtroAno != null) {
+      filtradas = filtradas.where((v) => v.fechaInicioDateTime?.year == _filtroAno).toList();
+    }
+
     return filtradas;
   }
 
@@ -50,6 +64,29 @@ class VacacionProvider extends ChangeNotifier {
   int get vacacionesProgramadas => _vacaciones.where((v) => v.estado == 'Programada').length;
   int get vacacionesEnCurso => _vacaciones.where((v) => v.estado == 'En curso').length;
   int get vacacionesCompletadas => _vacaciones.where((v) => v.estado == 'Completada').length;
+
+  // Listas únicas para filtros
+  List<int> get mesesUnicos {
+    final meses = <int>{};
+    for (var vacacion in _vacaciones) {
+      final fecha = vacacion.fechaInicioDateTime;
+      if (fecha != null) {
+        meses.add(fecha.month);
+      }
+    }
+    return meses.toList()..sort();
+  }
+
+  List<int> get anosUnicos {
+    final anos = <int>{};
+    for (var vacacion in _vacaciones) {
+      final fecha = vacacion.fechaInicioDateTime;
+      if (fecha != null) {
+        anos.add(fecha.year);
+      }
+    }
+    return anos.toList()..sort((a, b) => b.compareTo(a)); // Orden descendente
+  }
 
   void setAuthProvider(AuthProvider authProvider) {
     _authProvider = authProvider;
@@ -189,10 +226,22 @@ class VacacionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setFiltroMes(int? mes) {
+    _filtroMes = mes;
+    notifyListeners();
+  }
+
+  void setFiltroAno(int? ano) {
+    _filtroAno = ano;
+    notifyListeners();
+  }
+
   void limpiarFiltros() {
     _filtroEstado = 'todos';
     _filtroBusqueda = '';
     _filtroColaborador = null;
+    _filtroMes = null;
+    _filtroAno = null;
     notifyListeners();
   }
 

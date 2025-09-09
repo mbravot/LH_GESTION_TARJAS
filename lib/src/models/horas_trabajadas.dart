@@ -117,6 +117,8 @@ class HorasTrabajadas {
   }
 
   // Getters para formateo
+  DateTime? get fechaDateTime => _parseFecha(fecha);
+
   String get fechaFormateadaEspanol {
     final fechaParsed = _parseFecha(fecha);
     if (fechaParsed != null) {

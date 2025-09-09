@@ -32,26 +32,19 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
     _cargarDatosIniciales();
   }
 
+  bool _tieneFiltrosActivos(HorasTrabajadasProvider provider) {
+    return provider.filtroColaborador.isNotEmpty ||
+           provider.filtroMes != null ||
+           provider.filtroAno != null;
+  }
+
   void _aplicarFiltro(String filtro) {
     setState(() {
       _filtroActivo = filtro;
     });
     
-    final provider = Provider.of<HorasTrabajadasProvider>(context, listen: false);
-    switch (filtro) {
-      case 'mas_horas':
-        provider.setFiltroEstado('MÁS');
-        break;
-      case 'menos_horas':
-        provider.setFiltroEstado('MENOS');
-        break;
-      case 'exactas':
-        provider.setFiltroEstado('EXACTO');
-        break;
-      default: // 'todos'
-        provider.setFiltroEstado('');
-        break;
-    }
+    // El filtro de estado ya no se aplica, solo se mantiene para la UI
+    // Los filtros ahora se manejan a través de los filtros avanzados
   }
 
   // Funciones helper para agrupación por mes-año
@@ -262,22 +255,28 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
           Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _showFiltros = !_showFiltros;
-                    });
+                child: Consumer<HorasTrabajadasProvider>(
+                  builder: (context, provider, child) {
+                    final tieneFiltrosActivos = _tieneFiltrosActivos(provider);
+                    
+                    return ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _showFiltros = !_showFiltros;
+                        });
+                      },
+                      icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
+                      label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    );
                   },
-                  icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
-                  label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                 ),
               ),
             ],
@@ -347,29 +346,7 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: provider.filtroEstado.isEmpty ? null : provider.filtroEstado,
-                      decoration: const InputDecoration(
-                        labelText: 'Estado',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      ),
-                      items: [
-                        const DropdownMenuItem<String>(
-                          value: null,
-                          child: Text('Todos los estados'),
-                        ),
-                        ...provider.estadosUnicos.map((estado) {
-                          return DropdownMenuItem<String>(
-                            value: estado,
-                            child: Text(estado),
-                          );
-                        }),
-                      ],
-                      onChanged: (value) {
-                        provider.setFiltroEstado(value ?? '');
-                      },
-                    ),
+                    child: Container(), // Espacio vacío para mantener el layout
                   ),
                 ],
               ),
@@ -377,21 +354,57 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildDatePicker(
-                      label: 'Fecha Inicio',
-                      value: provider.fechaInicio,
-                      onChanged: (date) {
-                        provider.setFechaInicio(date);
+                    child: DropdownButtonFormField<int>(
+                      value: provider.filtroMes,
+                      decoration: const InputDecoration(
+                        labelText: 'Mes',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Todos los meses'),
+                        ),
+                        ...provider.mesesUnicos.map((mes) {
+                          final nombresMeses = [
+                            '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                          ];
+                          return DropdownMenuItem<int>(
+                            value: mes,
+                            child: Text(nombresMeses[mes]),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        provider.setFiltroMes(value);
                       },
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildDatePicker(
-                      label: 'Fecha Fin',
-                      value: provider.fechaFin,
-                      onChanged: (date) {
-                        provider.setFechaFin(date);
+                    child: DropdownButtonFormField<int>(
+                      value: provider.filtroAno,
+                      decoration: const InputDecoration(
+                        labelText: 'Año',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Todos los años'),
+                        ),
+                        ...provider.anosUnicos.map((ano) {
+                          return DropdownMenuItem<int>(
+                            value: ano,
+                            child: Text(ano.toString()),
+                          );
+                        }),
+                      ],
+                      onChanged: (value) {
+                        provider.setFiltroAno(value);
                       },
                     ),
                   ),
