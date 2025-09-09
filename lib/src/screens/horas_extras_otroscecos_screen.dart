@@ -24,6 +24,14 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
   bool _showFiltros = false;
   String _filtroActivo = 'todos'; // 'todos', 'futuras', 'hoy', 'pasadas'
   
+  // Variables para agrupación
+  List<bool> _expansionState = [];
+  final GlobalKey _expansionKey = GlobalKey();
+  
+  // Variables para agrupación por mes-año
+  Map<String, List<HorasExtrasOtrosCecos>> _horasExtrasAgrupadas = {};
+  List<String> _mesesAnos = [];
+  
 
   @override
   void initState() {
@@ -40,21 +48,53 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
     provider.setFiltroEstado(filtro);
   }
 
+  // Función para formatear mes-año
+  String _formatearMesAno(DateTime fecha) {
+    final meses = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    return '${meses[fecha.month - 1]} ${fecha.year}';
+  }
+
+  // Función para agrupar por mes-año
+  void _agruparPorMesAno(List<HorasExtrasOtrosCecos> horasExtras) {
+    _horasExtrasAgrupadas.clear();
+    _mesesAnos.clear();
+    
+    for (final hora in horasExtras) {
+      final mesAno = _formatearMesAno(hora.fecha);
+      if (!_horasExtrasAgrupadas.containsKey(mesAno)) {
+        _horasExtrasAgrupadas[mesAno] = [];
+        _mesesAnos.add(mesAno);
+      }
+      _horasExtrasAgrupadas[mesAno]!.add(hora);
+    }
+    
+    // Ordenar meses de más reciente a más antiguo
+    _mesesAnos.sort((a, b) {
+      final fechaA = _horasExtrasAgrupadas[a]!.first.fecha;
+      final fechaB = _horasExtrasAgrupadas[b]!.first.fecha;
+      return fechaB.compareTo(fechaA);
+    });
+  }
+
+  // Función para resetear estado de expansión
+  void _resetExpansionState() {
+    _expansionState = List.filled(_mesesAnos.length, false);
+  }
+
 
   void _cargarDatosIniciales() {
-    print('🔍 DEBUG: Iniciando carga de datos...');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = context.read<AuthProvider>();
       final provider = context.read<HorasExtrasOtrosCecosProvider>();
       
-      print('🔍 DEBUG: Configurando provider...');
       // Configurar el provider para escuchar cambios de sucursal
       provider.setAuthProvider(authProvider);
       
-      print('🔍 DEBUG: Cargando horas extras...');
       // Cargar datos
       provider.cargarHorasExtras();
-      print('🔍 DEBUG: Cargando opciones...');
       provider.cargarOpciones();
     });
   }
@@ -97,7 +137,6 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
               }
 
               if (provider.error != null && provider.error!.isNotEmpty) {
-                print('🔍 DEBUG: Mostrando error: ${provider.error}');
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -239,7 +278,7 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
                   icon: const Icon(Icons.add),
                   label: const Text('Nuevo'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -522,7 +561,7 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
                 child: _buildTarjetaEstadistica(
                   titulo: 'Pasadas',
                   valor: stats['pasadas']?.toString() ?? '0',
-                  color: Colors.grey,
+                  color: Colors.orange,
                   icono: Icons.history,
                   filtro: 'pasadas',
                 ),
@@ -604,11 +643,6 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
   Widget _buildListaHorasExtrasOtrosCecos(HorasExtrasOtrosCecosProvider provider) {
     final horasExtras = provider.horasExtrasFiltradas;
     
-    print('🔍 DEBUG: Pantalla - Total registros: ${provider.horasExtras.length}');
-    print('🔍 DEBUG: Pantalla - Registros filtrados: ${horasExtras.length}');
-    print('🔍 DEBUG: Pantalla - Estado de carga: ${provider.isLoading}');
-    print('🔍 DEBUG: Pantalla - Error: ${provider.error}');
-    
     if (horasExtras.isEmpty) {
       return Center(
         child: Column(
@@ -646,12 +680,74 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
       );
     }
 
+    // Agrupar por mes-año
+    _agruparPorMesAno(horasExtras);
+    _resetExpansionState();
+
+    return _buildListaHorasExtrasOtrosCecosAgrupados();
+  }
+
+  Widget _buildListaHorasExtrasOtrosCecosAgrupados() {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: horasExtras.length,
+      itemCount: _mesesAnos.length,
       itemBuilder: (context, index) {
-        final horasExtra = horasExtras[index];
-        return _buildHorasExtraCard(horasExtra);
+        final mesAno = _mesesAnos[index];
+        final horasExtras = _horasExtrasAgrupadas[mesAno]!;
+        
+        return ExpansionTile(
+          key: ValueKey(mesAno),
+          initiallyExpanded: true,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              if (index < _expansionState.length) {
+                _expansionState[index] = expanded;
+              }
+            });
+          },
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: EdgeInsets.zero,
+          shape: Border(),
+          collapsedShape: Border(),
+          collapsedIconColor: AppTheme.primaryColor,
+          iconColor: AppTheme.primaryColor,
+          title: Row(
+            children: [
+              Icon(
+                Icons.calendar_month,
+                size: 20,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                mesAno,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${horasExtras.length}',
+                  style: TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          children: horasExtras.map((horasExtra) {
+            return _buildHorasExtraCard(horasExtra);
+          }).toList(),
+        );
       },
     );
   }
@@ -865,119 +961,266 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
   void _mostrarDetallesHorasExtra(HorasExtrasOtrosCecos horasExtra) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: horasExtra.estadoColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                horasExtra.estadoIcono,
-                color: horasExtra.estadoColor,
-                size: 20,
-              ),
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          constraints: const BoxConstraints(maxWidth: 500),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surface.withOpacity(0.95),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Detalles de Horas Extras',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Container(
-          width: double.maxFinite,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header con avatar y nombre
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: horasExtra.estadoColor.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.primaryColor.withOpacity(0.05),
+                    ],
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.person,
-                      color: horasExtra.estadoColor,
-                      size: 16,
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.7)],
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.schedule,
+                        color: Colors.white,
+                        size: 30,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 16),
                     Expanded(
-                      child: Text(
-                        horasExtra.nombreColaborador,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: horasExtra.estadoColor,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Horas Extras Otros CECOS',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            horasExtra.nombreColaborador,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Contenido con información
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      // Información de las horas extras
+                      _buildInfoSection(
+                        'Información de Horas Extras',
+                        Icons.schedule,
+                        [
+                          _buildModernInfoRow('Fecha', horasExtra.fechaFormateadaEspanolCompleta, Icons.calendar_today),
+                          _buildModernInfoRow('Cantidad', horasExtra.cantidadFormateada, Icons.access_time),
+                          _buildModernInfoRow('Tipo CECO', horasExtra.nombreCecoTipo, Icons.category),
+                          _buildModernInfoRow('CECO', horasExtra.nombreCeco, Icons.business),
+                          _buildModernInfoRow('Estado', horasExtra.estadoTexto, Icons.info),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Botones de acción
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close, color: Colors.red),
+                        label: const Text('Cerrar', style: TextStyle(color: Colors.red)),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              _buildInfoRow('Fecha', horasExtra.fechaFormateadaEspanolCompleta, Icons.calendar_today),
-              _buildInfoRow('Cantidad', horasExtra.cantidadFormateada, Icons.access_time),
-              _buildInfoRow('Tipo CECO', horasExtra.nombreCecoTipo, Icons.category),
-              _buildInfoRow('CECO', horasExtra.nombreCeco, Icons.business),
-              _buildInfoRow('Estado', horasExtra.estadoTexto, Icons.info_outline),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Cerrar'),
+      ),
+    );
+  }
+
+  Widget _buildInfoSection(String title, IconData icon, List<Widget> children) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...children,
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value, IconData icon) {
+  Widget _buildModernInfoRow(String label, String value, IconData icon) {
+    // Definir colores para diferentes tipos de iconos
+    Color iconColor;
+    Color backgroundColor;
+    
+    // Comparar directamente con los iconos
+    if (icon == Icons.calendar_today) {
+      iconColor = Colors.blue;
+      backgroundColor = Colors.blue.withOpacity(0.1);
+    } else if (icon == Icons.access_time) {
+      iconColor = Colors.orange;
+      backgroundColor = Colors.orange.withOpacity(0.1);
+    } else if (icon == Icons.info) {
+      iconColor = Colors.purple;
+      backgroundColor = Colors.purple.withOpacity(0.1);
+    } else if (icon == Icons.category) {
+      iconColor = Colors.green;
+      backgroundColor = Colors.green.withOpacity(0.1);
+    } else if (icon == Icons.business) {
+      iconColor = Colors.red;
+      backgroundColor = Colors.red.withOpacity(0.1);
+    } else {
+      iconColor = AppTheme.primaryColor;
+      backgroundColor = AppTheme.primaryColor.withOpacity(0.1);
+    }
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: Colors.grey[600],
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[700],
-              ),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: iconColor,
             ),
           ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

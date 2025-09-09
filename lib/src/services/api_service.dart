@@ -1834,8 +1834,6 @@ class ApiService {
         url += '?' + queryParams.entries.map((e) => '${e.key}=${e.value}').join('&');
       }
 
-      print('🔍 DEBUG: Llamando a: $url');
-      
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -1843,13 +1841,9 @@ class ApiService {
           'Content-Type': 'application/json',
         },
       );
-
-      print('🔍 DEBUG: Status Code: ${response.statusCode}');
-      print('🔍 DEBUG: Response Body: ${response.body}');
       
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        print('🔍 DEBUG: Data length: ${data.length}');
         return data.map((item) => Map<String, dynamic>.from(item)).toList();
       } else {
         final errorData = json.decode(response.body);
@@ -1985,8 +1979,6 @@ class ApiService {
         url += '/';
       }
 
-      print('🔍 DEBUG: Llamando a bono-especial: $url');
-      
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -1994,13 +1986,9 @@ class ApiService {
           'Content-Type': 'application/json',
         },
       );
-
-      print('🔍 DEBUG: Status Code bono-especial: ${response.statusCode}');
-      print('🔍 DEBUG: Response Body bono-especial: ${response.body}');
-
+      
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        print('🔍 DEBUG: Data length bono-especial: ${data.length}');
         return data.map((item) => Map<String, dynamic>.from(item)).toList();
       } else {
         final errorData = json.decode(response.body);

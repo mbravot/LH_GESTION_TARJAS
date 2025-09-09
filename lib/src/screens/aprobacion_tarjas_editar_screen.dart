@@ -529,19 +529,11 @@ class _AprobacionTarjasEditarScreenState extends State<AprobacionTarjasEditarScr
   }
 
   String _getUnidadText(Tarja tarja) {
-    // Debug logging
-    print('DEBUG - _getUnidadText:');
-    print('  nombreUnidad: ${tarja.nombreUnidad}');
-    print('  idUnidad: ${tarja.idUnidad}');
-    
     if (tarja.nombreUnidad != null && tarja.nombreUnidad!.isNotEmpty) {
-      print('  Retornando nombre: ${tarja.nombreUnidad}');
       return tarja.nombreUnidad!;
     } else if (tarja.idUnidad.isNotEmpty) {
-      print('  Retornando ID: ${tarja.idUnidad}');
       return 'ID: ${tarja.idUnidad}';
     } else {
-      print('  Retornando: No especificado');
       return 'No especificado';
     }
   }

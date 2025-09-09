@@ -174,7 +174,6 @@ class _HorasExtrasOtrosCecosEditarScreenState extends State<HorasExtrasOtrosCeco
       
       return totalHoras;
     } catch (e) {
-      print('Error al obtener horas existentes: $e');
       return 0.0;
     }
   }

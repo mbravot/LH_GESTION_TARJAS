@@ -69,19 +69,12 @@ class HorasExtrasOtrosCecosProvider extends ChangeNotifier {
   Future<void> cargarHorasExtras() async {
     _setLoading(true);
     try {
-      print('🔍 DEBUG: Cargando horas extras otros CECOs...');
       final response = await ApiService.obtenerHorasExtrasOtrosCecos();
-
-      print('🔍 DEBUG: Respuesta del API: ${response.length} registros');
-      print('🔍 DEBUG: Primer registro: ${response.isNotEmpty ? response.first : "No hay registros"}');
 
       _horasExtras = response.map((json) => HorasExtrasOtrosCecos.fromJson(json)).toList();
       _aplicarFiltros();
       _error = '';
-      print('🔍 DEBUG: Horas extras cargadas: ${_horasExtras.length}');
-      print('🔍 DEBUG: Horas extras filtradas: ${_horasExtrasFiltradas.length}');
     } catch (e) {
-      print('🔍 DEBUG: Error al cargar horas extras: $e');
       _error = 'Error al cargar horas extras: $e';
       _horasExtras = [];
       _horasExtrasFiltradas = [];
@@ -92,28 +85,22 @@ class HorasExtrasOtrosCecosProvider extends ChangeNotifier {
 
   Future<void> cargarOpciones() async {
     try {
-      print('🔍 DEBUG: Cargando opciones...');
       final response = await ApiService.obtenerOpcionesHorasExtrasOtrosCecos();
-      
-      print('🔍 DEBUG: Respuesta de opciones: $response');
       
       if (response['tipos_ceco'] != null) {
         _tiposCeco = (response['tipos_ceco'] as List)
             .map((json) => CecoTipo.fromJson(json))
             .toList();
-        print('🔍 DEBUG: Tipos CECO cargados: ${_tiposCeco.length}');
       }
       
       if (response['cecos'] != null) {
         _cecos = (response['cecos'] as List)
             .map((json) => Ceco.fromJson(json))
             .toList();
-        print('🔍 DEBUG: CECOs cargados: ${_cecos.length}');
       }
       
       notifyListeners();
     } catch (e) {
-      print('🔍 DEBUG: Error al cargar opciones: $e');
       _error = 'Error al cargar opciones: $e';
     }
   }
@@ -222,7 +209,6 @@ class HorasExtrasOtrosCecosProvider extends ChangeNotifier {
   }
 
   void _aplicarFiltros() {
-    print('🔍 DEBUG: Aplicando filtros a ${_horasExtras.length} registros');
     _horasExtrasFiltradas = _horasExtras.where((horasExtras) {
       // Filtro de búsqueda
       if (_filtroBusqueda.isNotEmpty) {
@@ -280,7 +266,6 @@ class HorasExtrasOtrosCecosProvider extends ChangeNotifier {
       return true;
     }).toList();
 
-    print('🔍 DEBUG: Registros después del filtrado: ${_horasExtrasFiltradas.length}');
     notifyListeners();
   }
 
@@ -291,14 +276,11 @@ class HorasExtrasOtrosCecosProvider extends ChangeNotifier {
   }
 
   void setAuthProvider(AuthProvider authProvider) {
-    print('🔍 DEBUG: Configurando AuthProvider...');
     // Configurar el provider para escuchar cambios de sucursal
     authProvider.addListener(_onSucursalChanged);
-    print('🔍 DEBUG: AuthProvider configurado correctamente');
   }
 
   void _onSucursalChanged() {
-    print('🔍 DEBUG: Sucursal cambiada, recargando datos...');
     // Recargar datos cuando cambie la sucursal
     cargarHorasExtras();
     cargarOpciones();

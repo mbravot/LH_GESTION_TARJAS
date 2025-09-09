@@ -27,30 +27,72 @@ class BonoEspecial {
   }
 
   static DateTime _parseFecha(dynamic fecha) {
-    if (fecha == null) return DateTime.now();
-    if (fecha is DateTime) return fecha;
+    if (fecha == null) {
+      return DateTime(2025, 1, 1);
+    }
+    
+    if (fecha is DateTime) {
+      return fecha;
+    }
+    
     if (fecha is String) {
-      try {
-        // Intentar parsear formato ISO
-        return DateTime.parse(fecha);
-      } catch (e) {
+      // Intentar parsear formato GMT específico: "Fri, 01 Aug 2025 00:00:00 GMT"
+      if (fecha.contains('GMT')) {
         try {
-          // Intentar parsear formato GMT
-          if (fecha.contains('GMT')) {
-            final cleanFecha = fecha.replaceAll('GMT', '').trim();
-            return DateTime.parse(cleanFecha);
-          }
-          // Intentar parsear formato DD/MM/YYYY
-          final parts = fecha.split('/');
-          if (parts.length == 3) {
-            return DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+          // Formato: "Fri, 01 Aug 2025 00:00:00 GMT"
+          // Extraer solo la parte de fecha y hora: "01 Aug 2025 00:00:00"
+          final parts = fecha.split(', ');
+          if (parts.length >= 2) {
+            final dateTimePart = parts[1].replaceAll('GMT', '').trim();
+            // Convertir formato "01 Aug 2025 00:00:00" a formato parseable
+            final dateTimeParts = dateTimePart.split(' ');
+            if (dateTimeParts.length >= 4) {
+              final day = dateTimeParts[0];
+              final month = _convertMonthName(dateTimeParts[1]);
+              final year = dateTimeParts[2];
+              final time = dateTimeParts[3];
+              
+              // Crear fecha en formato ISO
+              final isoString = '$year-$month-$day $time';
+              return DateTime.parse(isoString);
+            }
           }
         } catch (e) {
-          return DateTime.now();
+          // Continuar con otros métodos de parsing
         }
       }
+      
+      // Intentar parsear formato ISO (YYYY-MM-DD)
+      try {
+        return DateTime.parse(fecha);
+      } catch (e) {
+        // Continuar con otros métodos de parsing
+      }
+      
+      // Intentar parsear formato DD/MM/YYYY
+      try {
+        final parts = fecha.split('/');
+        if (parts.length == 3) {
+          return DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+        }
+      } catch (e) {
+        // Continuar con fecha por defecto
+      }
+      
+      // Si no se puede parsear, usar fecha por defecto
+      return DateTime(2025, 1, 1);
     }
-    return DateTime.now();
+    
+    return DateTime(2025, 1, 1);
+  }
+
+  static String _convertMonthName(String monthName) {
+    const monthMap = {
+      'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+      'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+      'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+    };
+    return monthMap[monthName] ?? '01';
   }
 
   static double _toDouble(dynamic value) {
@@ -101,11 +143,22 @@ class BonoEspecial {
   }
 
   // Getters para estado y validaciones
-  bool get esFuturo => fecha.isAfter(DateTime.now());
-  bool get esHoy => fecha.year == DateTime.now().year &&
-                    fecha.month == DateTime.now().month &&
-                    fecha.day == DateTime.now().day;
-  bool get esPasado => fecha.isBefore(DateTime.now()) && !esHoy;
+  bool get esFuturo {
+    final ahora = DateTime.now();
+    return fecha.isAfter(ahora);
+  }
+  
+  bool get esHoy {
+    final ahora = DateTime.now();
+    return fecha.year == ahora.year &&
+           fecha.month == ahora.month &&
+           fecha.day == ahora.day;
+  }
+  
+  bool get esPasado {
+    final ahora = DateTime.now();
+    return fecha.isBefore(ahora) && !esHoy;
+  }
 
   // Getters para colores y estados
   String get estado {

@@ -493,7 +493,7 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.business, color: Colors.purple, size: 16),
+                            Icon(Icons.groups, color: Colors.purple, size: 16),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -741,8 +741,8 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close),
-                        label: const Text('Cerrar'),
+                        icon: const Icon(Icons.close, color: Colors.red),
+                        label: const Text('Cerrar', style: TextStyle(color: Colors.red)),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -835,6 +835,28 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
   }
 
   Widget _buildModernInfoRow(String label, String value, IconData icon) {
+    // Definir colores para diferentes tipos de iconos
+    Color iconColor;
+    Color backgroundColor;
+    
+    // Comparar directamente con los iconos
+    if (icon == Icons.badge) {
+      iconColor = Colors.red;
+      backgroundColor = Colors.red.withOpacity(0.1);
+    } else if (icon == Icons.business) {
+      iconColor = Colors.blue;
+      backgroundColor = Colors.blue.withOpacity(0.1);
+    } else if (icon == Icons.percent) {
+      iconColor = Colors.green;
+      backgroundColor = Colors.green.withOpacity(0.1);
+    } else if (icon == Icons.location_on) {
+      iconColor = Colors.orange;
+      backgroundColor = Colors.orange.withOpacity(0.1);
+    } else {
+      iconColor = AppTheme.primaryColor;
+      backgroundColor = AppTheme.primaryColor.withOpacity(0.1);
+    }
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -843,13 +865,13 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: backgroundColor,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               icon,
               size: 16,
-              color: Colors.grey[600],
+              color: iconColor,
             ),
           ),
           const SizedBox(width: 12),
@@ -1224,7 +1246,7 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
-                      Icons.business,
+                      Icons.groups,
                       color: AppTheme.primaryColor,
                       size: 20,
                     ),

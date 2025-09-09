@@ -492,6 +492,16 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
         children: [
           Expanded(
             child: _buildTarjetaEstadistica(
+              titulo: 'Total',
+              valor: stats['total'].toString(),
+              color: Colors.orange,
+              icono: Icons.list,
+              filtro: 'todos',
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildTarjetaEstadistica(
               titulo: 'Más Horas',
               valor: stats['mas_horas'].toString(),
               color: Colors.red,
@@ -517,16 +527,6 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
               color: Colors.green,
               icono: Icons.check_circle,
               filtro: 'exactas',
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildTarjetaEstadistica(
-              titulo: 'Total',
-              valor: stats['total'].toString(),
-              color: Colors.orange,
-              icono: Icons.list,
-              filtro: 'todos',
             ),
           ),
         ],

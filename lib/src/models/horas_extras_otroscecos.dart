@@ -25,7 +25,6 @@ class HorasExtrasOtrosCecos {
   });
 
   factory HorasExtrasOtrosCecos.fromJson(Map<String, dynamic> json) {
-    print('🔍 DEBUG: Parseando JSON: $json');
     return HorasExtrasOtrosCecos(
       id: json['id'] ?? '',
       idColaborador: json['id_colaborador'] ?? '',
@@ -40,17 +39,19 @@ class HorasExtrasOtrosCecos {
   }
 
   static DateTime _parseFecha(dynamic fecha) {
-    print('🔍 DEBUG: Parseando fecha: $fecha (tipo: ${fecha.runtimeType})');
-    if (fecha == null) return DateTime.now();
-    if (fecha is DateTime) return fecha;
+    
+    if (fecha == null) {
+      return DateTime(2025, 1, 1); // Fecha por defecto
+    }
+    if (fecha is DateTime) {
+      return fecha;
+    }
     if (fecha is String) {
       try {
-        // Intentar parsear formato ISO
+        // Intentar parsear formato ISO (YYYY-MM-DD)
         final parsed = DateTime.parse(fecha);
-        print('🔍 DEBUG: Fecha parseada exitosamente: $parsed');
         return parsed;
       } catch (e) {
-        print('🔍 DEBUG: Error parseando fecha ISO: $e');
         try {
           // Intentar parsear formato GMT específico: "Mon, 08 Sep 2025 00:00:00 GMT"
           if (fecha.contains('GMT')) {
@@ -70,7 +71,6 @@ class HorasExtrasOtrosCecos {
                 // Crear fecha en formato ISO
                 final isoString = '$year-$month-$day $time';
                 final parsed = DateTime.parse(isoString);
-                print('🔍 DEBUG: Fecha GMT parseada exitosamente: $parsed');
                 return parsed;
               }
             }
@@ -79,16 +79,16 @@ class HorasExtrasOtrosCecos {
           final parts = fecha.split('/');
           if (parts.length == 3) {
             final parsed = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
-            print('🔍 DEBUG: Fecha DD/MM/YYYY parseada exitosamente: $parsed');
             return parsed;
           }
+          // Si no se puede parsear, usar fecha por defecto
+          return DateTime(2025, 1, 1);
         } catch (e) {
-          print('🔍 DEBUG: Error parsing fecha: $fecha, error: $e');
-          return DateTime.now();
+          return DateTime(2025, 1, 1);
         }
       }
     }
-    return DateTime.now();
+    return DateTime(2025, 1, 1);
   }
 
   static String _convertMonthName(String monthName) {
@@ -97,20 +97,15 @@ class HorasExtrasOtrosCecos {
       'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
       'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
     };
-    final result = monthMap[monthName] ?? '01';
-    print('🔍 DEBUG: Convirtiendo mes: $monthName -> $result');
-    return result;
+    return monthMap[monthName] ?? '01';
   }
 
   static double _toDouble(dynamic value) {
-    print('🔍 DEBUG: Parseando cantidad: $value (tipo: ${value.runtimeType})');
     if (value == null) return 0.0;
     if (value is double) return value;
     if (value is int) return value.toDouble();
     if (value is String) {
-      final parsed = double.tryParse(value) ?? 0.0;
-      print('🔍 DEBUG: Cantidad parseada: $parsed');
-      return parsed;
+      return double.tryParse(value) ?? 0.0;
     }
     return 0.0;
   }
@@ -153,11 +148,22 @@ class HorasExtrasOtrosCecos {
   }
 
   // Getters para estado y validaciones
-  bool get esFuturo => fecha.isAfter(DateTime.now());
-  bool get esHoy => fecha.year == DateTime.now().year && 
-                   fecha.month == DateTime.now().month && 
-                   fecha.day == DateTime.now().day;
-  bool get esPasado => fecha.isBefore(DateTime.now()) && !esHoy;
+  bool get esFuturo {
+    final ahora = DateTime.now();
+    return fecha.isAfter(ahora);
+  }
+  
+  bool get esHoy {
+    final ahora = DateTime.now();
+    return fecha.year == ahora.year && 
+           fecha.month == ahora.month && 
+           fecha.day == ahora.day;
+  }
+  
+  bool get esPasado {
+    final ahora = DateTime.now();
+    return fecha.isBefore(ahora) && !esHoy;
+  }
 
   // Getters para colores y estados
   String get estado {
