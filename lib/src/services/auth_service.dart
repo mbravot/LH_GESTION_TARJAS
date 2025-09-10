@@ -151,6 +151,7 @@ class AuthService {
 
   // Obtener las sucursales disponibles del usuario
   Future<List<Map<String, dynamic>>> getSucursalesDisponibles() async {
+    final startTime = DateTime.now();
     developer.log('Obteniendo sucursales disponibles');
     
     try {
@@ -166,6 +167,9 @@ class AuthService {
         },
       );
 
+      final endTime = DateTime.now();
+      final duration = endTime.difference(startTime);
+      
       developer.log('Código de respuesta: ${response.statusCode}');
       developer.log('Cuerpo de respuesta: ${response.body}');
 
@@ -184,6 +188,7 @@ class AuthService {
 
   // Cambiar la sucursal activa del usuario
   Future<Map<String, dynamic>> cambiarSucursal(String idSucursal) async {
+    final startTime = DateTime.now();
     developer.log('Cambiando sucursal activa a: $idSucursal');
     
     try {
@@ -202,6 +207,9 @@ class AuthService {
         }),
       );
 
+      final endTime = DateTime.now();
+      final duration = endTime.difference(startTime);
+      
       developer.log('Código de respuesta: ${response.statusCode}');
       developer.log('Cuerpo de respuesta: ${response.body}');
 

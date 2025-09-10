@@ -385,6 +385,7 @@ class _ContratistaEditarScreenState extends State<ContratistaEditarScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Editar Contratista',
+      showAppBarElements: false,
       actions: [
         if (_isSaving)
           const Padding(

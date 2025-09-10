@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
+import '../screens/login_screen.dart';
 
 class UserInfo extends StatelessWidget {
   const UserInfo({super.key});
@@ -35,7 +36,9 @@ class UserInfo extends StatelessWidget {
         // Botón de cerrar sesión
         IconButton(
           icon: const Icon(Icons.logout, color: Colors.red),
-          onPressed: () => _confirmarCerrarSesion(context, authProvider),
+          onPressed: () {
+            _confirmarCerrarSesion(context, authProvider);
+          },
         ),
       ],
     );
@@ -50,14 +53,29 @@ class UserInfo extends StatelessWidget {
           content: const Text('¿Está seguro de que desea cerrar sesión?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                authProvider.logout();
               },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                
+                // Cerrar sesión en el AuthProvider
+                await authProvider.logout();
+                
+                // Navegar a la pantalla de login y limpiar el stack de navegación
+                if (context.mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                    (route) => false, // Remover todas las rutas del stack
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               child: const Text('Cerrar Sesión'),
             ),
           ],

@@ -195,10 +195,10 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
     notifyListeners();
 
     try {
-      // Cargar usuarios en paralelo si no están cargados
-      if (!_usuariosCargados) {
-        cargarUsuarios();
-      }
+      // Cargar usuarios solo si es necesario (no durante cambio de sucursal)
+      // if (!_usuariosCargados) {
+      //   cargarUsuarios();
+      // }
       
       final result = await handleApiError(
         () => ApiService().getTarjasByDate(DateTime.now(), _idSucursal!),
@@ -251,6 +251,13 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
     _filtroUsuario = '';
     _filtroTipoCeco = '';
     _aplicarFiltros();
+  }
+
+  // Cargar usuarios solo cuando sea necesario
+  Future<void> cargarUsuariosSiEsNecesario() async {
+    if (!_usuariosCargados) {
+      await cargarUsuarios();
+    }
   }
 
   // Forzar recarga de usuarios

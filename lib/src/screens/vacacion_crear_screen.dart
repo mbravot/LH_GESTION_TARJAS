@@ -316,6 +316,7 @@ class _VacacionCrearScreenState extends State<VacacionCrearScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Crear Vacación',
+      showAppBarElements: false,
       actions: [
         if (_isSaving)
           const Padding(

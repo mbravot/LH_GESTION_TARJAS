@@ -11,6 +11,11 @@ class AuthProvider extends ChangeNotifier {
   String? _error;
   bool _isAuthenticated = false;
   Map<String, dynamic>? _userData;
+  
+  // Cache de sucursales para evitar llamadas repetidas
+  List<Map<String, dynamic>>? _cachedSucursales;
+  DateTime? _sucursalesCacheTime;
+  static const Duration _cacheExpiration = Duration(minutes: 5);
 
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -22,11 +27,15 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _loadUserData() async {
+    final startTime = DateTime.now();
+    
     try {
       _userData = await _authService.getCurrentUser();
+      
       if (_userData != null) {
         // Validar que el token siga siendo válido haciendo una petición de prueba
         final isValid = await _authService.validateToken();
+        
         if (isValid) {
           _isAuthenticated = true;
         } else {
@@ -44,6 +53,10 @@ class AuthProvider extends ChangeNotifier {
       _userData = null;
       await _authService.logout();
     }
+    
+    final endTime = DateTime.now();
+    final duration = endTime.difference(startTime);
+    
     notifyListeners();
   }
 
@@ -75,6 +88,11 @@ class AuthProvider extends ChangeNotifier {
     
     try {
       await _authService.logout();
+      
+      // Limpiar cache de sucursales
+      _cachedSucursales = null;
+      _sucursalesCacheTime = null;
+      
       _isAuthenticated = false;
       _userData = null;
       _error = null;
@@ -161,8 +179,21 @@ class AuthProvider extends ChangeNotifier {
 
   // Obtener las sucursales disponibles del usuario
   Future<List<Map<String, dynamic>>> getSucursalesDisponibles() async {
+    // Verificar si tenemos cache válido
+    if (_cachedSucursales != null && 
+        _sucursalesCacheTime != null && 
+        DateTime.now().difference(_sucursalesCacheTime!) < _cacheExpiration) {
+      return _cachedSucursales!;
+    }
+    
     try {
-      return await _authService.getSucursalesDisponibles();
+      final sucursales = await _authService.getSucursalesDisponibles();
+      
+      // Actualizar cache
+      _cachedSucursales = sucursales;
+      _sucursalesCacheTime = DateTime.now();
+      
+      return sucursales;
     } catch (e) {
       _error = e.toString();
       notifyListeners();
@@ -172,15 +203,29 @@ class AuthProvider extends ChangeNotifier {
 
   // Cambiar la sucursal activa del usuario
   Future<bool> cambiarSucursal(String idSucursal) async {
+    final startTime = DateTime.now();
+    
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
       final result = await _authService.cambiarSucursal(idSucursal);
+      final resultStr = result.toString();
       
-      // Recargar los datos del usuario para reflejar el cambio
-      await _loadUserData();
+      // Actualizar datos del usuario directamente desde la respuesta (más rápido)
+      if (result['sucursal_nombre'] != null) {
+        if (_userData != null) {
+          _userData!['id_sucursal'] = int.tryParse(idSucursal);
+          _userData!['nombre_sucursal'] = result['sucursal_nombre'];
+        }
+      } else {
+        // Fallback: recargar datos completos si no hay información en la respuesta
+        await _loadUserData();
+      }
+      
+      final endTime = DateTime.now();
+      final duration = endTime.difference(startTime);
       
       _isLoading = false;
       notifyListeners();

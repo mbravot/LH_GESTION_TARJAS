@@ -4,6 +4,7 @@ import '../providers/bono_especial_provider.dart';
 import '../providers/colaborador_provider.dart';
 import '../models/bono_especial.dart';
 import '../theme/app_theme.dart';
+import '../widgets/main_scaffold.dart';
 
 class BonoEspecialEditarScreen extends StatefulWidget {
   final BonoEspecial bonoEspecial;
@@ -122,13 +123,9 @@ class _BonoEspecialEditarScreenState extends State<BonoEspecialEditarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Editar Bono Especial'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+    return MainScaffold(
+      title: 'Editar Bono Especial',
+      showAppBarElements: false,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(

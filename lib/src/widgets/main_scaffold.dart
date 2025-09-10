@@ -26,6 +26,7 @@ class MainScaffold extends StatelessWidget {
   final List<Widget>? actions;
   final Widget? drawer;
   final VoidCallback? onRefresh;
+  final bool showAppBarElements;
 
   const MainScaffold({
     Key? key,
@@ -35,6 +36,7 @@ class MainScaffold extends StatelessWidget {
     this.actions,
     this.drawer,
     this.onRefresh,
+    this.showAppBarElements = true,
   }) : super(key: key);
 
   void _handleRefresh(BuildContext context) async {
@@ -205,27 +207,11 @@ class MainScaffold extends StatelessWidget {
       appBar: AppBar(
         title: Text(title ?? 'LH Gestión Tarjas'),
         bottom: bottom,
-        actions: [
+        actions: showAppBarElements ? [
           const UserInfo(),
           const SucursalSelector(),
           if (actions != null) ...actions!,
-          // Botón de actualizar
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => _handleRefresh(context),
-          ),
-          IconButton(
-            icon: Icon(themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode),
-            onPressed: () => themeProvider.toggleTheme(),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () {
-              // Aquí puedes poner tu lógica de logout global
-              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-            },
-          ),
-        ],
+        ] : (actions != null ? actions! : []),
       ),
       drawer: drawer,
       body: body,

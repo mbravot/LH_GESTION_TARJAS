@@ -18,6 +18,15 @@ class _LoginScreenState extends State<LoginScreen> {
   final _claveController = TextEditingController();
   bool _isLoading = false;
   bool _obscureText = true;
+  PermisosProvider? _permisosProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _permisosProvider = context.read<PermisosProvider>();
+    });
+  }
 
   @override
   void dispose() {
@@ -42,37 +51,19 @@ class _LoginScreenState extends State<LoginScreen> {
         if (success) {
           // Cargar permisos del usuario
           try {
-            final permisosProvider = Provider.of<PermisosProvider>(context, listen: false);
-            print('🔍 Iniciando carga de permisos...');
-            await permisosProvider.cargarPermisos();
-            print('🔍 Permisos cargados exitosamente');
+            if (_permisosProvider != null) {
+              await _permisosProvider!.cargarPermisos();
+            }
           } catch (e) {
-            print('❌ Error al cargar permisos: $e');
           }
 
-          // Mostrar mensaje de bienvenida
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 8),
-                  Text('¡Bienvenido!'),
-                ],
-              ),
-              backgroundColor: AppTheme.successColor,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(10)),
-              ),
-            ),
-          );
-
           // Navegar a HomeScreen y reemplazar la página actual
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+            );
+          }
         } else {
           // Mostrar el mensaje de error del AuthProvider
           final mensaje = authProvider.error ?? 'Usuario o clave incorrectos o sin acceso a la app!';
@@ -120,7 +111,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         } else {
-          print('No se encontró ScaffoldMessenger en el contexto');
         }
       } finally {
         if (mounted) {

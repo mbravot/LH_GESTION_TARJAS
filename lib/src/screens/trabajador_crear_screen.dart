@@ -443,6 +443,7 @@ class _TrabajadorCrearScreenState extends State<TrabajadorCrearScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Crear Trabajador',
+      showAppBarElements: false,
       actions: [
         if (_isSaving)
           const Padding(

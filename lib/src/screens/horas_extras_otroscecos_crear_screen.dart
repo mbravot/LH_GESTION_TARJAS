@@ -271,6 +271,7 @@ class _HorasExtrasOtrosCecosCrearScreenState extends State<HorasExtrasOtrosCecos
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Crear Horas Extras Otros CECOs',
+      showAppBarElements: false,
       body: _isLoadingData
           ? const Center(child: CircularProgressIndicator())
           : _error != null

@@ -372,6 +372,7 @@ class _ContratistaCrearScreenState extends State<ContratistaCrearScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Crear Contratista',
+      showAppBarElements: false,
       actions: [
         if (_isSaving)
           const Padding(

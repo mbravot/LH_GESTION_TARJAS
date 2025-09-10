@@ -24,6 +24,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _showFiltros = false;
+  TarjaProvider? _tarjaProvider;
   
   // Nuevo estado para manejar la expansión de rendimientos por tarja
   Map<String, bool> _rendimientosExpansionState = {};
@@ -97,13 +98,13 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
   void _cargarDatosIniciales() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = context.read<AuthProvider>();
-      final tarjaProvider = context.read<TarjaProvider>();
+      _tarjaProvider = context.read<TarjaProvider>();
       
       // Configurar el TarjaProvider para escuchar cambios de sucursal
-      tarjaProvider.setAuthProvider(authProvider);
+      _tarjaProvider!.setAuthProvider(authProvider);
       
       // Escuchar cambios del TarjaProvider para limpiar cache cuando sea necesario
-      tarjaProvider.addListener(_onTarjaProviderChanged);
+      _tarjaProvider!.addListener(_onTarjaProviderChanged);
     });
   }
 
@@ -130,9 +131,10 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
   @override
   void dispose() {
     _searchController.dispose();
-    // Remover listener del TarjaProvider
-    final tarjaProvider = context.read<TarjaProvider>();
-    tarjaProvider.removeListener(_onTarjaProviderChanged);
+    // Remover listener del TarjaProvider usando la referencia guardada
+    if (_tarjaProvider != null) {
+      _tarjaProvider!.removeListener(_onTarjaProviderChanged);
+    }
     super.dispose();
   }
 

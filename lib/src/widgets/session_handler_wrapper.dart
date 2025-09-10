@@ -17,12 +17,16 @@ class SessionHandlerWrapper extends StatefulWidget {
 }
 
 class _SessionHandlerWrapperState extends State<SessionHandlerWrapper> with WidgetsBindingObserver {
+  AuthProvider? _authProvider;
 
   @override
   void initState() {
     super.initState();
-    // Verificar el estado de autenticación al iniciar
+    
+    // Agregar el listener inmediatamente
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _authProvider = context.read<AuthProvider>();
+      _authProvider!.addListener(_onAuthChanged);
       _checkInitialAuthStatus();
     });
     
@@ -50,8 +54,7 @@ class _SessionHandlerWrapperState extends State<SessionHandlerWrapper> with Widg
       }
     }
     
-    // Agregar el listener después de la verificación inicial
-    authProvider.addListener(_onAuthChanged);
+    // El listener ya se agregó en initState
   }
 
   @override
@@ -77,28 +80,45 @@ class _SessionHandlerWrapperState extends State<SessionHandlerWrapper> with Widg
     }
   }
 
+  @override
+  void dispose() {
+    // Remover el listener y el observer usando la referencia guardada
+    if (_authProvider != null) {
+      _authProvider!.removeListener(_onAuthChanged);
+    }
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
   void _onAuthChanged() {
-    final authProvider = context.read<AuthProvider>();
+    // Verificar si el widget sigue montado antes de usar context
+    if (!mounted || _authProvider == null) return;
+    
     
     // Solo redirigir si no está autenticado y no estamos ya en el login
-    if (!authProvider.isAuthenticated) {
+    if (!_authProvider!.isAuthenticated) {
+      
       // Verificar si estamos en una pantalla que requiere autenticación
       final currentRoute = ModalRoute.of(context);
       final routeName = currentRoute?.settings.name ?? '';
       
-      // Redirigir si no estamos en login o splash
-      if (currentRoute != null && 
-          !routeName.contains('login') &&
-          !routeName.contains('splash')) {
-        _redirectToLogin();
-      } else if (currentRoute == null) {
-        // Si no hay ruta actual (aplicación recién iniciada), redirigir al login
-        _redirectToLogin();
+      
+      // Solo redirigir si estamos en una pantalla protegida (no login/splash)
+      if (!routeName.contains('login') && !routeName.contains('splash') && routeName.isNotEmpty) {
+        // Usar un delay para evitar conflictos con navegación manual
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) _redirectToLogin();
+        });
+      } else {
       }
+    } else {
     }
   }
 
   void _redirectToLogin() {
+    // Verificar si el widget sigue montado antes de navegar
+    if (!mounted) return;
+    
     // Navegar al login y limpiar el stack de navegación
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
@@ -108,23 +128,6 @@ class _SessionHandlerWrapperState extends State<SessionHandlerWrapper> with Widg
     );
   }
 
-  @override
-  void dispose() {
-    // Solo remover el listener si el widget aún está montado
-    if (mounted) {
-      try {
-        final authProvider = context.read<AuthProvider>();
-        authProvider.removeListener(_onAuthChanged);
-      } catch (e) {
-        // Ignorar errores si el context ya no es válido
-      }
-    }
-    
-    // Remover el observer del ciclo de vida
-    WidgetsBinding.instance.removeObserver(this);
-    
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {

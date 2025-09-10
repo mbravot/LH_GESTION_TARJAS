@@ -244,14 +244,15 @@ class _SucursalSelectorState extends State<SucursalSelector> {
         );
       },
     );
-    if (seleccion != null && seleccion['id'].toString() != idSucursalActual) {
+    if (seleccion != null && seleccion['id'].toString() != idSucursalActual && mounted) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final exito = await authProvider.cambiarSucursal(seleccion['id'].toString());
       if (exito && mounted) {
         // Refrescar el clima cuando se cambie la sucursal
         WeatherWidget.refreshWeather();
         
-        ScaffoldMessenger.of(context).showSnackBar(
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
@@ -263,6 +264,7 @@ class _SucursalSelectorState extends State<SucursalSelector> {
             backgroundColor: Colors.green,
           ),
         );
+        }
       }
     }
   }

@@ -503,10 +503,10 @@ class _ColaboradorEditarScreenState extends State<ColaboradorEditarScreen> {
         RichText(
           text: TextSpan(
             text: label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: Colors.black87,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
             children: [
               if (isRequired)
@@ -662,6 +662,7 @@ class _ColaboradorEditarScreenState extends State<ColaboradorEditarScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Editar Colaborador',
+      showAppBarElements: false,
       actions: [
         if (_isSaving)
           const Padding(

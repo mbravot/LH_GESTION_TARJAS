@@ -394,6 +394,7 @@ class _PermisoEditarScreenState extends State<PermisoEditarScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Editar Permiso',
+      showAppBarElements: false,
       actions: [
         if (_isSaving)
           const Padding(

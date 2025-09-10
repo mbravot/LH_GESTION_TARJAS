@@ -29,11 +29,15 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   }
 
   Future<void> _loadWeather() async {
+    final startTime = DateTime.now();
+    
     try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+          _error = null;
+        });
+      }
 
       // Obtener información de la sucursal activa
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -46,9 +50,10 @@ class _WeatherWidgetState extends State<WeatherWidget> {
       if (userData != null) {
         cityName = userData['nombre_sucursal'];
         
-        // Intentar obtener coordenadas de la sucursal
+        // Intentar obtener coordenadas de la sucursal (usando cache)
         try {
           final sucursales = await authProvider.getSucursalesDisponibles();
+          
           final sucursalActual = sucursales.firstWhere(
             (s) => s['id'].toString() == userData['id_sucursal'].toString(),
             orElse: () => {},
@@ -61,9 +66,9 @@ class _WeatherWidgetState extends State<WeatherWidget> {
               latitude = double.tryParse(coords[0].trim());
               longitude = double.tryParse(coords[1].trim());
             }
+          } else {
           }
         } catch (e) {
-          print('Error obteniendo coordenadas de sucursal: $e');
         }
       }
 
@@ -80,6 +85,10 @@ class _WeatherWidgetState extends State<WeatherWidget> {
           cityName: cityName,
         );
       }
+      
+      if (weatherData != null) {
+      } else {
+      }
 
       if (mounted) {
         setState(() {
@@ -87,6 +96,10 @@ class _WeatherWidgetState extends State<WeatherWidget> {
           _isLoading = false;
         });
       }
+      
+      final endTime = DateTime.now();
+      final duration = endTime.difference(startTime);
+      
     } catch (e) {
       if (mounted) {
         setState(() {

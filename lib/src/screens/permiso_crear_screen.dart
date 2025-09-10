@@ -334,6 +334,7 @@ class _PermisoCrearScreenState extends State<PermisoCrearScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Crear Permiso',
+      showAppBarElements: false,
       actions: [
         if (_isSaving)
           const Padding(
