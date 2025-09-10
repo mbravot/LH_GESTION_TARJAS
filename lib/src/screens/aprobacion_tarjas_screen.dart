@@ -1049,11 +1049,30 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
     if (r.containsKey('rendimiento_total') && r.containsKey('cantidad_trab')) {
       tipoActividad = 'grupal';
     }
+    
+    // Detección adicional: si tiene porcentaje_grupal también es grupal
+    if (r.containsKey('porcentaje_grupal')) {
+      tipoActividad = 'grupal';
+    }
+    
+    // Detección adicional: si tiene cantidad_trab > 1 también es grupal
+    if (r.containsKey('cantidad_trab') && r['cantidad_trab'] != null) {
+      final cantidadTrab = int.tryParse(r['cantidad_trab'].toString()) ?? 0;
+      if (cantidadTrab > 1) {
+        tipoActividad = 'grupal';
+      }
+    }
+    
+    // Detección adicional: si tiene labor y cantidad_trab también es grupal
+    if (r.containsKey('labor') && r.containsKey('cantidad_trab')) {
+      tipoActividad = 'grupal';
+    }
 
     final theme = Theme.of(context);
     final isGrupal = tipoActividad == 'grupal';
     final colorBorde = theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[200]!;
     final colorFondo = theme.colorScheme.surface;
+    
     
     // Obtener nombre del CECO
     String nombreCeco;
@@ -1095,95 +1114,212 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark 
-                  ? Colors.green[800]!.withOpacity(0.3) 
-                  : Colors.green[50],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.all(16),
-                child: Icon(Icons.add_chart, color: Colors.green, size: 36),
+              // Header con CECO
+              Row(
+                children: [
+                  Icon(Icons.category, color: Colors.amber, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    'CECO: $nombreCeco',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber[700],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
+              const SizedBox(height: 12),
+              // Contenido en 3 columnas
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Columna 1: Información del grupo
               Expanded(
+                    flex: 2,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (labor.isNotEmpty) ...[
-                      const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.work, color: Colors.purple, size: 16),
-                          const SizedBox(width: 4),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.green[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(Icons.groups, color: Colors.green, size: 20),
+                            ),
+                            const SizedBox(width: 8),
                           Expanded(
-                            child: Text(labor, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
-                          ),
-                        ],
-                      ),
-                    ],
-                    const SizedBox(height: 4),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Cantidad trabajadores',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  Text(
+                                    cantidadTrab,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: _getAdaptiveColor(context),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.groups, color: Colors.amber, size: 16),
-                        const SizedBox(width: 4),
-                        Text('Cantidad trabajadores: ', style: TextStyle(color: _getAdaptiveColor(context))),
-                        Text(cantidadTrab, style: TextStyle(color: _getAdaptiveColor(context))),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(Icons.percent, color: Colors.blue, size: 20),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.percent, color: Colors.blue, size: 16),
-                        const SizedBox(width: 4),
-                        Text('Porcentaje: ', style: TextStyle(color: _getAdaptiveColor(context))),
-                        Text('${porcentajeStr != 'N/A' ? porcentajeStr + '%' : 'N/A'}', style: TextStyle(color: _getAdaptiveColor(context))),
-                      ],
+                                  Text(
+                                    'Porcentaje',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  Text(
+                                    '${porcentajeStr != 'N/A' ? porcentajeStr + '%' : 'N/A'}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: _getAdaptiveColor(context),
+                                    ),
+                                  ),
+                                ],
+                              ),
                     ),
                   ],
                 ),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 2: Rendimiento
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.eco, color: Colors.green, size: 28),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.green[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(Icons.eco, color: Colors.green, size: 20),
+                            ),
                       const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisAlignment: MainAxisAlignment.center,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                                                Text('Rendimiento total', style: TextStyle(fontWeight: FontWeight.w600, color: _getAdaptiveColor(context))),
-                      Text(rendimientoTotal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getAdaptiveColor(context))),
-                      Text(tarja.nombreUnidad ?? 'Unidad', style: TextStyle(fontSize: 12, color: _getAdaptiveColor(context))),
-                        ],
+                                  Text(
+                                    'Rendimiento',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  Text(
+                                    rendimientoTotal,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      color: _getAdaptiveColor(context),
+                                    ),
+                                  ),
+                                  Text(
+                                    tarja.nombreUnidad ?? 'Unidad',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  // Total estimado por trabajador
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 3: Pago estimado
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                     children: [
-                      Icon(Icons.person, color: Colors.orange, size: 20),
-                      const SizedBox(width: 4),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.orange[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(Icons.attach_money, color: Colors.orange, size: 20),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Pago estimado por trabajador', style: TextStyle(fontWeight: FontWeight.w600, color: _getAdaptiveColor(context), fontSize: 12)),
+                                  Text(
+                                    'Pago estimado',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
                           Text(
                             '\$${_calcularTotalEstimadoPorTrabajador(rendimientoTotal, cantidadTrab, tarja.tarifa, r)}',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orange[700]),
-                          ),
-                        ],
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.orange[700],
+                                    ),
+                                  ),
+                                  Text(
+                                    'por trabajador',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
                     ],
+                  ),
+                ],
+                    ),
                   ),
                 ],
               ),
@@ -1237,13 +1373,13 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Columna 1: Información del trabajador
-                  Expanded(
+              Expanded(
                     flex: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                      Row(
+                        children: [
                             Container(
                               decoration: BoxDecoration(
                                 color: Colors.blue[50],
@@ -1253,7 +1389,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                               child: Icon(Icons.person, color: Colors.blue, size: 20),
                             ),
                             const SizedBox(width: 8),
-                            Expanded(
+                          Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -1279,8 +1415,8 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                         ),
                         if (porcentaje != null) ...[
                           const SizedBox(height: 8),
-                          Row(
-                            children: [
+                    Row(
+                      children: [
                               Container(
                                 decoration: BoxDecoration(
                                   color: Colors.blue[50],
@@ -1290,7 +1426,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                                 child: Icon(Icons.percent, color: Colors.blue, size: 20),
                               ),
                               const SizedBox(width: 8),
-                              Expanded(
+                        Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -1308,25 +1444,25 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                                         fontSize: 16,
                                         color: _getAdaptiveColor(context),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                        ),
                       ],
                     ),
-                  ),
+                              ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
                   const SizedBox(width: 16),
                   // Columna 2: Rendimiento
                   Expanded(
                     flex: 2,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
+                children: [
+                  Row(
+                    children: [
                             Container(
                               decoration: BoxDecoration(
                                 color: Colors.green[50],
@@ -1335,11 +1471,11 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                               padding: const EdgeInsets.all(8),
                               child: Icon(Icons.eco, color: Colors.green, size: 20),
                             ),
-                            const SizedBox(width: 8),
+                      const SizedBox(width: 8),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
+                        children: [
                                   Text(
                                     'Rendimiento',
                                     style: TextStyle(
@@ -1364,9 +1500,9 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
+                      ),
+                    ],
+                  ),
                       ],
                     ),
                   ),
@@ -1378,7 +1514,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          children: [
+                    children: [
                             Container(
                               decoration: BoxDecoration(
                                 color: Colors.orange[50],
@@ -1391,7 +1527,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
+                        children: [
                                   Text(
                                     'Pago a trabajador',
                                     style: TextStyle(
@@ -1399,8 +1535,8 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                                       color: Colors.grey[600],
                                     ),
                                   ),
-                                  Text(
-                                    '\$${_calcularPagoTrabajador(rendimientoValor, tarja.tarifa, r)}',
+                          Text(
+                            '\$${_calcularPagoTrabajador(rendimientoValor, tarja.tarifa, r)}',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
@@ -1409,10 +1545,10 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ],
                     ),
                   ),
                 ],
@@ -1432,10 +1568,10 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
       ),
       elevation: 0,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header con CECO
               Row(
@@ -1464,9 +1600,9 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
+          children: [
+            Container(
+              decoration: BoxDecoration(
                                 color: Colors.blue[50],
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -1500,8 +1636,8 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 16),
+            ),
+            const SizedBox(width: 16),
                   // Columna 2: Rendimiento
                   Expanded(
                     flex: 2,
@@ -1519,11 +1655,11 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                               child: Icon(Icons.eco, color: Colors.green, size: 20),
                             ),
                             const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
                                     'Rendimiento',
                                     style: TextStyle(
                                       fontSize: 12,
@@ -1532,16 +1668,16 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                                   ),
                                   Text(
                                     r['rendimiento']?.toString() ?? r['cantidad']?.toString() ?? '0',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
                                       fontSize: 18,
                                       color: _getAdaptiveColor(context),
-                                    ),
-                                  ),
-                                  Text(
-                                    tarja.nombreUnidad ?? 'Unidad',
-                                    style: TextStyle(
-                                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    tarja.nombreUnidad ?? 'Unidad',
+                    style: TextStyle(
+                      fontSize: 12,
                                       color: Colors.grey[500],
                                     ),
                                   ),
@@ -1560,8 +1696,8 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
+                  Row(
+                    children: [
                             Container(
                               decoration: BoxDecoration(
                                 color: Colors.orange[50],
@@ -1575,23 +1711,23 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                      Text(
                                     'Pago a trabajador',
-                                    style: TextStyle(
-                                      fontSize: 12,
+                        style: TextStyle(
+                          fontSize: 12,
                                       color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  Text(
-                                    '\$${_calcularPagoTrabajador(r['rendimiento']?.toString() ?? r['cantidad']?.toString() ?? '0', tarja.tarifa, r)}',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '\$${_calcularPagoTrabajador(r['rendimiento']?.toString() ?? r['cantidad']?.toString() ?? '0', tarja.tarifa, r)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
                                       fontSize: 16,
-                                      color: Colors.orange[700],
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          color: Colors.orange[700],
+                        ),
+                      ),
+                    ],
+                  ),
                             ),
                           ],
                         ),
@@ -1600,7 +1736,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                   ),
                 ],
               ),
-              if (r['observaciones'] != null && r['observaciones'].toString().isNotEmpty) ...[
+                  if (r['observaciones'] != null && r['observaciones'].toString().isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -1614,20 +1750,20 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Observaciones: ${r['observaciones']}',
-                          style: TextStyle(
-                            color: _getAdaptiveColor(context),
-                            fontSize: 14,
-                            fontStyle: FontStyle.italic,
+                      'Observaciones: ${r['observaciones']}',
+                      style: TextStyle(
+                        color: _getAdaptiveColor(context),
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
                           ),
-                        ),
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                ],
+              ),
+            ),
               ],
-            ],
-          ),
+          ],
+        ),
       ),
     );
   }
@@ -1641,7 +1777,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
     // Para grupal, usar los datos del primer rendimiento que contiene la info del grupo
     if (rendimientos.isNotEmpty) {
       final r = rendimientos.first;
-      final rendimientoTotal = r['rendimiento_total']?.toString() ?? r['rendimiento']?.toString() ?? '0';
+      final rendimientoTotal = r['rendimiento_total']?.toString() ?? '0';
       final cantidadTrab = r['cantidad_trab']?.toString() ?? '0';
       final porcentajeRaw = r['porcentaje_grupal'];
       String porcentajeStr = 'N/A';
@@ -1751,7 +1887,7 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
         child: Center(
           child: Text(
             'No hay datos del grupo disponibles',
-            style: TextStyle(color: Colors.grey[600]),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
           ),
         ),
       ),
@@ -1994,22 +2130,22 @@ class _AprobacionTarjasScreenState extends State<AprobacionTarjasScreen> {
                     final tieneFiltrosActivos = _tieneFiltrosActivos(tarjaProvider);
                     
                     return Container(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _showFiltros = !_showFiltros;
-                          });
-                        },
-                        icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
-                        label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
-                        style: ElevatedButton.styleFrom(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _showFiltros = !_showFiltros;
+                    });
+                  },
+                  icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
+                  label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
+                  style: ElevatedButton.styleFrom(
                           backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                       ),
                     );
                   },
