@@ -1645,7 +1645,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                                     ),
                                   ),
                                   Text(
-                                    '\$${_calcularPagoTrabajador(rendimientoValor, tarja.tarifa, r)}',
+                                    '\$${_calcularPagoTrabajador(rendimientoValor, tarja.tarifa, r, tarja)}',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
@@ -1727,7 +1727,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                         ),
                       ),
                       Text(
-                        '\$${_calcularPagoTrabajador(r['rendimiento']?.toString() ?? r['cantidad']?.toString() ?? '0', tarja.tarifa, r)}',
+                        '\$${_calcularPagoTrabajador(r['rendimiento']?.toString() ?? r['cantidad']?.toString() ?? '0', tarja.tarifa, r, tarja)}',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -1951,18 +1951,22 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     double totalPago = 0;
     
     if (tipoActividad == 'propio') {
-      // Para propios: tarifa * rendimiento total (sin porcentaje)
-      final totalRendimientoStr = _calcularTotalRendimientos(rendimientos, tarja);
-      final totalRendimiento = double.tryParse(totalRendimientoStr) ?? 0;
-      totalPago = tarifa * totalRendimiento;
-    } else if (tipoActividad == 'multiple') {
-      // Para múltiples: suma del pago individual de cada trabajador (sin porcentaje)
+      // Para propios: sumar el pago individual de cada trabajador usando sueldo base
       for (var rendimiento in rendimientos) {
         final rendimientoValor = rendimiento['rendimiento']?.toString() ?? rendimiento['horas_trabajadas']?.toString() ?? rendimiento['cantidad']?.toString() ?? '0';
-        final rendimientoDouble = double.tryParse(rendimientoValor) ?? 0;
-        
-        final pagoIndividual = rendimientoDouble * tarifa;
-        totalPago += pagoIndividual;
+        final pagoIndividual = _calcularPagoTrabajador(rendimientoValor, tarja.tarifa, rendimiento, tarja);
+        // Convertir el pago formateado de vuelta a número para sumar
+        final pagoNumerico = double.tryParse(pagoIndividual.replaceAll(',', '')) ?? 0;
+        totalPago += pagoNumerico;
+      }
+    } else if (tipoActividad == 'multiple') {
+      // Para múltiples: suma del pago individual de cada trabajador usando sueldo base
+      for (var rendimiento in rendimientos) {
+        final rendimientoValor = rendimiento['rendimiento']?.toString() ?? rendimiento['horas_trabajadas']?.toString() ?? rendimiento['cantidad']?.toString() ?? '0';
+        final pagoIndividual = _calcularPagoTrabajador(rendimientoValor, tarja.tarifa, rendimiento, tarja);
+        // Convertir el pago formateado de vuelta a número para sumar
+        final pagoNumerico = double.tryParse(pagoIndividual.replaceAll(',', '')) ?? 0;
+        totalPago += pagoNumerico;
       }
     } else if (tipoActividad == 'contratista') {
       // Para contratistas individuales: suma de (rendimiento × tarifa × (1 + porcentaje))
@@ -2020,17 +2024,44 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
   }
 
   // Método para calcular el pago a trabajador individual
-  String _calcularPagoTrabajador(String rendimientoValor, String tarifa, [Map<String, dynamic>? rendimientoData]) {
+  String _calcularPagoTrabajador(String rendimientoValor, String tarifa, [Map<String, dynamic>? rendimientoData, Tarja? tarja]) {
     // Convertir el rendimiento a double
     final rendimiento = double.tryParse(rendimientoValor) ?? 0;
     
     // Convertir la tarifa a double
     final tarifaDouble = double.tryParse(tarifa) ?? 0;
     
-    // Para el pago individual del trabajador, NO aplicamos el porcentaje
-    // porque ya se aplicó en el cálculo del pago total de la actividad
-    // Solo calculamos: tarifa * rendimiento
-    final pago = tarifaDouble * rendimiento;
+    double pago = 0;
+    
+    // Verificar si es un colaborador propio (unidad HORAS BASE o JORNADA BASE)
+    if (tarja != null && (tarja.nombreUnidad == 'HORAS BASE' || tarja.nombreUnidad == 'JORNADA BASE')) {
+      // Es un colaborador propio, usar información de sueldo base
+      if (rendimientoData != null) {
+        // Obtener información de sueldo base del rendimiento
+        final horaDia = rendimientoData['hora_dia'] != null ? double.tryParse(rendimientoData['hora_dia'].toString()) ?? 0 : 0;
+        final baseDia = rendimientoData['base_dia'] != null ? double.tryParse(rendimientoData['base_dia'].toString()) ?? 0 : 0;
+        
+        if (tarja.nombreUnidad == 'HORAS BASE' && horaDia > 0) {
+          // HORAS BASE: rendimiento × hora_dia
+          pago = rendimiento * horaDia;
+        } else if (tarja.nombreUnidad == 'JORNADA BASE' && baseDia > 0) {
+          // JORNADA BASE: rendimiento × base_dia
+          pago = rendimiento * baseDia;
+        } else {
+          // Fallback a tarifa normal si no hay información de sueldo base
+          pago = tarifaDouble * rendimiento;
+        }
+      } else {
+        // Fallback a tarifa normal si no hay datos del rendimiento
+        pago = tarifaDouble * rendimiento;
+      }
+    } else {
+      // Es un contratista o trabajador externo, usar tarifa normal
+      // Para el pago individual del trabajador, NO aplicamos el porcentaje
+      // porque ya se aplicó en el cálculo del pago total de la actividad
+      // Solo calculamos: tarifa * rendimiento
+      pago = tarifaDouble * rendimiento;
+    }
     
     // Formatear como número entero con separación de miles
     final pagoEntero = pago.round();
