@@ -29,7 +29,8 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
   }
 
   bool _tieneFiltrosActivos(ColaboradorProvider provider) {
-    return provider.filtroEstado != 'todos';
+    // Los indicadores no son filtros avanzados, solo considerar filtros de búsqueda
+    return provider.filtroBusqueda.isNotEmpty;
   }
 
   void _cargarDatosIniciales() {
@@ -161,7 +162,7 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
                         icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                         label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
+                          backgroundColor: tieneFiltrosActivos ? Colors.orange : Colors.grey[500],
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -407,7 +408,8 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.colorScheme.surface;
-    final borderColor = Colors.green[300]!;
+    // Color del borde según el estado del colaborador
+    final borderColor = colaborador.idEstado == '1' ? Colors.green[300]! : Colors.red[300]!;
     final textColor = theme.colorScheme.onSurface;
 
     return Card(

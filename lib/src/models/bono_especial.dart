@@ -174,7 +174,7 @@ class BonoEspecial {
       case 'HOY':
         return Colors.green;
       case 'PASADO':
-        return Colors.grey;
+        return Colors.orange;
       default:
         return Colors.grey;
     }

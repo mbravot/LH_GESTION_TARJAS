@@ -277,7 +277,7 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
                         icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                         label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
+                          backgroundColor: tieneFiltrosActivos ? Colors.orange : Colors.grey[500],
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -591,7 +591,21 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = isDark ? DarkThemeColors.cardColor : Colors.white;
-    final borderColor = Colors.green[300]!;
+    // Color del borde según el estado de la licencia
+    Color borderColor;
+    switch (licencia.estadoColor) {
+      case 'orange':
+        borderColor = Colors.orange[300]!;
+        break;
+      case 'blue':
+        borderColor = Colors.blue[300]!;
+        break;
+      case 'green':
+        borderColor = Colors.green[300]!;
+        break;
+      default:
+        borderColor = Colors.grey[300]!;
+    }
     final textColor = isDark ? DarkThemeColors.primaryTextColor : Colors.black87;
 
     // Determinar color del estado con mejor contraste

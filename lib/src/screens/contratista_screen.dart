@@ -26,7 +26,8 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
   }
 
   bool _tieneFiltrosActivos(ContratistaProvider provider) {
-    return provider.filtroEstado.isNotEmpty;
+    // Los indicadores no son filtros avanzados, solo considerar filtros de búsqueda
+    return provider.filtroBusqueda.isNotEmpty;
   }
 
   void _aplicarFiltro(String filtro) {
@@ -155,7 +156,7 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
                         icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                         label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
+                          backgroundColor: tieneFiltrosActivos ? Colors.orange : Colors.grey[500],
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -475,7 +476,8 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
 
   Widget _buildContratistaCard(Contratista contratista) {
     final cardColor = Theme.of(context).colorScheme.surface;
-    final borderColor = Colors.green[300]!;
+    // Color del borde según el estado del contratista
+    final borderColor = contratista.esActivo ? Colors.green[300]! : Colors.red[300]!;
     final textColor = Theme.of(context).colorScheme.onSurface;
 
     return Card(

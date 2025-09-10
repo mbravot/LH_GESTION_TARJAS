@@ -268,7 +268,7 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
                       icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                       label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
+                        backgroundColor: tieneFiltrosActivos ? Colors.orange : Colors.grey[500],
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
@@ -727,7 +727,8 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.colorScheme.surface;
-    final borderColor = Colors.green[300]!;
+    // Color del borde según el estado de las horas trabajadas
+    final borderColor = _getEstadoColor(hora.estadoTrabajo).withOpacity(0.6);
     final textColor = theme.colorScheme.onSurface;
     
     return Card(

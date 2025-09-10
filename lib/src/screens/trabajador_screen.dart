@@ -165,7 +165,7 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
                         icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                         label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
+                          backgroundColor: tieneFiltrosActivos ? Colors.orange : Colors.grey[500],
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -421,7 +421,8 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
 
   Widget _buildTrabajadorCard(Trabajador trabajador) {
     final cardColor = Theme.of(context).colorScheme.surface;
-    final borderColor = Colors.green[300]!;
+    // Color del borde según el estado del trabajador
+    final borderColor = trabajador.idEstado == '1' ? Colors.green[300]! : Colors.red[300]!;
     final textColor = Theme.of(context).colorScheme.onSurface;
 
     return Card(

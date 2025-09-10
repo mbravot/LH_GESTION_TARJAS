@@ -283,7 +283,7 @@ class _PermisoScreenState extends State<PermisoScreen> {
                         icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                         label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
+                          backgroundColor: tieneFiltrosActivos ? Colors.orange : Colors.grey[500],
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -620,7 +620,8 @@ class _PermisoScreenState extends State<PermisoScreen> {
 
   Widget _buildPermisoCard(Permiso permiso) {
     final cardColor = Theme.of(context).colorScheme.surface;
-    final borderColor = Colors.green[300]!;
+    // Color del borde según el estado del permiso
+    final borderColor = _getColorEstado(permiso.estadoPermiso).withOpacity(0.6);
     final textColor = Theme.of(context).colorScheme.onSurface;
 
     return Card(

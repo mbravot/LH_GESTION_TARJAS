@@ -263,7 +263,7 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
                         icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                         label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
+                          backgroundColor: tieneFiltrosActivos ? Colors.orange : Colors.grey[500],
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -738,7 +738,21 @@ class _HorasExtrasOtrosCecosScreenState extends State<HorasExtrasOtrosCecosScree
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.colorScheme.surface;
-    final borderColor = Colors.green[300]!;
+    // Color del borde según el estado de las horas extras otros cecos
+    Color borderColor;
+    switch (horasExtra.estado) {
+      case 'FUTURO':
+        borderColor = Colors.blue[300]!;
+        break;
+      case 'HOY':
+        borderColor = Colors.green[300]!;
+        break;
+      case 'PASADO':
+        borderColor = Colors.orange[300]!;
+        break;
+      default:
+        borderColor = Colors.grey[300]!;
+    }
     final textColor = theme.colorScheme.onSurface;
 
     return Card(
