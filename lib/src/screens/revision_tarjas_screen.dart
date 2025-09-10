@@ -275,6 +275,16 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     }
   }
 
+  String _getTipoCecoText(Tarja tarja) {
+    if (tarja.nombreTipoceco != null && tarja.nombreTipoceco!.isNotEmpty) {
+      return tarja.nombreTipoceco!;
+    } else if (tarja.idTipoceco.isNotEmpty) {
+      return 'Tipo CECO ID: ${tarja.idTipoceco}';
+    } else {
+      return 'No especificado';
+    }
+  }
+
   String _formatearTarifa(String tarifa) {
     try {
       final double valor = double.parse(tarifa);
@@ -385,19 +395,13 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
   }
 
   String obtenerNombreCeco(Tarja tarja) {
-    // Si tenemos el nombre del CECO directamente del endpoint, lo usamos
+    // Solo mostrar el nombre específico del CECO
     if (tarja.nombreCeco != null && tarja.nombreCeco!.isNotEmpty) {
       return tarja.nombreCeco!;
     }
     
-    // Fallback: si no hay nombre específico, mostramos el tipo
-    if (tarja.nombreTipoceco != null && tarja.nombreTipoceco!.isNotEmpty) {
-      return tarja.nombreTipoceco!;
-    } else if (tarja.idTipoceco.isNotEmpty) {
-      return 'Tipo CECO ID: ${tarja.idTipoceco}';
-    }
-    
-    return 'Sin CECO';
+    // Si no hay nombre del CECO, indicar que falta información
+    return 'Nombre CECO no disponible';
   }
 
   String obtenerNombreUnidad(Tarja tarja) {
@@ -490,11 +494,12 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
       });
     }
     
-    // Determinar el color del borde basado en los rendimientos reales cargados
-    final tieneRendimientosReales = _deberiaMostrarConRendimientos(tarja, rendimientos);
-    final borderColor = tieneRendimientosReales 
+    // Determinar el color del borde basado en el estado de la tarja
+    final borderColor = tarja.idEstadoactividad == '1' // CREADA
+        ? (isDark ? Colors.orange[600]! : Colors.orange[400]!)
+        : tarja.idEstadoactividad == '2' // REVISADA
         ? (isDark ? Colors.green[600]! : Colors.green[400]!)
-        : (isDark ? Colors.red[600]! : Colors.red[400]!);
+        : (isDark ? Colors.grey[600]! : Colors.grey[400]!); // Otros estados
 
     return Card(
         color: cardColor,
@@ -1177,6 +1182,22 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     final isGrupal = tipoActividad == 'grupal';
     final colorBorde = theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[200]!;
     final colorFondo = theme.colorScheme.surface;
+    
+    // Obtener nombre del CECO
+    String nombreCeco;
+    if (tipoActividad == 'multiple') {
+      // Para rendimientos múltiples, usar el CECO específico del rendimiento
+      if (r['nombre_ceco'] != null && r['nombre_ceco'].toString().isNotEmpty) {
+        nombreCeco = r['nombre_ceco'].toString();
+      } else if (r['id_ceco'] != null && r['id_ceco'].toString().isNotEmpty) {
+        nombreCeco = 'CECO ID: ${r['id_ceco']}';
+      } else {
+        nombreCeco = 'CECO no disponible';
+      }
+    } else {
+      // Para otros tipos, usar el CECO de la actividad
+      nombreCeco = obtenerNombreCeco(tarja);
+    }
 
     if (isGrupal) {
       // Para grupal, usar los datos del grupo completo
@@ -1202,95 +1223,212 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark 
-                  ? Colors.green[800]!.withOpacity(0.3) 
-                  : Colors.green[50],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.all(16),
-                child: Icon(Icons.add_chart, color: Colors.green, size: 36),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (labor.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.work, color: Colors.purple, size: 16),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(labor, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
-                          ),
-                        ],
-                      ),
-                    ],
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.groups, color: Colors.amber, size: 16),
-                        const SizedBox(width: 4),
-                        Text('Cantidad trabajadores: ', style: TextStyle(color: _getAdaptiveColor(context))),
-                        Text(cantidadTrab, style: TextStyle(color: _getAdaptiveColor(context))),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.percent, color: Colors.blue, size: 16),
-                        const SizedBox(width: 4),
-                        Text('Porcentaje: ', style: TextStyle(color: _getAdaptiveColor(context))),
-                        Text('${porcentajeStr != 'N/A' ? porcentajeStr + '%' : 'N/A'}', style: TextStyle(color: _getAdaptiveColor(context))),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
+              // Header con CECO
+              Row(
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.eco, color: Colors.green, size: 28),
-                      const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('Rendimiento total', style: TextStyle(fontWeight: FontWeight.w600, color: _getAdaptiveColor(context))),
-                          Text(rendimientoTotal, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getAdaptiveColor(context))),
-                          Text(tarja.nombreUnidad ?? 'Unidad', style: TextStyle(fontSize: 12, color: _getAdaptiveColor(context))),
-                        ],
-                      ),
-                    ],
+                  Icon(Icons.category, color: Colors.amber, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    'CECO: $nombreCeco',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber[700],
+                      fontSize: 14,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  // Total estimado por trabajador
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.person, color: Colors.orange, size: 20),
-                      const SizedBox(width: 4),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text('Pago estimado por trabajador', style: TextStyle(fontWeight: FontWeight.w600, color: _getAdaptiveColor(context), fontSize: 12)),
-                          Text(
-                            '\$${_calcularTotalEstimadoPorTrabajador(rendimientoTotal, cantidadTrab, tarja.tarifa, r)}',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orange[700]),
-                          ),
-                        ],
-                      ),
-                    ],
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Contenido en 3 columnas
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Columna 1: Información del grupo
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.green[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(Icons.groups, color: Colors.green, size: 20),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Cantidad trabajadores',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  Text(
+                                    cantidadTrab,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: _getAdaptiveColor(context),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(Icons.percent, color: Colors.blue, size: 20),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Porcentaje',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  Text(
+                                    '${porcentajeStr != 'N/A' ? porcentajeStr + '%' : 'N/A'}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: _getAdaptiveColor(context),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 2: Rendimiento
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.green[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(Icons.eco, color: Colors.green, size: 20),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Rendimiento',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  Text(
+                                    rendimientoTotal,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      color: _getAdaptiveColor(context),
+                                    ),
+                                  ),
+                                  Text(
+                                    tarja.nombreUnidad ?? 'Unidad',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 3: Pago estimado
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.orange[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(Icons.attach_money, color: Colors.orange, size: 20),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Pago estimado',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  Text(
+                                    '\$${_calcularTotalEstimadoPorTrabajador(rendimientoTotal, cantidadTrab, tarja.tarifa, r)}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.orange[700],
+                                    ),
+                                  ),
+                                  Text(
+                                    'por trabajador',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -1320,98 +1458,207 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark 
-                  ? Colors.green[800]!.withOpacity(0.3) 
-                  : Colors.green[50],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.all(16),
-                child: Icon(Icons.add_chart, color: Colors.green, size: 36),
+              // Header con CECO
+              Row(
+                children: [
+                  Icon(Icons.category, color: Colors.amber, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    'CECO: $nombreCeco',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber[700],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (labor.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.work, color: Colors.purple, size: 16),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(labor, style: TextStyle(color: _getAdaptiveColor(context), fontSize: 13)),
+              const SizedBox(height: 12),
+              // Contenido en 3 columnas
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Columna 1: Información del trabajador
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(Icons.person, color: Colors.blue, size: 20),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Trabajador',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  Text(
+                                    nombre,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: _getAdaptiveColor(context),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (porcentaje != null) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.all(8),
+                                child: Icon(Icons.percent, color: Colors.blue, size: 20),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Porcentaje',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    Text(
+                                      porcentaje,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: _getAdaptiveColor(context),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
-                      ),
-                    ],
-                    const SizedBox(height: 4),
-                    Row(
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 2: Rendimiento
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.person, color: Colors.amber, size: 16),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(nombre, style: TextStyle(color: _getAdaptiveColor(context), fontSize: 13)),
+                        Row(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.green[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(Icons.eco, color: Colors.green, size: 20),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Rendimiento',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  Text(
+                                    rendimientoValor,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      color: _getAdaptiveColor(context),
+                                    ),
+                                  ),
+                                  Text(
+                                    tarja.nombreUnidad ?? 'Unidad',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    if (porcentaje != null) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.percent, color: Colors.blue, size: 16),
-                          const SizedBox(width: 4),
-                                                  Text('Porcentaje: ', style: TextStyle(color: _getAdaptiveColor(context))),
-                        Text(porcentaje, style: TextStyle(color: _getAdaptiveColor(context))),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.eco, color: Colors.green, size: 28),
-                      const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('Rendimiento', style: TextStyle(fontWeight: FontWeight.w600, color: _getAdaptiveColor(context))),
-                          Text(rendimientoValor, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getAdaptiveColor(context))),
-                          Text(tarja.nombreUnidad ?? 'Unidad', style: TextStyle(fontSize: 12, color: _getAdaptiveColor(context))),
-                        ],
-                      ),
-                    ],
                   ),
-                  const SizedBox(height: 8),
-                  // Pago a trabajador
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.person, color: Colors.orange, size: 20),
-                      const SizedBox(width: 4),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text('Pago a trabajador', style: TextStyle(fontWeight: FontWeight.w600, color: _getAdaptiveColor(context), fontSize: 12)),
-                          Text(
-                            '\$${_calcularPagoTrabajador(rendimientoValor, tarja.tarifa, r)}',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orange[700]),
-                          ),
-                        ],
-                      ),
-                    ],
+                  const SizedBox(width: 16),
+                  // Columna 3: Pago
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.orange[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(Icons.attach_money, color: Colors.orange, size: 20),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Pago a trabajador',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  Text(
+                                    '\$${_calcularPagoTrabajador(rendimientoValor, tarja.tarifa, r)}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.orange[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
