@@ -489,9 +489,6 @@ class _MasterLayoutState extends State<MasterLayout>
                         // Espacio para centrar elementos
                         const Spacer(),
                         
-                        // Acciones del usuario (derecha)
-                        const UserInfo(),
-                        
                         // Botón de actualizar para pantallas específicas
                         if (_screens[_currentScreenIndex]['key'] == 'horas_trabajadas' ||
                             _screens[_currentScreenIndex]['key'] == 'revision_tarjas' ||
@@ -511,6 +508,9 @@ class _MasterLayoutState extends State<MasterLayout>
                               _refreshCurrentScreen();
                             },
                           ),
+                        
+                        // Acciones del usuario (derecha)
+                        const UserInfo(),
                         
                       ],
                     ),

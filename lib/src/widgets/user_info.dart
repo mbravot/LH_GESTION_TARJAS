@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
-import '../widgets/weather_widget.dart';
 
 class UserInfo extends StatelessWidget {
   const UserInfo({super.key});
@@ -20,12 +19,6 @@ class UserInfo extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Botón de refresh del clima
-        IconButton(
-          icon: const Icon(Icons.refresh, color: Colors.white),
-          onPressed: () => _refreshWeather(context),
-        ),
-        
         // Botón de tema
         Consumer<ThemeProvider>(
           builder: (context, themeProvider, child) {
@@ -46,11 +39,6 @@ class UserInfo extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  void _refreshWeather(BuildContext context) {
-    // Refrescar el clima usando el método estático
-    WeatherWidget.refreshWeather();
   }
 
   void _confirmarCerrarSesion(BuildContext context, AuthProvider authProvider) {
@@ -77,4 +65,5 @@ class UserInfo extends StatelessWidget {
       },
     );
   }
+
 } 
