@@ -16,6 +16,7 @@ class HorasExtrasProvider extends ChangeNotifier {
   // Variables para filtros
   String _filtroBusqueda = '';
   String _filtroColaborador = '';
+  String _filtroEstado = 'todos'; // 'todos', 'futuras', 'hoy', 'pasadas'
   int? _filtroMes;
   int? _filtroAno;
 
@@ -29,6 +30,7 @@ class HorasExtrasProvider extends ChangeNotifier {
   // Getters para filtros
   String get filtroBusqueda => _filtroBusqueda;
   String get filtroColaborador => _filtroColaborador;
+  String get filtroEstado => _filtroEstado;
   int? get filtroMes => _filtroMes;
   int? get filtroAno => _filtroAno;
 
@@ -139,6 +141,12 @@ class HorasExtrasProvider extends ChangeNotifier {
     _aplicarFiltros();
   }
 
+  // Método para establecer filtro de estado
+  void setFiltroEstado(String estado) {
+    _filtroEstado = estado;
+    _aplicarFiltros();
+  }
+
   // Método para establecer filtro de mes
   void setFiltroMes(int? mes) {
     _filtroMes = mes;
@@ -185,6 +193,20 @@ class HorasExtrasProvider extends ChangeNotifier {
       filtrados = filtrados.where((rendimiento) => rendimiento.fechaDateTime?.year == _filtroAno).toList();
     }
 
+    // Aplicar filtro de estado
+    if (_filtroEstado != 'todos') {
+      filtrados = filtrados.where((rendimiento) {
+        switch (_filtroEstado) {
+          case 'con_horas_extras':
+            return rendimiento.actividadesDetalle.any((actividad) => actividad.horasExtras > 0);
+          case 'sin_horas_extras':
+            return rendimiento.actividadesDetalle.every((actividad) => actividad.horasExtras == 0);
+          default:
+            return true;
+        }
+      }).toList();
+    }
+
     _rendimientosFiltrados = filtrados;
     notifyListeners();
   }
@@ -193,6 +215,7 @@ class HorasExtrasProvider extends ChangeNotifier {
   void limpiarFiltros() {
     _filtroBusqueda = '';
     _filtroColaborador = '';
+    _filtroEstado = 'todos';
     _filtroMes = null;
     _filtroAno = null;
     _rendimientosFiltrados = List.from(_rendimientos);
@@ -201,11 +224,41 @@ class HorasExtrasProvider extends ChangeNotifier {
 
   // Método para obtener estadísticas
   Map<String, int> get estadisticas {
-    final conHorasExtras = _rendimientos.where((r) => 
+    // Calcular estadísticas sobre los datos filtrados (excluyendo el filtro de estado)
+    List<HorasExtras> datosParaEstadisticas = List.from(_rendimientos);
+    
+    // Aplicar solo los filtros avanzados, no el filtro de estado
+    if (_filtroBusqueda.isNotEmpty) {
+      datosParaEstadisticas = datosParaEstadisticas.where((rendimiento) {
+        final colaborador = rendimiento.colaborador.toLowerCase();
+        final fecha = rendimiento.fechaFormateadaEspanolCompleta.toLowerCase();
+        final dia = rendimiento.nombreDia.toLowerCase();
+        
+        return colaborador.contains(_filtroBusqueda.toLowerCase()) ||
+               fecha.contains(_filtroBusqueda.toLowerCase()) ||
+               dia.contains(_filtroBusqueda.toLowerCase());
+      }).toList();
+    }
+
+    if (_filtroColaborador.isNotEmpty) {
+      datosParaEstadisticas = datosParaEstadisticas.where((rendimiento) {
+        return rendimiento.colaborador == _filtroColaborador;
+      }).toList();
+    }
+
+    if (_filtroMes != null) {
+      datosParaEstadisticas = datosParaEstadisticas.where((rendimiento) => rendimiento.fechaDateTime?.month == _filtroMes).toList();
+    }
+
+    if (_filtroAno != null) {
+      datosParaEstadisticas = datosParaEstadisticas.where((rendimiento) => rendimiento.fechaDateTime?.year == _filtroAno).toList();
+    }
+
+    final conHorasExtras = datosParaEstadisticas.where((r) => 
       r.actividadesDetalle.any((actividad) => actividad.horasExtras > 0)).length;
-    final sinHorasExtras = _rendimientos.where((r) => 
+    final sinHorasExtras = datosParaEstadisticas.where((r) => 
       r.actividadesDetalle.every((actividad) => actividad.horasExtras == 0)).length;
-    final total = _rendimientos.length;
+    final total = datosParaEstadisticas.length;
 
     return {
       'con_horas_extras': conHorasExtras,

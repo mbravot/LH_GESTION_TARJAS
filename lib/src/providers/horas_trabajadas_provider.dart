@@ -15,6 +15,7 @@ class HorasTrabajadasProvider extends ChangeNotifier {
   // Variables para filtros
   String _filtroBusqueda = '';
   String _filtroColaborador = '';
+  String _filtroEstado = 'todos'; // 'todos', 'futuras', 'hoy', 'pasadas'
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
   int? _filtroMes;
@@ -29,6 +30,7 @@ class HorasTrabajadasProvider extends ChangeNotifier {
   // Getters para filtros
   String get filtroBusqueda => _filtroBusqueda;
   String get filtroColaborador => _filtroColaborador;
+  String get filtroEstado => _filtroEstado;
   DateTime? get fechaInicio => _fechaInicio;
   DateTime? get fechaFin => _fechaFin;
   int? get filtroMes => _filtroMes;
@@ -90,6 +92,12 @@ class HorasTrabajadasProvider extends ChangeNotifier {
     _aplicarFiltros();
   }
 
+  // Método para establecer filtro de estado
+  void setFiltroEstado(String estado) {
+    _filtroEstado = estado;
+    _aplicarFiltros();
+  }
+
   // Método para establecer filtro de fecha inicio
   void setFechaInicio(DateTime? fecha) {
     _fechaInicio = fecha;
@@ -148,6 +156,22 @@ class HorasTrabajadasProvider extends ChangeNotifier {
       filtrados = filtrados.where((horas) => horas.fechaDateTime?.year == _filtroAno).toList();
     }
 
+    // Aplicar filtro de estado
+    if (_filtroEstado != 'todos') {
+      filtrados = filtrados.where((horas) {
+        switch (_filtroEstado) {
+          case 'mas_horas':
+            return horas.estadoTrabajo == 'MÁS';
+          case 'menos_horas':
+            return horas.estadoTrabajo == 'MENOS';
+          case 'exactas':
+            return horas.estadoTrabajo == 'EXACTO';
+          default:
+            return true;
+        }
+      }).toList();
+    }
+
     _horasTrabajadasFiltradas = filtrados;
     notifyListeners();
   }
@@ -179,6 +203,7 @@ class HorasTrabajadasProvider extends ChangeNotifier {
   void limpiarFiltros() {
     _filtroBusqueda = '';
     _filtroColaborador = '';
+    _filtroEstado = 'todos';
     _fechaInicio = null;
     _fechaFin = null;
     _filtroMes = null;
@@ -189,10 +214,40 @@ class HorasTrabajadasProvider extends ChangeNotifier {
 
   // Método para obtener estadísticas
   Map<String, int> get estadisticas {
-    final masHoras = _horasTrabajadas.where((h) => h.estadoTrabajo == 'MÁS').length;
-    final menosHoras = _horasTrabajadas.where((h) => h.estadoTrabajo == 'MENOS').length;
-    final exactas = _horasTrabajadas.where((h) => h.estadoTrabajo == 'EXACTO').length;
-    final total = _horasTrabajadas.length;
+    // Calcular estadísticas sobre los datos filtrados (excluyendo el filtro de estado)
+    List<HorasTrabajadas> datosParaEstadisticas = List.from(_horasTrabajadas);
+    
+    // Aplicar solo los filtros avanzados, no el filtro de estado
+    if (_filtroBusqueda.isNotEmpty) {
+      datosParaEstadisticas = datosParaEstadisticas.where((horas) {
+        final colaborador = horas.colaborador.toLowerCase();
+        final fecha = horas.fechaFormateadaEspanol.toLowerCase();
+        final dia = horas.nombreDia.toLowerCase();
+        
+        return colaborador.contains(_filtroBusqueda.toLowerCase()) ||
+               fecha.contains(_filtroBusqueda.toLowerCase()) ||
+               dia.contains(_filtroBusqueda.toLowerCase());
+      }).toList();
+    }
+
+    if (_filtroColaborador.isNotEmpty) {
+      datosParaEstadisticas = datosParaEstadisticas.where((horas) {
+        return horas.colaborador == _filtroColaborador;
+      }).toList();
+    }
+
+    if (_filtroMes != null) {
+      datosParaEstadisticas = datosParaEstadisticas.where((horas) => horas.fechaDateTime?.month == _filtroMes).toList();
+    }
+
+    if (_filtroAno != null) {
+      datosParaEstadisticas = datosParaEstadisticas.where((horas) => horas.fechaDateTime?.year == _filtroAno).toList();
+    }
+
+    final masHoras = datosParaEstadisticas.where((h) => h.estadoTrabajo == 'MÁS').length;
+    final menosHoras = datosParaEstadisticas.where((h) => h.estadoTrabajo == 'MENOS').length;
+    final exactas = datosParaEstadisticas.where((h) => h.estadoTrabajo == 'EXACTO').length;
+    final total = datosParaEstadisticas.length;
 
     return {
       'mas_horas': masHoras,

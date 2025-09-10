@@ -47,8 +47,8 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
       _filtroActivo = filtro;
     });
     
-    // El filtro de estado ya no se aplica, solo se mantiene para la UI
-    // Los filtros ahora se manejan a través de los filtros avanzados
+    final provider = Provider.of<HorasExtrasProvider>(context, listen: false);
+    provider.setFiltroEstado(filtro);
   }
 
   Future<void> _cargarDatosIniciales() async {

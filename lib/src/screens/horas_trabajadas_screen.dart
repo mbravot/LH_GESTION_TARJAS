@@ -43,8 +43,8 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
       _filtroActivo = filtro;
     });
     
-    // El filtro de estado ya no se aplica, solo se mantiene para la UI
-    // Los filtros ahora se manejan a través de los filtros avanzados
+    final provider = Provider.of<HorasTrabajadasProvider>(context, listen: false);
+    provider.setFiltroEstado(filtro);
   }
 
   // Funciones helper para agrupación por mes-año
