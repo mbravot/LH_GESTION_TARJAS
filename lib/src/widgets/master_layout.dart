@@ -34,6 +34,8 @@ import '../screens/cambiar_clave_screen.dart';
 import '../screens/login_screen.dart';
 import 'sucursal_selector.dart';
 import 'user_info.dart';
+import 'user_name_widget.dart';
+import 'weather_widget.dart';
 
 class MasterLayout extends StatefulWidget {
   const MasterLayout({super.key});
@@ -451,7 +453,7 @@ class _MasterLayoutState extends State<MasterLayout>
                           },
                         ),
                         
-                        // Título
+                        // Título (donde estaba originalmente)
                         const SizedBox(width: 16),
                         Expanded(
                           child: Text(
@@ -464,9 +466,31 @@ class _MasterLayoutState extends State<MasterLayout>
                           ),
                         ),
                         
-                        // Acciones del usuario
+                        // Espacio para centrar elementos
+                        const Spacer(),
+                        
+                        // Elementos centrados: Nombre de Usuario, Selector de Sucursal, Clima
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Nombre de Usuario
+                            const UserNameWidget(),
+                            const SizedBox(width: 24),
+                            
+                            // Selector de Sucursal
+                            const SucursalSelector(),
+                            const SizedBox(width: 24),
+                            
+                            // Widget de clima
+                            WeatherWidget(key: WeatherWidget.globalKey),
+                          ],
+                        ),
+                        
+                        // Espacio para centrar elementos
+                        const Spacer(),
+                        
+                        // Acciones del usuario (derecha)
                         const UserInfo(),
-                        const SucursalSelector(),
                         
                         // Botón de actualizar para pantallas específicas
                         if (_screens[_currentScreenIndex]['key'] == 'horas_trabajadas' ||
@@ -488,20 +512,6 @@ class _MasterLayoutState extends State<MasterLayout>
                             },
                           ),
                         
-                        // Botón de tema
-                        IconButton(
-                          icon: Icon(
-                            themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                            color: Colors.white,
-                          ),
-                          onPressed: () => themeProvider.toggleTheme(),
-                        ),
-                        
-                        // Botón de cerrar sesión
-                        IconButton(
-                          icon: const Icon(Icons.logout, color: Colors.white),
-                          onPressed: () => _confirmarCerrarSesion(context, authProvider),
-                        ),
                       ],
                     ),
                   ),
