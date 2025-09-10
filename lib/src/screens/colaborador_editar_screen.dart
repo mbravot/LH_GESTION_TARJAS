@@ -81,6 +81,45 @@ class _ColaboradorEditarScreenState extends State<ColaboradorEditarScreen> {
     });
   }
 
+  // Función para formatear fechas para mostrar en el formulario
+  String _formatearFechaParaMostrar(String? fechaStr) {
+    if (fechaStr == null || fechaStr.isEmpty) return '';
+    
+    try {
+      // Si es un formato GMT, parsearlo
+      if (fechaStr.contains('GMT')) {
+        final regex = RegExp(r'(\w{3}), (\d{1,2}) (\w{3}) (\d{4}) (\d{2}):(\d{2}):(\d{2}) GMT');
+        final match = regex.firstMatch(fechaStr);
+        
+        if (match != null) {
+          final day = int.parse(match.group(2)!);
+          final monthStr = match.group(3)!;
+          final year = int.parse(match.group(4)!);
+          
+          final monthMap = {
+            'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+            'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+          };
+          
+          final month = monthMap[monthStr];
+          if (month != null) {
+            final fecha = DateTime(year, month, day);
+            return '${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}';
+          }
+        }
+      } else {
+        // Intentar parsear como ISO o formato YYYY-MM-DD
+        final fecha = DateTime.parse(fechaStr);
+        return '${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}';
+      }
+    } catch (e) {
+      // Si no se puede parsear, devolver string vacío
+      return '';
+    }
+    
+    return '';
+  }
+
   Future<void> _cargarDatosIniciales() async {
     setState(() {
       _isLoadingData = true;
@@ -103,9 +142,9 @@ class _ColaboradorEditarScreenState extends State<ColaboradorEditarScreen> {
         _apellidoMaternoController.text = widget.colaborador.apellidoMaterno ?? '';
         _rutController.text = widget.colaborador.rut ?? '';
         _codigoVerificadorController.text = widget.colaborador.codigoVerificador ?? '';
-        _fechaNacimientoController.text = widget.colaborador.fechaNacimiento ?? '';
-        _fechaIncorporacionController.text = widget.colaborador.fechaIncorporacion ?? '';
-        _fechaFiniquitoController.text = widget.colaborador.fechaFiniquito ?? '';
+        _fechaNacimientoController.text = _formatearFechaParaMostrar(widget.colaborador.fechaNacimiento);
+        _fechaIncorporacionController.text = _formatearFechaParaMostrar(widget.colaborador.fechaIncorporacion);
+        _fechaFiniquitoController.text = _formatearFechaParaMostrar(widget.colaborador.fechaFiniquito);
         
         // Asignar valores seleccionados, asegurándose de que no sean null si existen
         _cargoSeleccionado = widget.colaborador.idCargo?.isNotEmpty == true 

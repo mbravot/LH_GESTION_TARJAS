@@ -201,6 +201,8 @@ class HorasExtrasProvider extends ChangeNotifier {
             return rendimiento.actividadesDetalle.any((actividad) => actividad.horasExtras > 0);
           case 'sin_horas_extras':
             return rendimiento.actividadesDetalle.every((actividad) => actividad.horasExtras == 0);
+          case 'horas_extras_sobre_permitido':
+            return rendimiento.totalHorasExtras > 2;
           default:
             return true;
         }
@@ -258,11 +260,14 @@ class HorasExtrasProvider extends ChangeNotifier {
       r.actividadesDetalle.any((actividad) => actividad.horasExtras > 0)).length;
     final sinHorasExtras = datosParaEstadisticas.where((r) => 
       r.actividadesDetalle.every((actividad) => actividad.horasExtras == 0)).length;
+    final horasExtrasSobrePermitido = datosParaEstadisticas.where((r) => 
+      r.totalHorasExtras > 2).length; // Más de 2 horas extras en total por día
     final total = datosParaEstadisticas.length;
 
     return {
       'con_horas_extras': conHorasExtras,
       'sin_horas_extras': sinHorasExtras,
+      'horas_extras_sobre_permitido': horasExtrasSobrePermitido,
       'total': total,
     };
   }

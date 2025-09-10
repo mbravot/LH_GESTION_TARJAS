@@ -467,7 +467,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
             child: _buildTarjetaEstadistica(
               titulo: 'Total',
               valor: stats['total'].toString(),
-              color: Colors.orange,
+              color: Colors.purple,
               icono: Icons.list,
               filtro: 'todos',
             ),
@@ -487,9 +487,19 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
             child: _buildTarjetaEstadistica(
               titulo: 'Sin Horas Extras',
               valor: stats['sin_horas_extras'].toString(),
-              color: Colors.red,
+              color: Colors.orange,
               icono: Icons.remove_circle,
               filtro: 'sin_horas_extras',
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildTarjetaEstadistica(
+              titulo: 'Sobre lo Permitido',
+              valor: stats['horas_extras_sobre_permitido'].toString(),
+              color: Colors.red,
+              icono: Icons.warning,
+              filtro: 'horas_extras_sobre_permitido',
             ),
           ),
         ],
@@ -716,8 +726,8 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.colorScheme.surface;
-    // Color del borde según si tiene horas extras o no
-    final borderColor = rendimiento.totalHorasExtras > 0 ? Colors.green[300]! : Colors.red[300]!;
+    // Color del borde según las horas extras
+    final borderColor = _getColorHorasExtras(rendimiento.totalHorasExtras).withOpacity(0.6);
     final textColor = theme.colorScheme.onSurface;
     
     return Card(
@@ -1001,7 +1011,7 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
                   'Horas Extras',
                   '${actividad.horasExtrasFormateadas}h',
                   Icons.timer,
-                  Colors.orange,
+                  actividad.horasExtras > 0 ? Colors.green : Colors.orange,
                 ),
               ),
             ],
@@ -1271,11 +1281,11 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
   // Función para determinar el color según las horas extras y límite legal
   Color _getColorHorasExtras(double horasExtras) {
     if (horasExtras <= 0) {
-      return Colors.red; // No hay horas extras
+      return Colors.orange; // No hay horas extras
     } else if (horasExtras <= 2.0) {
       return Colors.green; // Horas extras legales (máximo 2h por día)
     } else {
-      return Colors.orange; // Excede el límite legal (más de 2h por día)
+      return Colors.red; // Excede el límite legal (más de 2h por día)
     }
   }
 }

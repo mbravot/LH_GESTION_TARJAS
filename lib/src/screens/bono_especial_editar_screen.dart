@@ -22,7 +22,7 @@ class _BonoEspecialEditarScreenState extends State<BonoEspecialEditarScreen> {
   final _cantidadController = TextEditingController();
   
   String? _colaboradorSeleccionado;
-  DateTime _fechaSeleccionada = DateTime.now();
+  DateTime _fechaSeleccionada = DateTime(DateTime.now().year, DateTime.now().month, 0);
   
   bool _isLoading = false;
 
@@ -349,9 +349,6 @@ class _BonoEspecialEditarScreenState extends State<BonoEspecialEditarScreen> {
         }
         if (cantidad <= 0) {
           return 'La cantidad debe ser mayor a 0';
-        }
-        if (cantidad > 24) {
-          return 'La cantidad no puede ser mayor a 24 horas';
         }
         return null;
       },

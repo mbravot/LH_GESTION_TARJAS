@@ -20,7 +20,7 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _showFiltros = false;
-  String _filtroActivo = 'todos'; // 'todos', 'activos', 'inactivos'
+  String _filtroActivo = 'todos'; // 'todos', 'activos', 'inactivos', 'finiquitados'
 
   @override
   void initState() {
@@ -76,6 +76,9 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
         break;
       case 'inactivos':
         colaboradorProvider.setFiltroEstado('2');
+        break;
+      case 'finiquitados':
+        colaboradorProvider.setFiltroEstado('finiquitados');
         break;
       default: // 'todos'
         colaboradorProvider.setFiltroEstado('todos');
@@ -307,7 +310,7 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
                   'Total',
                   colaboradorProvider.totalColaboradores.toString(),
                   Icons.people,
-                  Colors.orange,
+                  Colors.purple,
                   'todos',
                   colaboradorProvider.totalColaboradores > 0,
                 ),
@@ -332,6 +335,17 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
                   Colors.red,
                   'inactivos',
                   colaboradorProvider.colaboradoresInactivos > 0,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTarjetaEstadistica(
+                  'Finiquitados',
+                  colaboradorProvider.colaboradoresFiniquitados.toString(),
+                  Icons.exit_to_app,
+                  Colors.orange,
+                  'finiquitados',
+                  colaboradorProvider.colaboradoresFiniquitados > 0,
                 ),
               ),
             ],

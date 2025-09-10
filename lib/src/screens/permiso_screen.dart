@@ -868,7 +868,7 @@ class _PermisoScreenState extends State<PermisoScreen> {
       builder: (context) => AlertDialog(
         title: Text('${accion == 'aprobar' ? 'Aprobar' : 'Desaprobar'} Permiso'),
         content: Text(
-          '¿Está seguro de que desea ${accion == 'aprobar' ? 'aprobar' : 'desaprobar'} el permiso de ${permiso.nombreCompletoColaborador}?'
+          '¿Está seguro de que desea ${accion == 'aprobar' ? 'aprobar' : 'desaprobar'} el permiso de ${permiso.nombreCompletoColaborador} para el ${permiso.fechaFormateadaEspanol}?'
         ),
         actions: [
           TextButton(

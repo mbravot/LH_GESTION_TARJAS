@@ -460,7 +460,7 @@ class _VacacionEditarScreenState extends State<VacacionEditarScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Información de la Vacación',
+                                  'Información de Vacaciones',
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -498,44 +498,6 @@ class _VacacionEditarScreenState extends State<VacacionEditarScreen> {
                                   fecha: _fechaFin,
                                   onTap: _seleccionarFechaFin,
                                   hintText: 'Seleccionar fecha de fin',
-                                ),
-                                const SizedBox(height: 16),
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: Colors.blue.withOpacity(0.3),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.calendar_today,
-                                        color: Colors.blue[700],
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 8),
-                                                                             Text(
-                                         'Duración: $_duracionDias días naturales',
-                                         style: TextStyle(
-                                           fontSize: 16,
-                                           fontWeight: FontWeight.bold,
-                                           color: Colors.blue[700],
-                                         ),
-                                       ),
-                                       const SizedBox(height: 4),
-                                       Text(
-                                         'Nota: Los días hábiles se recalcularán automáticamente al guardar',
-                                         style: TextStyle(
-                                           fontSize: 12,
-                                           color: Colors.blue[600],
-                                           fontStyle: FontStyle.italic,
-                                         ),
-                                       ),
-                                    ],
-                                  ),
                                 ),
                               ],
                             ),

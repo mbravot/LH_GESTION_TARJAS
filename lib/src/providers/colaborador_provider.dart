@@ -23,7 +23,11 @@ class ColaboradorProvider extends ChangeNotifier {
 
     // Filtrar por estado
     if (_filtroEstado != 'todos') {
-      filtrados = filtrados.where((c) => c.idEstado == _filtroEstado).toList();
+      if (_filtroEstado == 'finiquitados') {
+        filtrados = filtrados.where((c) => c.fechaFiniquito != null && c.fechaFiniquito!.isNotEmpty).toList();
+      } else {
+        filtrados = filtrados.where((c) => c.idEstado == _filtroEstado).toList();
+      }
     }
 
     // Filtrar por búsqueda
@@ -42,6 +46,7 @@ class ColaboradorProvider extends ChangeNotifier {
   int get totalColaboradores => _colaboradores.length;
   int get colaboradoresActivos => _colaboradores.where((c) => c.idEstado == '1').length;
   int get colaboradoresInactivos => _colaboradores.where((c) => c.idEstado == '2').length;
+  int get colaboradoresFiniquitados => _colaboradores.where((c) => c.fechaFiniquito != null && c.fechaFiniquito!.isNotEmpty).length;
 
   void setAuthProvider(AuthProvider authProvider) {
     _authProvider = authProvider;

@@ -232,25 +232,14 @@ class Vacacion {
     return '$fechaInicioFormateada - $fechaFinFormateada';
   }
 
-  // Método para obtener el texto de duración con información de días hábiles
+  // Método para obtener el texto de duración (solo días hábiles)
   String get duracionTexto {
     if (diasHabiles != null) {
-      final diasNaturales = duracionDiasNaturales;
-      // Siempre mostrar días hábiles cuando el backend los proporciona
-      if (diasNaturales > 0) {
-        return '$diasHabiles días hábiles ($diasNaturales días naturales)';
-      } else {
-        // Si no hay días naturales calculados, intentar calcularlos
-        final diasCalculados = _calcularDiasNaturales();
-        if (diasCalculados > 0) {
-          return '$diasHabiles días hábiles ($diasCalculados días naturales)';
-        } else {
-          return '$diasHabiles días hábiles';
-        }
-      }
+      // Solo mostrar días hábiles para evitar confusión
+      return '$diasHabiles días hábiles';
     }
     // Fallback al cálculo manual
-    return '$duracionDias días';
+    return '$duracionDias días hábiles';
   }
   
   // Método auxiliar para calcular días naturales
