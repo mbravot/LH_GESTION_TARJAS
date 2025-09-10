@@ -2601,5 +2601,117 @@ class ApiService {
     }
   }
 
+  // ========== MÉTODOS PARA SUELDOS BASE ==========
+
+  // Obtener sueldos base de un colaborador
+  static Future<List<Map<String, dynamic>>> obtenerSueldosBaseColaborador(String colaboradorId) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('No hay token de autenticación');
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/colaboradores/$colaboradorId/sueldos-base'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return List<Map<String, dynamic>>.from(data);
+      } else {
+        throw Exception('Error al obtener sueldos base: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Crear un nuevo sueldo base
+  static Future<Map<String, dynamic>> crearSueldoBase(String colaboradorId, Map<String, dynamic> datos) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('No hay token de autenticación');
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/colaboradores/$colaboradorId/sueldos-base'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(datos),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['message'] ?? 'Error al crear sueldo base: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Editar un sueldo base existente
+  static Future<Map<String, dynamic>> editarSueldoBase(int sueldoBaseId, Map<String, dynamic> datos) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('No hay token de autenticación');
+      }
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/colaboradores/sueldos-base/$sueldoBaseId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(datos),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['message'] ?? 'Error al editar sueldo base: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Eliminar un sueldo base
+  static Future<Map<String, dynamic>> eliminarSueldoBase(int sueldoBaseId) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('No hay token de autenticación');
+      }
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/colaboradores/sueldos-base/$sueldoBaseId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['message'] ?? 'Error al eliminar sueldo base: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
 
 } 

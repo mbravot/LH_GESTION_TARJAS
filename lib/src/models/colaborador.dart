@@ -20,6 +20,13 @@ class Colaborador {
   final String? nombreSucursal;
   final String? nombreEstado;
   final String? fechaFiniquito;
+  
+  // Campos de sueldo base
+  final int? sueldobase;
+  final int? baseDia;
+  final int? horaDia;
+  final String? fechaSueldobase;
+  final String? idSueldobaseactivo;
 
   Colaborador({
     required this.id,
@@ -41,6 +48,11 @@ class Colaborador {
     this.nombreSucursal,
     this.nombreEstado,
     this.fechaFiniquito,
+    this.sueldobase,
+    this.baseDia,
+    this.horaDia,
+    this.fechaSueldobase,
+    this.idSueldobaseactivo,
   });
 
   factory Colaborador.fromJson(Map<String, dynamic> json) {
@@ -64,6 +76,11 @@ class Colaborador {
       nombreSucursal: json['nombre_sucursal']?.toString(),
       nombreEstado: json['nombre_estado']?.toString(),
       fechaFiniquito: json['fecha_finiquito']?.toString(),
+      sueldobase: json['sueldobase'] != null ? int.tryParse(json['sueldobase'].toString()) : null,
+      baseDia: json['base_dia'] != null ? int.tryParse(json['base_dia'].toString()) : null,
+      horaDia: json['hora_dia'] != null ? int.tryParse(json['hora_dia'].toString()) : null,
+      fechaSueldobase: json['fecha_sueldobase']?.toString(),
+      idSueldobaseactivo: json['id_sueldobaseactivo']?.toString(),
     );
   }
 
@@ -88,6 +105,11 @@ class Colaborador {
       'nombre_sucursal': nombreSucursal,
       'nombre_estado': nombreEstado,
       'fecha_finiquito': fechaFiniquito,
+      'sueldobase': sueldobase,
+      'base_dia': baseDia,
+      'hora_dia': horaDia,
+      'fecha_sueldobase': fechaSueldobase,
+      'id_sueldobaseactivo': idSueldobaseactivo,
     };
   }
 
@@ -161,6 +183,60 @@ class Colaborador {
       return nombreSucursal!;
     }
     return idSucursal.isNotEmpty ? 'Sucursal $idSucursal' : 'Sin sucursal';
+  }
+
+  // Método para obtener el sueldo base formateado
+  String get sueldobaseFormateado {
+    if (sueldobase != null) {
+      return '\$${sueldobase!.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+    }
+    return 'Sin sueldo base';
+  }
+
+  // Método para obtener la base diaria formateada
+  String get baseDiaFormateada {
+    if (baseDia != null) {
+      return '\$${baseDia!.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+    }
+    return 'Sin base diaria';
+  }
+
+  // Método para obtener la hora por día formateada
+  String get horaDiaFormateada {
+    if (horaDia != null) {
+      return '\$${horaDia!.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+    }
+    return 'Sin hora por día';
+  }
+
+  // Método para obtener la fecha del sueldo base formateada
+  String get fechaSueldobaseFormateada {
+    if (fechaSueldobase != null && fechaSueldobase!.isNotEmpty) {
+      try {
+        final fecha = DateTime.parse(fechaSueldobase!);
+        return '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}';
+      } catch (e) {
+        return fechaSueldobase!;
+      }
+    }
+    return 'Sin fecha';
+  }
+
+  // Método para obtener la fecha del sueldo base formateada en español
+  String get fechaSueldobaseFormateadaEspanol {
+    final fecha = _parseFecha(fechaSueldobase);
+    if (fecha != null) {
+      final diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+      final meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      
+      final diaSemana = diasSemana[fecha.weekday - 1];
+      final dia = fecha.day.toString().padLeft(2, '0');
+      final mes = meses[fecha.month - 1];
+      final anio = fecha.year;
+      
+      return '$diaSemana, $dia $mes $anio';
+    }
+    return fechaSueldobase ?? 'Sin fecha';
   }
 
   // Método para parsear fechas en formato "Mon, 18 Aug 2025 00:00:00 GMT"
@@ -293,6 +369,11 @@ class Colaborador {
     String? nombreSucursal,
     String? nombreEstado,
     String? fechaFiniquito,
+    int? sueldobase,
+    int? baseDia,
+    int? horaDia,
+    String? fechaSueldobase,
+    String? idSueldobaseactivo,
   }) {
     return Colaborador(
       id: id ?? this.id,
@@ -314,6 +395,11 @@ class Colaborador {
       nombreSucursal: nombreSucursal ?? this.nombreSucursal,
       nombreEstado: nombreEstado ?? this.nombreEstado,
       fechaFiniquito: fechaFiniquito ?? this.fechaFiniquito,
+      sueldobase: sueldobase ?? this.sueldobase,
+      baseDia: baseDia ?? this.baseDia,
+      horaDia: horaDia ?? this.horaDia,
+      fechaSueldobase: fechaSueldobase ?? this.fechaSueldobase,
+      idSueldobaseactivo: idSueldobaseactivo ?? this.idSueldobaseactivo,
     );
   }
 }

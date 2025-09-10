@@ -471,7 +471,7 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              // Contenido en 7 columnas
+              // Contenido en 8 columnas (agregando sueldo base)
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -611,7 +611,50 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  // Columna 5: Estado, Desactivar/Activar, Editar
+                  // Columna 5: Sueldo Base
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (colaborador.sueldobase != null) ...[
+                          Row(
+                            children: [
+                              Icon(Icons.attach_money, color: Colors.blue, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Sueldo Base: ${colaborador.sueldobaseFormateado}',
+                                  style: TextStyle(
+                                    color: textColor.withOpacity(0.7),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ] else ...[
+                          Row(
+                            children: [
+                              Icon(Icons.attach_money, color: Colors.grey, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Sueldo Base: Sin información',
+                                  style: TextStyle(
+                                    color: textColor.withOpacity(0.5),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Columna 6: Estado, Desactivar/Activar, Editar
                   Expanded(
                     flex: 2,
                     child: Row(
@@ -800,6 +843,26 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
                       ),
                       
                       const SizedBox(height: 20),
+                      
+                      // Información de sueldo base
+                      if (colaborador.sueldobase != null || colaborador.baseDia != null || colaborador.horaDia != null)
+                        _buildInfoSection(
+                          'Información de Sueldo Base',
+                          Icons.attach_money,
+                          [
+                            if (colaborador.sueldobase != null)
+                              _buildModernInfoRow('Sueldo Base', colaborador.sueldobaseFormateado, Icons.attach_money),
+                            if (colaborador.baseDia != null)
+                              _buildModernInfoRow('Base Día', colaborador.baseDiaFormateada, Icons.calendar_view_day),
+                            if (colaborador.horaDia != null)
+                              _buildModernInfoRow('Hora Día', colaborador.horaDiaFormateada, Icons.access_time),
+                            if (colaborador.fechaSueldobase != null)
+                              _buildModernInfoRow('Fecha Sueldo Base', colaborador.fechaSueldobaseFormateadaEspanol, Icons.calendar_today),
+                          ],
+                        ),
+                      
+                      if (colaborador.sueldobase != null || colaborador.baseDia != null || colaborador.horaDia != null)
+                        const SizedBox(height: 20),
                       
                       // Fechas
                       _buildInfoSection(
