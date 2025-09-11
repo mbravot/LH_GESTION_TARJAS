@@ -366,7 +366,7 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
     return GestureDetector(
       onTap: () => _aplicarFiltro(filtro),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isActivo ? color.withOpacity(0.2) : color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
@@ -384,8 +384,8 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
         ),
         child: Column(
           children: [
-            Icon(icono, color: color, size: 32),
-            const SizedBox(height: 8),
+            Icon(icono, color: color, size: 24),
+            const SizedBox(height: 4),
             Text(
               valor,
               style: TextStyle(
@@ -397,7 +397,7 @@ class _TrabajadorScreenState extends State<TrabajadorScreen> {
             Text(
               titulo,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 10,
                 color: color.withOpacity(0.8),
                 fontWeight: isActivo ? FontWeight.w600 : FontWeight.w500,
               ),

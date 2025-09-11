@@ -497,7 +497,7 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
             child: _buildTarjetaEstadistica(
               titulo: 'Total',
               valor: stats['total'].toString(),
-              color: Colors.orange,
+              color: Colors.purple,
               icono: Icons.list,
               filtro: 'todos',
             ),
