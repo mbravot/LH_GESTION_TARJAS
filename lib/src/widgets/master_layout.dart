@@ -28,6 +28,7 @@ import '../screens/horas_extras_otroscecos_screen.dart';
 import '../screens/bono_especial_screen.dart';
 import '../screens/trabajador_screen.dart';
 import '../screens/contratista_screen.dart';
+import '../screens/indicadores_screen.dart';
 import '../screens/ejemplo_permisos_screen.dart';
 import '../screens/info_screen.dart';
 import '../screens/cambiar_clave_screen.dart';
@@ -53,6 +54,7 @@ class _MasterLayoutState extends State<MasterLayout>
   // Lista de todas las pantallas disponibles
   final List<Map<String, dynamic>> _screens = [
     {'key': 'home', 'screen': _HomeContent(), 'title': 'Inicio'},
+    {'key': 'indicadores', 'screen': IndicadoresScreen(), 'title': 'Indicadores'},
     {'key': 'revision_tarjas', 'screen': RevisionTarjasScreen(), 'title': 'Revisión de Tarjas'},
     {'key': 'aprobacion_tarjas', 'screen': AprobacionTarjasScreen(), 'title': 'Aprobación de Tarjas'},
     {'key': 'colaboradores', 'screen': ColaboradorScreen(), 'title': 'Colaboradores'},
@@ -73,6 +75,7 @@ class _MasterLayoutState extends State<MasterLayout>
   @override
   void initState() {
     super.initState();
+    print('🏗️ [MASTER_LAYOUT] MasterLayout inicializado');
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -112,6 +115,9 @@ class _MasterLayoutState extends State<MasterLayout>
     
     // Llamar al método de refresh del provider correspondiente
     switch (screenKey) {
+      case 'indicadores':
+        // Los indicadores se refrescan automáticamente al cargar la pantalla
+        break;
       case 'horas_trabajadas':
         Provider.of<HorasTrabajadasProvider>(context, listen: false).cargarHorasTrabajadas();
         break;
@@ -266,6 +272,12 @@ class _MasterLayoutState extends State<MasterLayout>
                                       title: 'Inicio',
                                       onTap: () => _navigateToScreen('home'),
                                       screenKey: 'home',
+                                    ),
+                                    _buildMenuItem(
+                                      icon: Icons.insights,
+                                      title: 'Indicadores',
+                                      onTap: () => _navigateToScreen('indicadores'),
+                                      screenKey: 'indicadores',
                                     ),
                                   ],
                                 ),
@@ -490,7 +502,8 @@ class _MasterLayoutState extends State<MasterLayout>
                         const Spacer(),
                         
                         // Botón de actualizar para pantallas específicas
-                        if (_screens[_currentScreenIndex]['key'] == 'horas_trabajadas' ||
+                        if (_screens[_currentScreenIndex]['key'] == 'indicadores' ||
+                            _screens[_currentScreenIndex]['key'] == 'horas_trabajadas' ||
                             _screens[_currentScreenIndex]['key'] == 'revision_tarjas' ||
                             _screens[_currentScreenIndex]['key'] == 'aprobacion_tarjas' ||
                             _screens[_currentScreenIndex]['key'] == 'horas_extras' ||

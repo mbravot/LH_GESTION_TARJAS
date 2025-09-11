@@ -480,7 +480,7 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
                 child: _buildTarjetaEstadistica(
                   'Total',
                   vacacionProvider.totalVacaciones.toString(),
-                  Icons.calendar_month,
+                  Icons.beach_access,
                   Colors.purple,
                   'todos',
                   vacacionProvider.totalVacaciones > 0,

@@ -11,8 +11,9 @@ class AuthService {
 
   //Login
   Future<Map<String, dynamic>> login(String usuario, String password) async {
-    developer.log('Intentando login con usuario: $usuario');
-    developer.log('URL de la API: $baseUrl/auth/login');
+    final startTime = DateTime.now();
+    print('🔐 [LOGIN] Iniciando login para usuario: $usuario');
+    print('🔐 [LOGIN] URL: $baseUrl/auth/login');
     
     try {
       final response = await http.post(
@@ -27,12 +28,16 @@ class AuthService {
         }),
       );
 
-      developer.log('Código de respuesta: ${response.statusCode}');
-      developer.log('Cuerpo de respuesta: ${response.body}');
+      final endTime = DateTime.now();
+      final duration = endTime.difference(startTime);
+      print('🔐 [LOGIN] Respuesta recibida en ${duration.inMilliseconds}ms - Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        developer.log('Datos decodificados: $data');
+        print('🔐 [LOGIN] Login exitoso - Datos del usuario obtenidos');
+        
+        print('🔐 [LOGIN] Guardando datos en storage...');
+        final storageStartTime = DateTime.now();
         
         // Guardar el token
         await storage.write(key: 'token', value: data['access_token']);
@@ -50,6 +55,13 @@ class AuthService {
           'nombre_sucursal': data['sucursal_nombre'],
           'id_rol': data['id_rol'],
         }));
+
+        final storageEndTime = DateTime.now();
+        final storageDuration = storageEndTime.difference(storageStartTime);
+        print('🔐 [LOGIN] Storage completado en ${storageDuration.inMilliseconds}ms');
+        
+        final totalDuration = storageEndTime.difference(startTime);
+        print('🔐 [LOGIN] Login total completado en ${totalDuration.inMilliseconds}ms');
 
         return data;
       } else {
@@ -72,14 +84,21 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>?> getCurrentUser() async {
+    final startTime = DateTime.now();
+    print('👤 [GET_USER] Obteniendo datos del usuario desde storage...');
+    
     try {
       final userDataStr = await storage.read(key: 'user_data');
       if (userDataStr != null) {
+        final endTime = DateTime.now();
+        final duration = endTime.difference(startTime);
+        print('👤 [GET_USER] Datos obtenidos en ${duration.inMilliseconds}ms');
         return json.decode(userDataStr);
       }
+      print('👤 [GET_USER] No hay datos de usuario en storage');
       return null;
     } catch (e) {
-      developer.log('Error al obtener datos del usuario: $e');
+      print('👤 [GET_USER] Error al obtener datos del usuario: $e');
       return null;
     }
   }

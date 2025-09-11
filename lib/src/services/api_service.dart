@@ -484,8 +484,12 @@ class ApiService {
 
   // Obtener todos los permisos del usuario actual
   static Future<List<Map<String, dynamic>>> obtenerPermisosUsuario() async {
+    final startTime = DateTime.now();
+    print('🌐 [API] Iniciando llamada a /permisos/usuario/actual...');
+    
     final token = await _authService.getToken();
     if (token == null) {
+      print('🌐 [API] Error: No hay token de autenticación');
       throw Exception('No hay token de autenticación');
     }
 
@@ -497,9 +501,14 @@ class ApiService {
       },
     );
 
+    final endTime = DateTime.now();
+    final duration = endTime.difference(startTime);
+    print('🌐 [API] Respuesta de /permisos/usuario/actual recibida en ${duration.inMilliseconds}ms - Status: ${response.statusCode}');
+
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       final permisos = data.map((item) => Map<String, dynamic>.from(item)).toList();
+      print('🌐 [API] Permisos procesados exitosamente - Total: ${permisos.length}');
       return permisos;
     } else {
       throw Exception('Error al obtener permisos: ${response.statusCode}');

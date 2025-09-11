@@ -18,13 +18,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Cargar permisos automáticamente si no están cargados
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final permisosProvider = context.read<PermisosProvider>();
-      // Siempre intentar cargar permisos para asegurar que estén disponibles
-      // especialmente después de un hot reload
-      permisosProvider.cargarPermisos();
-    });
+    print('🏠 [HOME_SCREEN] HomeScreen inicializado');
+    // No cargar permisos automáticamente ya que se cargan en LoginScreen
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   print('🏠 [HOME_SCREEN] Cargando permisos automáticamente...');
+    //   final permisosProvider = context.read<PermisosProvider>();
+    //   permisosProvider.cargarPermisos();
+    // });
   }
 
   @override
