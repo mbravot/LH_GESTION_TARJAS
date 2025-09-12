@@ -1,114 +1,300 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/sueldo_base.dart';
 import '../services/api_service.dart';
-import '../providers/auth_provider.dart';
+import 'auth_provider.dart';
+import 'session_handler_mixin.dart';
+import 'notification_provider.dart';
 
-class SueldoBaseProvider extends ChangeNotifier {
-  final ApiService _apiService = ApiService();
-  AuthProvider? _authProvider;
-  
+class SueldoBaseProvider extends ChangeNotifier with SessionHandlerMixin {
+  List<SueldoBaseAgrupado> _sueldosBaseAgrupados = [];
   List<SueldoBase> _sueldosBase = [];
+  List<SueldoBase> _sueldosBaseFiltrados = [];
   bool _isLoading = false;
   String? _error;
+  String? _idSucursal;
+  AuthProvider? _authProvider;
+  NotificationProvider? _notificationProvider;
+
+  // Filtros
+  String _filtroColaborador = '';
+  String _filtroFecha = '';
 
   // Getters
+  List<SueldoBaseAgrupado> get sueldosBaseAgrupados => _sueldosBaseAgrupados;
   List<SueldoBase> get sueldosBase => _sueldosBase;
+  List<SueldoBase> get sueldosBaseFiltrados => _sueldosBaseFiltrados;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  // Método para configurar el AuthProvider
-  void setAuthProvider(AuthProvider authProvider) {
-    _authProvider = authProvider;
-    // Escuchar cambios en la sucursal activa
-    _authProvider!.addListener(_onSucursalChanged);
+  // Getters para filtros
+  String get filtroColaborador => _filtroColaborador;
+  String get filtroFecha => _filtroFecha;
+
+  // Listas únicas para filtros
+  List<String> get colaboradoresUnicos {
+    final colaboradores = <String>{};
+    for (var sueldo in _sueldosBase) {
+      if (sueldo.nombreColaborador != null && sueldo.nombreColaborador!.isNotEmpty) {
+        colaboradores.add(sueldo.nombreColaborador!);
+      }
+    }
+    return colaboradores.toList()..sort();
   }
 
-  // Método para manejar cambios de sucursal
-  void _onSucursalChanged() {
-    if (_authProvider != null) {
-      // Recargar sueldos base si es necesario
+  List<String> get fechasUnicas {
+    final fechas = <String>{};
+    for (var sueldo in _sueldosBase) {
+      fechas.add(sueldo.fechaFormateada);
     }
+    return fechas.toList()..sort();
+  }
+
+  // Inicializar provider
+  void initialize(AuthProvider authProvider, NotificationProvider notificationProvider) {
+    _authProvider = authProvider;
+    _notificationProvider = notificationProvider;
+    _authProvider!.addListener(_onAuthChanged);
+  }
+
+  void _onAuthChanged() {
+    _checkAndUpdateSucursal();
+  }
+
+  // Verificar si cambió la sucursal y actualizar si es necesario
+  void _checkAndUpdateSucursal() {
+    if (_authProvider?.userData != null && _authProvider!.userData!['id_sucursal'] != null) {
+      final nuevaSucursalId = _authProvider!.userData!['id_sucursal'].toString();
+      if (_idSucursal != nuevaSucursalId) {
+        _idSucursal = nuevaSucursalId;
+        cargarSueldosBase();
+      }
+    }
+  }
+
+  // Setter para la sucursal (mantener para compatibilidad)
+  void setIdSucursal(String idSucursal) {
+    _idSucursal = idSucursal;
+    cargarSueldosBase();
+  }
+
+  // Cargar sueldos base
+  Future<void> cargarSueldosBase() async {
+    if (_idSucursal == null) {
+      _error = 'No se ha especificado una sucursal';
+      notifyListeners();
+      return;
+    }
+
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      print('🔍 [SUELDO_BASE] Iniciando carga de sueldos base...');
+      
+      final result = await handleApiError(
+        () => ApiService.obtenerSueldosBase(),
+        _authProvider!,
+        _notificationProvider,
+      );
+      
+      print('📡 [SUELDO_BASE] Respuesta del API recibida: ${result?.length ?? 0} elementos');
+      
+      if (result != null) {
+        print('📊 [SUELDO_BASE] Tipo de resultado: ${result.runtimeType}');
+        print('📋 [SUELDO_BASE] Primer elemento: ${result.isNotEmpty ? result.first : "Lista vacía"}');
+        
+        try {
+          // Procesar estructura agrupada (ahora con array real)
+          _sueldosBaseAgrupados = result.map((json) {
+            print('🔄 [SUELDO_BASE] Procesando grupo: ${json['nombre_colaborador']} (${json['sueldos_base']?.length ?? 0} sueldos)');
+            final grupo = SueldoBaseAgrupado.fromJson(json);
+            print('✅ [SUELDO_BASE] Grupo creado: ${grupo.nombreColaborador} - ${grupo.sueldosBase.length} sueldos');
+            return grupo;
+          }).toList();
+          
+          // Convertir a lista plana para compatibilidad
+          _sueldosBase = [];
+          for (var grupo in _sueldosBaseAgrupados) {
+            _sueldosBase.addAll(grupo.sueldosBase);
+          }
+          
+          print('🎯 [SUELDO_BASE] Total grupos procesados: ${_sueldosBaseAgrupados.length}');
+          print('🎯 [SUELDO_BASE] Total sueldos individuales: ${_sueldosBase.length}');
+          _aplicarFiltros();
+          _error = null;
+          print('✅ [SUELDO_BASE] Carga exitosa');
+        } catch (parseError) {
+          print('❌ [SUELDO_BASE] Error al parsear grupos: $parseError');
+          _error = 'Error al procesar datos: $parseError';
+        }
+      } else {
+        print('⚠️ [SUELDO_BASE] Resultado nulo - sesión expirada');
+        return;
+      }
+    } catch (e) {
+      print('💥 [SUELDO_BASE] Error general: $e');
+      _error = e.toString();
+      _sueldosBaseAgrupados = [];
+      _sueldosBase = [];
+      _sueldosBaseFiltrados = [];
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    print('🏁 [SUELDO_BASE] Carga finalizada. Sueldos: ${_sueldosBase.length}, Filtrados: ${_sueldosBaseFiltrados.length}');
+  }
+
+  // Métodos para filtros
+  void setFiltroColaborador(String value) {
+    _filtroColaborador = value;
+    _aplicarFiltros();
+  }
+
+  void setFiltroFecha(String value) {
+    _filtroFecha = value;
+    _aplicarFiltros();
+  }
+
+  void limpiarFiltros() {
+    _filtroColaborador = '';
+    _filtroFecha = '';
+    _aplicarFiltros();
+  }
+
+  void _aplicarFiltros() {
+    _sueldosBaseFiltrados = _sueldosBase.where((sueldo) {
+      // Filtro por colaborador
+      if (_filtroColaborador.isNotEmpty) {
+        if (sueldo.nombreColaborador == null || 
+            !sueldo.nombreColaborador!.toLowerCase().contains(_filtroColaborador.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // Filtro por fecha
+      if (_filtroFecha.isNotEmpty) {
+        if (sueldo.fechaFormateada != _filtroFecha) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+
+    notifyListeners();
+  }
+
+  // Crear sueldo base
+  Future<bool> crearSueldoBase(SueldoBase sueldoBase) async {
+    try {
+      final result = await handleApiError(
+        () => ApiService.crearSueldoBase(sueldoBase.toCreateJson()),
+        _authProvider!,
+        _notificationProvider,
+      );
+      
+      if (result != null) {
+        await cargarSueldosBase();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Actualizar sueldo base
+  Future<bool> actualizarSueldoBase(SueldoBase sueldoBase) async {
+    try {
+      final result = await handleApiError(
+        () => ApiService.actualizarSueldoBase(sueldoBase.id.toString(), sueldoBase.toUpdateJson()),
+        _authProvider!,
+        _notificationProvider,
+      );
+      
+      if (result != null) {
+        await cargarSueldosBase();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Eliminar sueldo base
+  Future<bool> eliminarSueldoBase(int id) async {
+    try {
+      await handleApiError(
+        () => ApiService.eliminarSueldoBase(id.toString()),
+        _authProvider!,
+        _notificationProvider,
+      );
+      
+      await cargarSueldosBase();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Obtener sueldo base por ID
+  Future<SueldoBase?> obtenerSueldoBasePorId(int id) async {
+    try {
+      final result = await handleApiError(
+        () => ApiService.obtenerSueldoBasePorId(id.toString()),
+        _authProvider!,
+        _notificationProvider,
+      );
+      
+      if (result != null) {
+        return SueldoBase.fromJson(result);
+      }
+      return null;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
+
+  // Obtener sueldos base por colaborador
+  Future<List<SueldoBase>?> obtenerSueldosBasePorColaborador(String idColaborador) async {
+    try {
+      final result = await handleApiError(
+        () => ApiService.obtenerSueldosBasePorColaborador(idColaborador),
+        _authProvider!,
+        _notificationProvider,
+      );
+      
+      if (result != null && result['sueldos_base'] != null) {
+        final List<dynamic> sueldosList = result['sueldos_base'];
+        return sueldosList.map((json) => SueldoBase.fromJson(json)).toList();
+      }
+      return null;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
+
+  // Limpiar error
+  void clearError() {
+    _error = null;
+    notifyListeners();
   }
 
   @override
   void dispose() {
-    if (_authProvider != null) {
-      _authProvider!.removeListener(_onSucursalChanged);
-    }
+    _authProvider?.removeListener(_onAuthChanged);
     super.dispose();
-  }
-
-  // Método para cargar sueldos base de un colaborador
-  Future<void> cargarSueldosBase(String colaboradorId) async {
-    _setLoading(true);
-    _error = null;
-    
-    try {
-      final response = await _apiService.obtenerSueldosBaseColaborador(colaboradorId);
-      _sueldosBase = response.map((json) => SueldoBase.fromJson(json)).toList();
-      _setLoading(false);
-    } catch (e) {
-      _error = e.toString();
-      _setLoading(false);
-    }
-  }
-
-  // Método para crear un nuevo sueldo base
-  Future<bool> crearSueldoBase(String colaboradorId, Map<String, dynamic> datos) async {
-    try {
-      final response = await _apiService.crearSueldoBase(colaboradorId, datos);
-      // Recargar la lista después de crear
-      await cargarSueldosBase(colaboradorId);
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      return false;
-    }
-  }
-
-  // Método para editar un sueldo base
-  Future<bool> editarSueldoBase(int sueldoBaseId, Map<String, dynamic> datos) async {
-    try {
-      final response = await _apiService.editarSueldoBase(sueldoBaseId, datos);
-      // Recargar la lista después de editar
-      if (_sueldosBase.isNotEmpty) {
-        await cargarSueldosBase(_sueldosBase.first.idColaborador);
-      }
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      return false;
-    }
-  }
-
-  // Método para eliminar un sueldo base
-  Future<bool> eliminarSueldoBase(int sueldoBaseId) async {
-    try {
-      final response = await _apiService.eliminarSueldoBase(sueldoBaseId);
-      // Recargar la lista después de eliminar
-      if (_sueldosBase.isNotEmpty) {
-        await cargarSueldosBase(_sueldosBase.first.idColaborador);
-      }
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      return false;
-    }
-  }
-
-  // Método para limpiar la lista
-  void limpiarSueldosBase() {
-    _sueldosBase.clear();
-    _error = null;
-    notifyListeners();
-  }
-
-  // Método privado para establecer el estado de carga
-  void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
   }
 }

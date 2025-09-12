@@ -119,7 +119,7 @@ class AuthService {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       // Si el token es válido, debería devolver 200
       // Si es inválido, devolverá 401 o 403

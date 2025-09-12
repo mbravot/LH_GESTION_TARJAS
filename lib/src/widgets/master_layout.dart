@@ -15,6 +15,8 @@ import '../providers/permiso_provider.dart';
 import '../providers/bono_especial_provider.dart';
 import '../providers/trabajador_provider.dart';
 import '../providers/contratista_provider.dart';
+import '../providers/sueldo_base_provider.dart';
+import '../models/sueldo_base.dart';
 import '../theme/app_theme.dart';
 import '../screens/revision_tarjas_screen.dart';
 import '../screens/aprobacion_tarjas_screen.dart';
@@ -28,6 +30,9 @@ import '../screens/horas_extras_otroscecos_screen.dart';
 import '../screens/bono_especial_screen.dart';
 import '../screens/trabajador_screen.dart';
 import '../screens/contratista_screen.dart';
+import '../screens/sueldo_base_screen.dart';
+import '../screens/sueldo_base_crear_screen.dart';
+import '../screens/sueldo_base_editar_screen.dart';
 import '../screens/indicadores_screen.dart';
 import '../screens/ejemplo_permisos_screen.dart';
 import '../screens/info_screen.dart';
@@ -67,6 +72,7 @@ class _MasterLayoutState extends State<MasterLayout>
     {'key': 'bono_especial', 'screen': BonoEspecialScreen(), 'title': 'Bono Especial'},
     {'key': 'trabajadores', 'screen': TrabajadorScreen(), 'title': 'Trabajadores'},
     {'key': 'contratistas', 'screen': ContratistaScreen(), 'title': 'Contratistas'},
+    {'key': 'sueldos_base', 'screen': SueldoBaseScreen(), 'title': 'Sueldos Base'},
     {'key': 'ejemplo_permisos', 'screen': EjemploPermisosScreen(), 'title': 'Ejemplo de Permisos'},
     {'key': 'info', 'screen': const InfoScreen(), 'title': 'Acerca de'},
     {'key': 'cambiar_clave', 'screen': const CambiarClaveScreen(), 'title': 'Cambiar Contraseña'},
@@ -99,6 +105,14 @@ class _MasterLayoutState extends State<MasterLayout>
         _currentScreenIndex = index;
       });
     }
+  }
+
+  // Método para determinar si se debe ocultar el título
+  bool _shouldHideTitle() {
+    final currentKey = _screens[_currentScreenIndex]['key'];
+    
+    // No ocultar el título en ninguna pantalla ya que todas usan MainScaffold
+    return false;
   }
 
   void _refreshCurrentScreen() {
@@ -314,6 +328,12 @@ class _MasterLayoutState extends State<MasterLayout>
                                       screenKey: 'colaboradores',
                                     ),
                                     _buildMenuItem(
+                                      icon: Icons.attach_money,
+                                      title: 'Sueldos Base',
+                                      onTap: () => _navigateToScreen('sueldos_base'),
+                                      screenKey: 'sueldos_base',
+                                    ),
+                                    _buildMenuItem(
                                       icon: Icons.medical_services,
                                       title: 'Licencias',
                                       onTap: () => _navigateToScreen('licencias'),
@@ -465,18 +485,20 @@ class _MasterLayoutState extends State<MasterLayout>
                           },
                         ),
                         
-                        // Título (donde estaba originalmente)
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Text(
-                            _screens[_currentScreenIndex]['title'],
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                        // Título (solo si la pantalla no usa showAppBarElements: false)
+                        if (!_shouldHideTitle())
+                          const SizedBox(width: 16),
+                        if (!_shouldHideTitle())
+                          Expanded(
+                            child: Text(
+                              _screens[_currentScreenIndex]['title'],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
                         
                         // Espacio para centrar elementos
                         const Spacer(),
@@ -487,11 +509,11 @@ class _MasterLayoutState extends State<MasterLayout>
                           children: [
                             // Nombre de Usuario
                             const UserNameWidget(),
-                            const SizedBox(width: 24),
+                            const SizedBox(width: 16),
                             
                             // Selector de Sucursal
                             const SucursalSelector(),
-                            const SizedBox(width: 24),
+                            const SizedBox(width: 16),
                             
                             // Widget de clima
                             WeatherWidget(key: WeatherWidget.globalKey),
@@ -514,13 +536,33 @@ class _MasterLayoutState extends State<MasterLayout>
                             _screens[_currentScreenIndex]['key'] == 'permisos' ||
                             _screens[_currentScreenIndex]['key'] == 'bono_especial' ||
                             _screens[_currentScreenIndex]['key'] == 'trabajadores' ||
-                            _screens[_currentScreenIndex]['key'] == 'contratistas')
-                          IconButton(
-                            icon: const Icon(Icons.refresh, color: Colors.white),
-                            onPressed: () {
-                              _refreshCurrentScreen();
-                            },
+                            _screens[_currentScreenIndex]['key'] == 'contratistas' ||
+                            _screens[_currentScreenIndex]['key'] == 'sueldos_base')
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.2),
+                                width: 1,
+                              ),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.refresh, color: Colors.white),
+                              onPressed: () {
+                                _refreshCurrentScreen();
+                              },
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 24,
+                                minHeight: 24,
+                              ),
+                            ),
                           ),
+                        
+                        // Espaciado consistente antes de las acciones del usuario
+                        const SizedBox(width: 16),
                         
                         // Acciones del usuario (derecha)
                         const UserInfo(),

@@ -27,6 +27,7 @@ class MainScaffold extends StatelessWidget {
   final Widget? drawer;
   final VoidCallback? onRefresh;
   final bool showAppBarElements;
+  final Widget? floatingActionButton;
 
   const MainScaffold({
     Key? key,
@@ -37,6 +38,7 @@ class MainScaffold extends StatelessWidget {
     this.drawer,
     this.onRefresh,
     this.showAppBarElements = true,
+    this.floatingActionButton,
   }) : super(key: key);
 
   void _handleRefresh(BuildContext context) async {
@@ -204,17 +206,18 @@ class MainScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     return Scaffold(
-      appBar: AppBar(
+      appBar: showAppBarElements ? AppBar(
         title: Text(title ?? 'LH Gestión Tarjas'),
         bottom: bottom,
-        actions: showAppBarElements ? [
+        actions: [
           const UserInfo(),
           const SucursalSelector(),
           if (actions != null) ...actions!,
-        ] : (actions != null ? actions! : []),
-      ),
+        ],
+      ) : null,
       drawer: drawer,
       body: body,
+      floatingActionButton: floatingActionButton,
     );
   }
 } 

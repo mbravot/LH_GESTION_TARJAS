@@ -28,10 +28,23 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
   bool _showFiltros = false;
   TarjaProvider? _tarjaProvider;
   
-  // Nuevo estado para manejar la expansión de rendimientos por tarja
+  // Estado para manejar la expansión de rendimientos por tarja
   Map<String, bool> _rendimientosExpansionState = {};
   Map<String, List<Map<String, dynamic>>> _rendimientosCache = {};
-  Map<String, bool> _rendimientosLoadingState = {};
+  Map<String, DateTime> _lastToggleTime = {};
+  Map<String, bool> _rendimientosCargando = {};
+  bool _isInitialLoad = true;
+  
+  // Usar un Set para mantener el estado de expansión de forma más persistente
+  Set<String> _expandedTarjas = {};
+  
+  // Estado global persistente que no se resetea con rebuilds
+  static final Set<String> _globalExpandedTarjas = {};
+  
+  // Método para limpiar el estado global solo cuando sea necesario
+  static void limpiarEstadoGlobalExpansion() {
+    _globalExpandedTarjas.clear();
+  }
 
   // Helper para obtener colores adaptativos al tema
   Color _getAdaptiveColor(BuildContext context, {Color? lightColor, Color? darkColor}) {
@@ -54,6 +67,17 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
   }
 
   Future<void> _refrescarDatos() async {
+    // Limpiar cache de rendimientos al refrescar
+    // NO limpiar el estado global de expansión para mantener las tarjetas abiertas
+    setState(() {
+      _rendimientosCache.clear();
+      _rendimientosExpansionState.clear();
+      _lastToggleTime.clear();
+      _rendimientosCargando.clear();
+      // Sincronizar con el estado global
+      _expandedTarjas = Set.from(_globalExpandedTarjas);
+    });
+    
     // Actualizar todos los providers relevantes
     final tarjaProvider = Provider.of<TarjaProvider>(context, listen: false);
     final horasTrabajadasProvider = Provider.of<HorasTrabajadasProvider>(context, listen: false);
@@ -65,6 +89,8 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
       horasTrabajadasProvider.cargarHorasTrabajadas(),
       horasExtrasProvider.cargarRendimientos(),
     ]);
+    
+    // No precargar rendimientos para mejor rendimiento
   }
 
   // Método para filtrar rendimientos que pertenecen a una tarja específica
@@ -139,6 +165,15 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
   void initState() {
     super.initState();
     _cargarDatosIniciales();
+    
+    // Marcar que la carga inicial ha terminado después de un delay
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _isInitialLoad = false;
+        });
+      }
+    });
   }
 
   void _cargarDatosIniciales() {
@@ -151,20 +186,28 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
       
       // Escuchar cambios del TarjaProvider para limpiar cache cuando sea necesario
       _tarjaProvider!.addListener(_onTarjaProviderChanged);
+      
+      // Cargar tarjas sin precargar rendimientos para mejor rendimiento
+      _tarjaProvider!.cargarTarjas();
     });
   }
 
   void _onTarjaProviderChanged() {
     // Este método se ejecuta cuando el TarjaProvider notifica cambios
     // Si se llama limpiarCacheRendimientos(), limpiar el cache local
+    // NO limpiar el estado global de expansión para mantener las tarjetas abiertas
     if (mounted) {
       setState(() {
         _rendimientosCache.clear();
         _rendimientosExpansionState.clear();
-        _rendimientosLoadingState.clear();
+        _lastToggleTime.clear();
+        _rendimientosCargando.clear();
+        // Sincronizar con el estado global
+        _expandedTarjas = Set.from(_globalExpandedTarjas);
       });
     }
   }
+
 
 
   void _resetExpansionState(int groupCount) {
@@ -420,14 +463,13 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
   Future<void> _cargarRendimientos(Tarja tarja) async {
     final tarjaId = tarja.id;
     
-    // Si ya están cargados, no hacer nada
-    if (_rendimientosCache.containsKey(tarjaId)) {
+    // Si ya están cargados o se están cargando, no hacer nada
+    if (_rendimientosCache.containsKey(tarjaId) || (_rendimientosCargando[tarjaId] ?? false)) {
       return;
     }
 
-    setState(() {
-      _rendimientosLoadingState[tarjaId] = true;
-    });
+    // Marcar como cargando
+    _rendimientosCargando[tarjaId] = true;
 
     try {
       final response = await ApiService.obtenerRendimientos(
@@ -450,28 +492,61 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
         rendimientosList = response;
       }
 
-      setState(() {
-        _rendimientosCache[tarjaId] = rendimientosList;
-        _rendimientosLoadingState[tarjaId] = false;
-      });
+      // Actualizar cache
+      _rendimientosCache[tarjaId] = rendimientosList;
+      
+      // Solo hacer setState si el widget está montado
+      if (mounted) {
+        setState(() {});
+      }
       
     } catch (e) {
-      setState(() {
-        _rendimientosCache[tarjaId] = [];
-        _rendimientosLoadingState[tarjaId] = false;
-      });
+      // Actualizar cache en caso de error
+      _rendimientosCache[tarjaId] = [];
+      
+      // Solo hacer setState si el widget está montado
+      if (mounted) {
+        setState(() {});
+      }
+    } finally {
+      // Limpiar estado de carga
+      _rendimientosCargando[tarjaId] = false;
     }
   }
 
   // Método para alternar la expansión de rendimientos
   void _toggleRendimientosExpansion(Tarja tarja) {
     final tarjaId = tarja.id;
+    final now = DateTime.now();
+    final lastToggle = _lastToggleTime[tarjaId];
+    
+    // Debounce: evitar clics muy rápidos (menos de 1000ms)
+    if (lastToggle != null && now.difference(lastToggle).inMilliseconds < 1000) {
+      return;
+    }
+    
+    _lastToggleTime[tarjaId] = now;
+    final isCurrentlyExpanded = _globalExpandedTarjas.contains(tarjaId);
+    
+    // Si se está colapsando, cambiar estado inmediatamente
+    if (isCurrentlyExpanded) {
+      _globalExpandedTarjas.remove(tarjaId);
+      setState(() {
+        _expandedTarjas.remove(tarjaId);
+        _rendimientosExpansionState[tarjaId] = false;
+      });
+      return;
+    }
+    
+    // Si se está expandiendo, expandir inmediatamente y cargar en segundo plano
+    _globalExpandedTarjas.add(tarjaId);
     setState(() {
-      _rendimientosExpansionState[tarjaId] = !(_rendimientosExpansionState[tarjaId] ?? false);
+      _expandedTarjas.add(tarjaId);
+      _rendimientosExpansionState[tarjaId] = true;
     });
     
-    // Si se está expandiendo y no hay rendimientos cargados, cargarlos
-    if (_rendimientosExpansionState[tarjaId] == true && !_rendimientosCache.containsKey(tarjaId)) {
+    // Cargar rendimientos en segundo plano si no están cargados
+    if (!_rendimientosCache.containsKey(tarjaId)) {
       _cargarRendimientos(tarja);
     }
   }
@@ -485,15 +560,18 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
     final cardColor = theme.colorScheme.surface;
     final textColor = theme.colorScheme.onSurface;
     final tarjaId = tarja.id;
-    final isRendimientosExpanded = _rendimientosExpansionState[tarjaId] ?? false;
+    final isRendimientosExpanded = _globalExpandedTarjas.contains(tarjaId);
     final rendimientos = _rendimientosCache[tarjaId] ?? [];
-    final isLoadingRendimientos = _rendimientosLoadingState[tarjaId] ?? false;
+    
 
-    // Cargar rendimientos automáticamente si tiene rendimientos y no están cargados
-    if (tarja.tieneRendimiento && !_rendimientosCache.containsKey(tarjaId) && !isLoadingRendimientos) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _cargarRendimientos(tarja);
-      });
+    // Solo cargar rendimientos cuando la tarjeta esté expandida y no sea la carga inicial
+    // Esto evita múltiples llamadas durante hot reload
+    if (!_isInitialLoad && 
+        isRendimientosExpanded && 
+        tarja.tieneRendimiento && 
+        !_rendimientosCache.containsKey(tarjaId) && 
+        !(_rendimientosCargando[tarjaId] ?? false)) {
+      _cargarRendimientos(tarja);
     }
     
     // Determinar el color del borde basado en el estado de la tarja
@@ -710,26 +788,26 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: _deberiaMostrarConRendimientos(tarja, rendimientos) ? Colors.green[100] : Colors.red[100],
+                            color: tarja.tieneRendimiento ? Colors.green[100] : Colors.red[100],
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                _deberiaMostrarConRendimientos(tarja, rendimientos) ? Icons.check_circle : Icons.cancel,
+                                tarja.tieneRendimiento ? Icons.check_circle : Icons.cancel,
                                 size: 14,
-                                color: _deberiaMostrarConRendimientos(tarja, rendimientos) ? Colors.green : Colors.red,
+                                color: tarja.tieneRendimiento ? Colors.green : Colors.red,
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                _deberiaMostrarConRendimientos(tarja, rendimientos)
-                                    ? (isLoadingRendimientos 
-                                        ? 'Con rendimientos (cargando...)' 
-                                        : 'Con rendimientos (${_filtrarRendimientosPorTarja(tarja, rendimientos).length})')
+                                tarja.tieneRendimiento 
+                                    ? (rendimientos.isNotEmpty 
+                                        ? 'Con rendimientos (${rendimientos.length})' 
+                                        : 'Con rendimientos')
                                     : 'Sin rendimientos',
                                 style: TextStyle(
-                                  color: _deberiaMostrarConRendimientos(tarja, rendimientos) ? Colors.green[800] : Colors.red[800],
+                                  color: tarja.tieneRendimiento ? Colors.green[800] : Colors.red[800],
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -830,14 +908,8 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    if (isLoadingRendimientos)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else if (rendimientos.isEmpty)
+                    // Indicador de carga eliminado para simplificar
+                    if (rendimientos.isEmpty)
                       Center(
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),

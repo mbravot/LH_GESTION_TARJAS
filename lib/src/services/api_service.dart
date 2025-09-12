@@ -15,7 +15,7 @@ class ApiService {
       final response = await http.get(
         Uri.parse('$baseUrl/licencias'),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
       
       return response.statusCode == 200 || response.statusCode == 401; // 401 significa que el servidor responde pero necesita autenticación
     } catch (e) {
@@ -24,7 +24,7 @@ class ApiService {
         final baseResponse = await http.get(
           Uri.parse('https://api-lh-gestion-tarjas-927498545444.us-central1.run.app/'),
           headers: {'Content-Type': 'application/json'},
-        ).timeout(const Duration(seconds: 5));
+        ).timeout(const Duration(seconds: 15));
         return true;
       } catch (e2) {
         return false;
@@ -50,7 +50,7 @@ class ApiService {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
       
       return response.statusCode == 200 || response.statusCode == 401; // 401 significa que el servidor responde pero necesita autenticación
     } catch (e) {
@@ -92,9 +92,13 @@ class ApiService {
 
 //Obtener las actividades de una fecha y una sucursal
   Future<List<Tarja>> getTarjasByDate(DateTime fecha, String idSucursal) async {
-    try {
-      developer.log('Iniciando obtención de actividades');
-      developer.log('ID Sucursal: $idSucursal');
+    const maxRetries = 3;
+    const retryDelay = Duration(seconds: 2);
+    
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        developer.log('Iniciando obtención de actividades (intento $attempt/$maxRetries)');
+        developer.log('ID Sucursal: $idSucursal');
       
       final token = await _authService.getToken();
       developer.log('Token obtenido: [32m${token?.substring(0, 20)}...[0m');
@@ -107,6 +111,7 @@ class ApiService {
 
       try {
         developer.log('Realizando petición HTTP...');
+        final startTime = DateTime.now();
         final response = await _makeHttpRequest(() async {
           return await http.get(
             Uri.parse(url),
@@ -115,13 +120,17 @@ class ApiService {
               'Content-Type': 'application/json',
             },
           ).timeout(
-            const Duration(seconds: 10),
+            const Duration(seconds: 30),
             onTimeout: () {
-              developer.log('⚠️ Tiempo de espera agotado al intentar conectar a $url');
+              final elapsed = DateTime.now().difference(startTime);
+              developer.log('⚠️ Tiempo de espera agotado después de ${elapsed.inSeconds}s al intentar conectar a $url');
               throw Exception('Tiempo de espera agotado');
             },
           );
         });
+        
+        final elapsed = DateTime.now().difference(startTime);
+        developer.log('✅ Petición completada en ${elapsed.inSeconds}s');
 
         developer.log('Respuesta recibida');
         developer.log('Código de estado: ${response.statusCode}');
@@ -147,14 +156,34 @@ class ApiService {
           developer.log('❌ Cuerpo del error: ${response.body}');
           throw Exception('Error al cargar las actividades: ${response.statusCode} - ${response.body}');
         }
+        } catch (e) {
+          developer.log('❌ Error en la petición HTTP (intento $attempt): $e');
+          
+          // Si es el último intento, re-lanzar el error
+          if (attempt == maxRetries) {
+            rethrow;
+          }
+          
+          // Si no es el último intento, esperar y reintentar
+          developer.log('⏳ Esperando ${retryDelay.inSeconds}s antes del siguiente intento...');
+          await Future.delayed(retryDelay);
+        }
       } catch (e) {
-        developer.log('❌ Error en la petición HTTP: $e');
-        rethrow;
+        developer.log('Error en getTarjasByDate (intento $attempt): $e', error: e);
+        
+        // Si es el último intento, lanzar la excepción final
+        if (attempt == maxRetries) {
+          throw Exception('Error al cargar las actividades después de $maxRetries intentos: $e');
+        }
+        
+        // Si no es el último intento, esperar y reintentar
+        developer.log('⏳ Esperando ${retryDelay.inSeconds}s antes del siguiente intento...');
+        await Future.delayed(retryDelay);
       }
-    } catch (e) {
-      developer.log('Error en getTarjasByDate: $e', error: e);
-      throw Exception('Error al cargar las actividades: $e');
     }
+    
+    // Este punto nunca debería alcanzarse, pero por seguridad
+    throw Exception('Error inesperado en getTarjasByDate');
   }
 
   //Aprobar una tarja
@@ -2117,6 +2146,145 @@ class ApiService {
     }
   }
 
+  // Métodos para Sueldos Base
+  static Future<List<Map<String, dynamic>>> obtenerSueldosBase() async {
+    final token = await _authService.getToken();
+    if (token == null) throw Exception('No hay token de autenticación');
+
+    final uri = Uri.parse('$baseUrl/sueldos/sueldos-base');
+    print('🌐 [API] Haciendo petición a: $uri');
+
+    final response = await http.get(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    print('📡 [API] Respuesta recibida - Status: ${response.statusCode}');
+    print('📄 [API] Body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      try {
+        final List<dynamic> jsonList = json.decode(response.body);
+        print('✅ [API] JSON parseado exitosamente - ${jsonList.length} elementos');
+        return jsonList.cast<Map<String, dynamic>>();
+      } catch (e) {
+        print('❌ [API] Error al parsear JSON: $e');
+        throw Exception('Error al parsear respuesta JSON: $e');
+      }
+    } else {
+      print('❌ [API] Error HTTP: ${response.statusCode} - ${response.body}');
+      throw Exception('Error al obtener sueldos base: ${response.statusCode} - ${response.body}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> obtenerSueldoBasePorId(String id) async {
+    final token = await _authService.getToken();
+    if (token == null) throw Exception('No hay token de autenticación');
+
+    final uri = Uri.parse('$baseUrl/sueldos/sueldos-base/$id');
+
+    final response = await http.get(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Error al obtener sueldo base: ${response.statusCode}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> obtenerSueldosBasePorColaborador(String idColaborador) async {
+    final token = await _authService.getToken();
+    if (token == null) throw Exception('No hay token de autenticación');
+
+    final uri = Uri.parse('$baseUrl/sueldos/colaboradores/$idColaborador/sueldos-base');
+
+    final response = await http.get(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Error al obtener sueldos base del colaborador: ${response.statusCode}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> crearSueldoBase(Map<String, dynamic> datos) async {
+    final token = await _authService.getToken();
+    if (token == null) throw Exception('No hay token de autenticación');
+
+    final uri = Uri.parse('$baseUrl/sueldos/sueldos-base');
+
+    final response = await http.post(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(datos),
+    );
+
+    if (response.statusCode == 201) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Error al crear sueldo base: ${response.statusCode} - ${response.body}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> actualizarSueldoBase(String id, Map<String, dynamic> datos) async {
+    final token = await _authService.getToken();
+    if (token == null) throw Exception('No hay token de autenticación');
+
+    final uri = Uri.parse('$baseUrl/sueldos/sueldos-base/$id');
+
+    final response = await http.put(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(datos),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Error al actualizar sueldo base: ${response.statusCode} - ${response.body}');
+    }
+  }
+
+  static Future<void> eliminarSueldoBase(String id) async {
+    final token = await _authService.getToken();
+    if (token == null) throw Exception('No hay token de autenticación');
+
+    final uri = Uri.parse('$baseUrl/sueldos/sueldos-base/$id');
+
+    final response = await http.delete(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Error al eliminar sueldo base: ${response.statusCode} - ${response.body}');
+    }
+  }
+
   // Métodos para Contratistas
   static Future<List<Map<String, dynamic>>> obtenerContratistas() async {
     final token = await _authService.getToken();
@@ -2639,88 +2807,6 @@ class ApiService {
     }
   }
 
-  // Crear un nuevo sueldo base
-  static Future<Map<String, dynamic>> crearSueldoBase(String colaboradorId, Map<String, dynamic> datos) async {
-    try {
-      final token = await _authService.getToken();
-      if (token == null) {
-        throw Exception('No hay token de autenticación');
-      }
-
-      final response = await http.post(
-        Uri.parse('$baseUrl/colaboradores/$colaboradorId/sueldos-base'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(datos),
-      );
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        final errorBody = json.decode(response.body);
-        throw Exception(errorBody['message'] ?? 'Error al crear sueldo base: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
-    }
-  }
-
-  // Editar un sueldo base existente
-  static Future<Map<String, dynamic>> editarSueldoBase(int sueldoBaseId, Map<String, dynamic> datos) async {
-    try {
-      final token = await _authService.getToken();
-      if (token == null) {
-        throw Exception('No hay token de autenticación');
-      }
-
-      final response = await http.put(
-        Uri.parse('$baseUrl/colaboradores/sueldos-base/$sueldoBaseId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(datos),
-      );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        final errorBody = json.decode(response.body);
-        throw Exception(errorBody['message'] ?? 'Error al editar sueldo base: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
-    }
-  }
-
-  // Eliminar un sueldo base
-  static Future<Map<String, dynamic>> eliminarSueldoBase(int sueldoBaseId) async {
-    try {
-      final token = await _authService.getToken();
-      if (token == null) {
-        throw Exception('No hay token de autenticación');
-      }
-
-      final response = await http.delete(
-        Uri.parse('$baseUrl/colaboradores/sueldos-base/$sueldoBaseId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        final errorBody = json.decode(response.body);
-        throw Exception(errorBody['message'] ?? 'Error al eliminar sueldo base: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
-    }
-  }
 
 
 } 

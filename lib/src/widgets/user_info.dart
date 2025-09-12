@@ -23,22 +23,56 @@ class UserInfo extends StatelessWidget {
         // Botón de tema
         Consumer<ThemeProvider>(
           builder: (context, themeProvider, child) {
-            return IconButton(
-              icon: Icon(
-                themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                color: Colors.yellow,
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
+                ),
               ),
-              onPressed: () => themeProvider.toggleTheme(),
+              child: IconButton(
+                icon: Icon(
+                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: Colors.yellow,
+                ),
+                onPressed: () => themeProvider.toggleTheme(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 24,
+                  minHeight: 24,
+                ),
+              ),
             );
           },
         ),
         
+        const SizedBox(width: 16),
+        
         // Botón de cerrar sesión
-        IconButton(
-          icon: const Icon(Icons.logout, color: Colors.red),
-          onPressed: () {
-            _confirmarCerrarSesion(context, authProvider);
-          },
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.logout, color: Colors.red),
+            onPressed: () {
+              _confirmarCerrarSesion(context, authProvider);
+            },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 24,
+              minHeight: 24,
+            ),
+          ),
         ),
       ],
     );
