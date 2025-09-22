@@ -25,6 +25,8 @@ class ColaboradorProvider extends ChangeNotifier {
     if (_filtroEstado != 'todos') {
       if (_filtroEstado == 'finiquitados') {
         filtrados = filtrados.where((c) => c.fechaFiniquito != null && c.fechaFiniquito!.isNotEmpty).toList();
+      } else if (_filtroEstado == 'preenrolados') {
+        filtrados = filtrados.where((c) => c.rut == null || c.rut!.isEmpty).toList();
       } else {
         filtrados = filtrados.where((c) => c.idEstado == _filtroEstado).toList();
       }
@@ -47,6 +49,7 @@ class ColaboradorProvider extends ChangeNotifier {
   int get colaboradoresActivos => _colaboradores.where((c) => c.idEstado == '1').length;
   int get colaboradoresInactivos => _colaboradores.where((c) => c.idEstado == '2').length;
   int get colaboradoresFiniquitados => _colaboradores.where((c) => c.fechaFiniquito != null && c.fechaFiniquito!.isNotEmpty).length;
+  int get colaboradoresPreenrolados => _colaboradores.where((c) => c.rut == null || c.rut!.isEmpty).length;
 
   void setAuthProvider(AuthProvider authProvider) {
     _authProvider = authProvider;
