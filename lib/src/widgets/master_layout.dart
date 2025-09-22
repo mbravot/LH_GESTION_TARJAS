@@ -16,7 +16,6 @@ import '../providers/bono_especial_provider.dart';
 import '../providers/trabajador_provider.dart';
 import '../providers/contratista_provider.dart';
 import '../providers/sueldo_base_provider.dart';
-import '../models/sueldo_base.dart';
 import '../theme/app_theme.dart';
 import '../screens/revision_tarjas_screen.dart';
 import '../screens/aprobacion_tarjas_screen.dart';
@@ -31,8 +30,6 @@ import '../screens/bono_especial_screen.dart';
 import '../screens/trabajador_screen.dart';
 import '../screens/contratista_screen.dart';
 import '../screens/sueldo_base_screen.dart';
-import '../screens/sueldo_base_crear_screen.dart';
-import '../screens/sueldo_base_editar_screen.dart';
 import '../screens/indicadores_screen.dart';
 import '../screens/ejemplo_permisos_screen.dart';
 import '../screens/info_screen.dart';
@@ -115,63 +112,96 @@ class _MasterLayoutState extends State<MasterLayout>
     return false;
   }
 
-  void _refreshCurrentScreen() {
-    final screenKey = _screens[_currentScreenIndex]['key'];
-    
+  void _refreshCurrentScreen() async {
     // Mostrar un mensaje de confirmación
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Refrescando datos de ${_screens[_currentScreenIndex]['title']}...'),
-        duration: const Duration(seconds: 1),
+      const SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+            SizedBox(width: 8),
+            Text('Actualizando todas las pantallas...'),
+          ],
+        ),
+        duration: Duration(seconds: 2),
         backgroundColor: AppTheme.primaryColor,
       ),
     );
     
-    // Llamar al método de refresh del provider correspondiente
-    switch (screenKey) {
-      case 'indicadores':
-        // Los indicadores se refrescan automáticamente al cargar la pantalla
-        break;
-      case 'horas_trabajadas':
-        Provider.of<HorasTrabajadasProvider>(context, listen: false).cargarHorasTrabajadas();
-        break;
-      case 'revision_tarjas':
-        final tarjaProvider = Provider.of<TarjaProvider>(context, listen: false);
-        tarjaProvider.limpiarCacheRendimientos();
-        tarjaProvider.cargarTarjas();
-        break;
-      case 'aprobacion_tarjas':
-        final tarjaProvider2 = Provider.of<TarjaProvider>(context, listen: false);
-        tarjaProvider2.limpiarCacheRendimientos();
-        tarjaProvider2.cargarTarjas();
-        break;
-      case 'horas_extras':
-        Provider.of<HorasExtrasProvider>(context, listen: false).cargarRendimientos();
-        break;
-      case 'horas_extras_otroscecos':
-        Provider.of<HorasExtrasOtrosCecosProvider>(context, listen: false).cargarHorasExtras();
-        break;
-      case 'colaboradores':
-        Provider.of<ColaboradorProvider>(context, listen: false).cargarColaboradores();
-        break;
-      case 'licencias':
-        Provider.of<LicenciaProvider>(context, listen: false).cargarLicencias();
-        break;
-      case 'vacaciones':
-        Provider.of<VacacionProvider>(context, listen: false).cargarVacaciones();
-        break;
-      case 'permisos':
-        Provider.of<PermisoProvider>(context, listen: false).cargarPermisos();
-        break;
-      case 'bono_especial':
-        Provider.of<BonoEspecialProvider>(context, listen: false).cargarBonosEspeciales();
-        break;
-      case 'trabajadores':
-        Provider.of<TrabajadorProvider>(context, listen: false).cargarTrabajadores();
-        break;
-      case 'contratistas':
-        Provider.of<ContratistaProvider>(context, listen: false).cargarContratistas();
-        break;
+    try {
+      // Obtener todos los providers
+      final tarjaProvider = Provider.of<TarjaProvider>(context, listen: false);
+      final colaboradorProvider = Provider.of<ColaboradorProvider>(context, listen: false);
+      final vacacionProvider = Provider.of<VacacionProvider>(context, listen: false);
+      final licenciaProvider = Provider.of<LicenciaProvider>(context, listen: false);
+      final permisoProvider = Provider.of<PermisoProvider>(context, listen: false);
+      final horasTrabajadasProvider = Provider.of<HorasTrabajadasProvider>(context, listen: false);
+      final horasExtrasProvider = Provider.of<HorasExtrasProvider>(context, listen: false);
+      final horasExtrasOtrosCecosProvider = Provider.of<HorasExtrasOtrosCecosProvider>(context, listen: false);
+      final bonoEspecialProvider = Provider.of<BonoEspecialProvider>(context, listen: false);
+      final trabajadorProvider = Provider.of<TrabajadorProvider>(context, listen: false);
+      final contratistaProvider = Provider.of<ContratistaProvider>(context, listen: false);
+      final sueldoBaseProvider = Provider.of<SueldoBaseProvider>(context, listen: false);
+      
+      // Limpiar cache de tarjas primero
+      tarjaProvider.limpiarCacheRendimientos();
+      
+      // Ejecutar todas las cargas en paralelo
+      await Future.wait([
+        tarjaProvider.cargarTarjas(),
+        colaboradorProvider.cargarColaboradores(),
+        vacacionProvider.cargarVacaciones(),
+        licenciaProvider.cargarLicencias(),
+        permisoProvider.cargarPermisos(),
+        horasTrabajadasProvider.cargarHorasTrabajadas(),
+        horasExtrasProvider.cargarRendimientos(),
+        horasExtrasOtrosCecosProvider.cargarHorasExtras(),
+        bonoEspecialProvider.cargarBonosEspeciales(),
+        trabajadorProvider.cargarTrabajadores(),
+        contratistaProvider.cargarContratistas(),
+        sueldoBaseProvider.cargarSueldosBase(),
+      ]);
+      
+      // Mostrar mensaje de éxito
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Todas las pantallas actualizadas correctamente'),
+              ],
+            ),
+            duration: Duration(seconds: 2),
+            backgroundColor: AppTheme.successColor,
+          ),
+        );
+      }
+    } catch (e) {
+      // Mostrar mensaje de error
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('Error al actualizar: $e'),
+              ],
+            ),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -548,15 +578,18 @@ class _MasterLayoutState extends State<MasterLayout>
                                 width: 1,
                               ),
                             ),
-                            child: IconButton(
-                              icon: const Icon(Icons.refresh, color: Colors.white),
-                              onPressed: () {
-                                _refreshCurrentScreen();
-                              },
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 24,
-                                minHeight: 24,
+                            child: Tooltip(
+                              message: 'Actualizar todas las pantallas',
+                              child: IconButton(
+                                icon: const Icon(Icons.refresh, color: Colors.white),
+                                onPressed: () {
+                                  _refreshCurrentScreen();
+                                },
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 24,
+                                  minHeight: 24,
+                                ),
                               ),
                             ),
                           ),
