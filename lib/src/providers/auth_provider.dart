@@ -62,32 +62,26 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> login(String email, String password) async {
     final startTime = DateTime.now();
-    print('🔑 [AUTH_PROVIDER] Iniciando proceso de login...');
     
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      print('🔑 [AUTH_PROVIDER] Llamando a AuthService.login...');
       final response = await _authService.login(email, password);
       _isAuthenticated = true;
-      print('🔑 [AUTH_PROVIDER] Login exitoso, obteniendo datos del usuario...');
       
       // Cargar solo los datos básicos del usuario sin validación adicional
       _userData = await _authService.getCurrentUser();
-      print('🔑 [AUTH_PROVIDER] Datos del usuario obtenidos');
       
       _isLoading = false;
       notifyListeners();
       
       final endTime = DateTime.now();
       final duration = endTime.difference(startTime);
-      print('🔑 [AUTH_PROVIDER] Proceso de login completado en ${duration.inMilliseconds}ms');
       
       return true;
     } catch (e) {
-      print('🔑 [AUTH_PROVIDER] Error en login: $e');
       _error = e.toString();
       _isAuthenticated = false;
       _userData = null;

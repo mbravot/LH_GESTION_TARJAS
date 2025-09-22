@@ -38,12 +38,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       final startTime = DateTime.now();
-      print('📱 [LOGIN_SCREEN] Iniciando proceso de login...');
       
       setState(() => _isLoading = true);
 
       try {
-        print('📱 [LOGIN_SCREEN] Llamando a AuthProvider.login...');
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final success = await authProvider.login(
             _usuarioController.text,
@@ -53,19 +51,14 @@ class _LoginScreenState extends State<LoginScreen> {
         if (!mounted) return;
 
         if (success) {
-          print('📱 [LOGIN_SCREEN] Login exitoso, cargando permisos...');
           // Cargar permisos del usuario
           try {
             if (_permisosProvider != null) {
-              print('📱 [LOGIN_SCREEN] Cargando permisos del usuario...');
               await _permisosProvider!.cargarPermisos();
-              print('📱 [LOGIN_SCREEN] Permisos cargados exitosamente');
             }
           } catch (e) {
-            print('📱 [LOGIN_SCREEN] Error al cargar permisos: $e');
           }
 
-          print('📱 [LOGIN_SCREEN] Navegando a HomeScreen...');
           // Navegar a HomeScreen y reemplazar la página actual
           if (mounted) {
             Navigator.pushReplacement(
@@ -76,9 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
           
           final endTime = DateTime.now();
           final duration = endTime.difference(startTime);
-          print('📱 [LOGIN_SCREEN] Proceso completo de login finalizado en ${duration.inMilliseconds}ms');
         } else {
-          print('📱 [LOGIN_SCREEN] Login falló');
           // Mostrar el mensaje de error del AuthProvider
           final mensaje = authProvider.error ?? 'Usuario o clave incorrectos o sin acceso a la app!';
           final scaffoldMessenger = ScaffoldMessenger.maybeOf(context);

@@ -125,7 +125,7 @@ class _BonoEspecialEditarScreenState extends State<BonoEspecialEditarScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Editar Bono Especial',
-      showAppBarElements: false,
+      showAppBarElements: true,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(

@@ -90,7 +90,6 @@ class SueldoBaseProvider extends ChangeNotifier with SessionHandlerMixin {
     notifyListeners();
 
     try {
-      print('🔍 [SUELDO_BASE] Iniciando carga de sueldos base...');
       
       final result = await handleApiError(
         () => ApiService.obtenerSueldosBase(),
@@ -98,18 +97,13 @@ class SueldoBaseProvider extends ChangeNotifier with SessionHandlerMixin {
         _notificationProvider,
       );
       
-      print('📡 [SUELDO_BASE] Respuesta del API recibida: ${result?.length ?? 0} elementos');
       
       if (result != null) {
-        print('📊 [SUELDO_BASE] Tipo de resultado: ${result.runtimeType}');
-        print('📋 [SUELDO_BASE] Primer elemento: ${result.isNotEmpty ? result.first : "Lista vacía"}');
         
         try {
           // Procesar estructura agrupada (ahora con array real)
           _sueldosBaseAgrupados = result.map((json) {
-            print('🔄 [SUELDO_BASE] Procesando grupo: ${json['nombre_colaborador']} (${json['sueldos_base']?.length ?? 0} sueldos)');
             final grupo = SueldoBaseAgrupado.fromJson(json);
-            print('✅ [SUELDO_BASE] Grupo creado: ${grupo.nombreColaborador} - ${grupo.sueldosBase.length} sueldos');
             return grupo;
           }).toList();
           
@@ -119,21 +113,15 @@ class SueldoBaseProvider extends ChangeNotifier with SessionHandlerMixin {
             _sueldosBase.addAll(grupo.sueldosBase);
           }
           
-          print('🎯 [SUELDO_BASE] Total grupos procesados: ${_sueldosBaseAgrupados.length}');
-          print('🎯 [SUELDO_BASE] Total sueldos individuales: ${_sueldosBase.length}');
           _aplicarFiltros();
           _error = null;
-          print('✅ [SUELDO_BASE] Carga exitosa');
         } catch (parseError) {
-          print('❌ [SUELDO_BASE] Error al parsear grupos: $parseError');
           _error = 'Error al procesar datos: $parseError';
         }
       } else {
-        print('⚠️ [SUELDO_BASE] Resultado nulo - sesión expirada');
         return;
       }
     } catch (e) {
-      print('💥 [SUELDO_BASE] Error general: $e');
       _error = e.toString();
       _sueldosBaseAgrupados = [];
       _sueldosBase = [];
@@ -142,7 +130,6 @@ class SueldoBaseProvider extends ChangeNotifier with SessionHandlerMixin {
 
     _isLoading = false;
     notifyListeners();
-    print('🏁 [SUELDO_BASE] Carga finalizada. Sueldos: ${_sueldosBase.length}, Filtrados: ${_sueldosBaseFiltrados.length}');
   }
 
   // Métodos para filtros

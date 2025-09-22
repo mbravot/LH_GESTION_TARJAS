@@ -39,7 +39,7 @@ class WeatherService {
         };
       }
     } catch (e) {
-      print('Error obteniendo clima: $e');
+      // print('Error obteniendo clima: $e');
     }
     return null;
   }
@@ -72,14 +72,14 @@ class WeatherService {
         };
       }
     } catch (e) {
-      print('Error obteniendo clima simple: $e');
+      // print('Error obteniendo clima simple: $e');
     }
     return null;
   }
 
   static String _translateToSpanish(String description) {
     // Debug: imprimir la descripción original
-    print('🌤️ Descripción original del clima: "$description"');
+    // print('🌤️ Descripción original del clima: "$description"');
     
     // Traducción de descripciones de clima al español
     final translations = {
@@ -163,14 +163,14 @@ class WeatherService {
     final lowerDescription = description.toLowerCase().trim();
     if (translations.containsKey(lowerDescription)) {
       final translated = translations[lowerDescription]!;
-      print('🌤️ Traducción exacta: "$description" -> "$translated"');
+      // print('🌤️ Traducción exacta: "$description" -> "$translated"');
       return translated;
     }
 
     // Buscar traducción parcial (palabras clave)
     for (final entry in translations.entries) {
       if (lowerDescription.contains(entry.key)) {
-        print('🌤️ Traducción parcial: "$description" -> "${entry.value}" (clave: "${entry.key}")');
+        // print('🌤️ Traducción parcial: "$description" -> "${entry.value}" (clave: "${entry.key}")');
         return entry.value;
       }
     }
@@ -201,13 +201,13 @@ class WeatherService {
 
     for (final word in commonWords.entries) {
       if (lowerDescription.contains(word.key)) {
-        print('🌤️ Traducción por palabra: "$description" -> "${word.value}" (palabra: "${word.key}")');
+        // print('🌤️ Traducción por palabra: "$description" -> "${word.value}" (palabra: "${word.key}")');
         return word.value;
       }
     }
 
     // Si no se encuentra traducción, devolver el original
-    print('🌤️ No se encontró traducción para: "$description"');
+    // print('🌤️ No se encontró traducción para: "$description"');
     return description;
   }
 

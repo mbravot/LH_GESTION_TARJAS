@@ -339,7 +339,7 @@ class _LicenciaEditarScreenState extends State<LicenciaEditarScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Editar Licencia Médica',
-      showAppBarElements: false,
+      showAppBarElements: true,
       actions: [
         if (_isSaving)
           const Padding(

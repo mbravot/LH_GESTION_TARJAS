@@ -492,7 +492,7 @@ class _TrabajadorEditarScreenState extends State<TrabajadorEditarScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Editar Trabajador',
-      showAppBarElements: false,
+      showAppBarElements: true,
       actions: [
         if (_isSaving)
           const Padding(

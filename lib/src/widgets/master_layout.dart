@@ -78,7 +78,6 @@ class _MasterLayoutState extends State<MasterLayout>
   @override
   void initState() {
     super.initState();
-    print('🏗️ [MASTER_LAYOUT] MasterLayout inicializado');
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,

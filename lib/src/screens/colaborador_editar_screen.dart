@@ -662,7 +662,7 @@ class _ColaboradorEditarScreenState extends State<ColaboradorEditarScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Editar Colaborador',
-      showAppBarElements: false,
+      showAppBarElements: true,
       actions: [
         if (_isSaving)
           const Padding(

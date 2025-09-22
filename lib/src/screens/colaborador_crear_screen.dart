@@ -571,7 +571,7 @@ class _ColaboradorCrearScreenState extends State<ColaboradorCrearScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Crear Colaborador',
-      showAppBarElements: false,
+      showAppBarElements: true,
       actions: [
         if (_isSaving)
           const Padding(

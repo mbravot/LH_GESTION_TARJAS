@@ -47,7 +47,7 @@ class _SueldoBaseCrearScreenState extends State<SueldoBaseCrearScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Crear Sueldo Base',
-      showAppBarElements: false,
+      showAppBarElements: true,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(

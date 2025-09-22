@@ -308,7 +308,7 @@ class _LicenciaCrearScreenState extends State<LicenciaCrearScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Crear Licencia Médica',
-      showAppBarElements: false,
+      showAppBarElements: true,
       actions: [
         if (_isSaving)
           const Padding(

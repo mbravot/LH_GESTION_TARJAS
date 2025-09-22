@@ -514,11 +514,9 @@ class ApiService {
   // Obtener todos los permisos del usuario actual
   static Future<List<Map<String, dynamic>>> obtenerPermisosUsuario() async {
     final startTime = DateTime.now();
-    print('🌐 [API] Iniciando llamada a /permisos/usuario/actual...');
     
     final token = await _authService.getToken();
     if (token == null) {
-      print('🌐 [API] Error: No hay token de autenticación');
       throw Exception('No hay token de autenticación');
     }
 
@@ -532,12 +530,10 @@ class ApiService {
 
     final endTime = DateTime.now();
     final duration = endTime.difference(startTime);
-    print('🌐 [API] Respuesta de /permisos/usuario/actual recibida en ${duration.inMilliseconds}ms - Status: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       final permisos = data.map((item) => Map<String, dynamic>.from(item)).toList();
-      print('🌐 [API] Permisos procesados exitosamente - Total: ${permisos.length}');
       return permisos;
     } else {
       throw Exception('Error al obtener permisos: ${response.statusCode}');
@@ -2152,7 +2148,6 @@ class ApiService {
     if (token == null) throw Exception('No hay token de autenticación');
 
     final uri = Uri.parse('$baseUrl/sueldos/sueldos-base');
-    print('🌐 [API] Haciendo petición a: $uri');
 
     final response = await http.get(
       uri,
@@ -2162,20 +2157,15 @@ class ApiService {
       },
     );
 
-    print('📡 [API] Respuesta recibida - Status: ${response.statusCode}');
-    print('📄 [API] Body: ${response.body}');
 
     if (response.statusCode == 200) {
       try {
         final List<dynamic> jsonList = json.decode(response.body);
-        print('✅ [API] JSON parseado exitosamente - ${jsonList.length} elementos');
         return jsonList.cast<Map<String, dynamic>>();
       } catch (e) {
-        print('❌ [API] Error al parsear JSON: $e');
         throw Exception('Error al parsear respuesta JSON: $e');
       }
     } else {
-      print('❌ [API] Error HTTP: ${response.statusCode} - ${response.body}');
       throw Exception('Error al obtener sueldos base: ${response.statusCode} - ${response.body}');
     }
   }
@@ -2689,8 +2679,6 @@ class ApiService {
         'horas_extras': horasExtras,
       };
 
-      print('🔧 Debug - URL: $url');
-      print('🔧 Debug - Body: ${json.encode(body)}');
 
       final response = await http.put(
         Uri.parse(url),
@@ -2701,15 +2689,11 @@ class ApiService {
         body: json.encode(body),
       );
 
-      print('🔧 Debug - Status Code: ${response.statusCode}');
-      print('🔧 Debug - Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         return responseData;
       } else {
-        print('🔧 Debug - Error Status Code: ${response.statusCode}');
-        print('🔧 Debug - Error Response: ${response.body}');
         
         try {
           final errorData = json.decode(response.body);
@@ -2719,7 +2703,6 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('🔧 Debug - Exception: $e');
       throw Exception('Error de conexión: $e');
     }
   }

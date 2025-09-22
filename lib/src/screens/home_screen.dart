@@ -18,10 +18,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    print('🏠 [HOME_SCREEN] HomeScreen inicializado');
+    // print('🏠 [HOME_SCREEN] HomeScreen inicializado');
     // No cargar permisos automáticamente ya que se cargan en LoginScreen
     // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   print('🏠 [HOME_SCREEN] Cargando permisos automáticamente...');
+    //   // print('🏠 [HOME_SCREEN] Cargando permisos automáticamente...');
     //   final permisosProvider = context.read<PermisosProvider>();
     //   permisosProvider.cargarPermisos();
     // });

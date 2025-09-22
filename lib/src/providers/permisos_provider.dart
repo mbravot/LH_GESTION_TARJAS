@@ -15,24 +15,24 @@ class PermisosProvider with ChangeNotifier {
   // Cargar permisos del usuario
   Future<void> cargarPermisos() async {
     final startTime = DateTime.now();
-    print('🔐 [PERMISOS] Iniciando carga de permisos...');
+    // print('🔐 [PERMISOS] Iniciando carga de permisos...');
     
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      print('🔐 [PERMISOS] Llamando a ApiService.obtenerPermisosUsuario...');
+      // print('🔐 [PERMISOS] Llamando a ApiService.obtenerPermisosUsuario...');
       _permisos = await ApiService.obtenerPermisosUsuario();
       
       final endTime = DateTime.now();
       final duration = endTime.difference(startTime);
-      print('🔐 [PERMISOS] Permisos cargados exitosamente en ${duration.inMilliseconds}ms - Total: ${_permisos.length} permisos');
+      // print('🔐 [PERMISOS] Permisos cargados exitosamente en ${duration.inMilliseconds}ms - Total: ${_permisos.length} permisos');
       
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      print('🔐 [PERMISOS] Error al cargar permisos: $e');
+      // print('🔐 [PERMISOS] Error al cargar permisos: $e');
       _error = e.toString();
       _isLoading = false;
       notifyListeners();

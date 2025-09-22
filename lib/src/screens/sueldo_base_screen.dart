@@ -427,9 +427,6 @@ class _SueldoBaseScreenState extends State<SueldoBaseScreen> {
     final grupos = sueldoBaseProvider.sueldosBaseAgrupados;
     final sueldos = sueldoBaseProvider.sueldosBaseFiltrados;
     
-    print('🎨 [UI] Construyendo lista - Grupos: ${grupos.length}, Sueldos filtrados: ${sueldos.length}');
-    print('🎨 [UI] Estado de carga: ${sueldoBaseProvider.isLoading}');
-    print('🎨 [UI] Error: ${sueldoBaseProvider.error}');
 
     if (grupos.isNotEmpty) {
       // Usar estructura agrupada

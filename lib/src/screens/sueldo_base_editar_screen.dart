@@ -69,7 +69,7 @@ class _SueldoBaseEditarScreenState extends State<SueldoBaseEditarScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Editar Sueldo Base',
-      showAppBarElements: false,
+      showAppBarElements: true,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(

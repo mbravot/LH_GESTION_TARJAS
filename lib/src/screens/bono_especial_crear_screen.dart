@@ -113,7 +113,7 @@ class _BonoEspecialCrearScreenState extends State<BonoEspecialCrearScreen> {
   Widget build(BuildContext context) {
     return MainScaffold(
       title: 'Crear Bono Especial',
-      showAppBarElements: false,
+      showAppBarElements: true,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
