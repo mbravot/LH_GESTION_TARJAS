@@ -51,11 +51,10 @@ class _MasterLayoutState extends State<MasterLayout>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
-  int _currentScreenIndex = 0;
+  int _currentScreenIndex = 0; // IndicadoresScreen es ahora el índice 0
 
   // Lista de todas las pantallas disponibles
   final List<Map<String, dynamic>> _screens = [
-    {'key': 'home', 'screen': _HomeContent(), 'title': 'Inicio'},
     {'key': 'indicadores', 'screen': IndicadoresScreen(), 'title': 'Indicadores'},
     {'key': 'revision_tarjas', 'screen': RevisionTarjasScreen(), 'title': 'Revisión de Tarjas'},
     {'key': 'aprobacion_tarjas', 'screen': AprobacionTarjasScreen(), 'title': 'Aprobación de Tarjas'},
@@ -748,29 +747,3 @@ class _MasterLayoutState extends State<MasterLayout>
   }
 }
 
-// Widget para el contenido de la pantalla de inicio
-class _HomeContent extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Bienvenido a LH Gestión Tarjas',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Selecciona una opción del menú lateral para comenzar.',
-            style: TextStyle(fontSize: 16),
-          ),
-        ],
-      ),
-    );
-  }
-}

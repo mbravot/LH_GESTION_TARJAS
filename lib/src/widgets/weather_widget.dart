@@ -30,6 +30,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
 
   Future<void> _loadWeather() async {
     try {
+      print('🌤️ [WEATHER_WIDGET] Iniciando carga de clima...');
       if (mounted) {
         setState(() {
           _isLoading = true;
@@ -45,9 +46,15 @@ class _WeatherWidgetState extends State<WeatherWidget> {
           _weatherData = weatherData;
           _isLoading = false;
         });
+        if (weatherData != null) {
+          print('✅ [WEATHER_WIDGET] Clima cargado exitosamente - ${weatherData['temperature']}°C en ${weatherData['city']}');
+        } else {
+          print('❌ [WEATHER_WIDGET] No se pudo cargar el clima');
+        }
       }
       
     } catch (e) {
+      print('❌ [WEATHER_WIDGET] Error cargando clima: $e');
       if (mounted) {
         setState(() {
           _error = e.toString();
