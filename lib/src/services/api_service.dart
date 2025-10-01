@@ -2772,15 +2772,12 @@ class ApiService {
   // Obtener sueldos base de un colaborador
   // Obtener ubicación de la sucursal activa
   static Future<Map<String, dynamic>> obtenerUbicacionSucursalActiva() async {
-    print('🌐 [API] Obteniendo ubicación de sucursal activa...');
     final token = await _authService.getToken();
     if (token == null) {
-      print('❌ [API] Token no encontrado');
       throw Exception('Token no encontrado');
     }
 
     final uri = Uri.parse('$baseUrl/sucursal/ubicacion-activa');
-    print('🌐 [API] Haciendo petición GET a: $uri');
     final response = await http.get(
       uri,
       headers: {
@@ -2789,16 +2786,10 @@ class ApiService {
       },
     );
 
-    print('🌐 [API] Respuesta recibida - Status: ${response.statusCode}');
-    print('🌐 [API] Body: ${response.body}');
-
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      print('✅ [API] Ubicación obtenida exitosamente: ${data['ubicacion']}');
-      return data;
+      return json.decode(response.body);
     } else {
       final errorData = json.decode(response.body);
-      print('❌ [API] Error HTTP: ${response.statusCode} - ${errorData['error']}');
       throw Exception(errorData['error'] ?? 'Error al obtener ubicación de sucursal');
     }
   }

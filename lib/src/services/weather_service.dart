@@ -14,26 +14,21 @@ class WeatherService {
   // Obtener ubicación de la sucursal activa
   static Future<Map<String, double>?> getUbicacionSucursal() async {
     try {
-      print('🌍 [WEATHER] Obteniendo ubicación de sucursal activa...');
       final response = await ApiService.obtenerUbicacionSucursalActiva();
       final ubicacion = response['ubicacion'] as String;
-      print('🌍 [WEATHER] Ubicación recibida: $ubicacion');
       
       // Parsear coordenadas (formato: "lat, lng")
       final coords = ubicacion.split(',');
       if (coords.length == 2) {
         final lat = double.parse(coords[0].trim());
         final lng = double.parse(coords[1].trim());
-        print('🌍 [WEATHER] Coordenadas parseadas - Lat: $lat, Lng: $lng');
         return {
           'latitude': lat,
           'longitude': lng,
         };
-      } else {
-        print('❌ [WEATHER] Error: Formato de ubicación inválido - $ubicacion');
       }
     } catch (e) {
-      print('❌ [WEATHER] Error obteniendo ubicación de sucursal: $e');
+      // Si falla, usar coordenadas por defecto
     }
     return null;
   }
@@ -41,23 +36,19 @@ class WeatherService {
   // Método principal que usa la ubicación de la sucursal activa
   static Future<Map<String, dynamic>?> getWeatherForSucursal() async {
     try {
-      print('🌤️ [WEATHER] Iniciando carga de clima para sucursal...');
       // Obtener ubicación de la sucursal activa
       final ubicacion = await getUbicacionSucursal();
       
       if (ubicacion != null) {
-        print('🌤️ [WEATHER] Usando ubicación de sucursal - Lat: ${ubicacion['latitude']}, Lng: ${ubicacion['longitude']}');
         return await getCurrentWeather(
           latitude: ubicacion['latitude'],
           longitude: ubicacion['longitude'],
         );
       } else {
-        print('🌤️ [WEATHER] Usando coordenadas por defecto - Lat: $_defaultLatitude, Lng: $_defaultLongitude');
         // Fallback a coordenadas por defecto
         return await getCurrentWeather();
       }
     } catch (e) {
-      print('❌ [WEATHER] Error en getWeatherForSucursal: $e');
       // Fallback a coordenadas por defecto
       return await getCurrentWeather();
     }
