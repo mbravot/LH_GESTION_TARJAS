@@ -16,6 +16,9 @@ class AuthProvider extends ChangeNotifier {
   List<Map<String, dynamic>>? _cachedSucursales;
   DateTime? _sucursalesCacheTime;
   static const Duration _cacheExpiration = Duration(minutes: 5);
+  
+  // Control para evitar notificaciones múltiples durante cambio de sucursal
+  bool isChangingSucursal = false;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -214,9 +217,10 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> cambiarSucursal(String idSucursal) async {
     final startTime = DateTime.now();
     
+    // Marcar que estamos cambiando sucursal para evitar notificaciones múltiples
+    isChangingSucursal = true;
     _isLoading = true;
     _error = null;
-    notifyListeners();
 
     try {
       final result = await _authService.cambiarSucursal(idSucursal);
@@ -237,11 +241,14 @@ class AuthProvider extends ChangeNotifier {
       final duration = endTime.difference(startTime);
       
       _isLoading = false;
+      isChangingSucursal = false;
+      // Notificar UNA SOLA VEZ al final
       notifyListeners();
       return true;
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
+      isChangingSucursal = false;
       notifyListeners();
       return false;
     }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'api_service.dart';
 
 class WeatherService {
   // API gratuita de OpenWeatherMap (necesitarás una API key)
@@ -9,6 +10,47 @@ class WeatherService {
   // Coordenadas por defecto (Santiago)
   static const double _defaultLatitude = -33.4489;
   static const double _defaultLongitude = -70.6693;
+
+  // Obtener ubicación de la sucursal activa
+  static Future<Map<String, double>?> getUbicacionSucursal() async {
+    try {
+      final response = await ApiService.obtenerUbicacionSucursalActiva();
+      final ubicacion = response['ubicacion'] as String;
+      
+      // Parsear coordenadas (formato: "lat, lng")
+      final coords = ubicacion.split(',');
+      if (coords.length == 2) {
+        return {
+          'latitude': double.parse(coords[0].trim()),
+          'longitude': double.parse(coords[1].trim()),
+        };
+      }
+    } catch (e) {
+      // Si falla, usar coordenadas por defecto
+    }
+    return null;
+  }
+
+  // Método principal que usa la ubicación de la sucursal activa
+  static Future<Map<String, dynamic>?> getWeatherForSucursal() async {
+    try {
+      // Obtener ubicación de la sucursal activa
+      final ubicacion = await getUbicacionSucursal();
+      
+      if (ubicacion != null) {
+        return await getCurrentWeather(
+          latitude: ubicacion['latitude'],
+          longitude: ubicacion['longitude'],
+        );
+      } else {
+        // Fallback a coordenadas por defecto
+        return await getCurrentWeather();
+      }
+    } catch (e) {
+      // Fallback a coordenadas por defecto
+      return await getCurrentWeather();
+    }
+  }
 
   static Future<Map<String, dynamic>?> getCurrentWeather({
     double? latitude,

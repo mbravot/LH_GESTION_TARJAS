@@ -94,9 +94,13 @@ class AuthService {
 
   // Validar si el token actual es válido
   Future<bool> validateToken() async {
+    final startTime = DateTime.now();
+    
     try {
       final token = await getToken();
-      if (token == null) return false;
+      if (token == null) {
+        return false;
+      }
 
       // Usar un endpoint que sabemos que existe para validar el token
       // Si el token es válido, debería devolver 200 o 401 (pero no 403)
@@ -110,9 +114,13 @@ class AuthService {
         },
       ).timeout(const Duration(seconds: 30));
 
+      final endTime = DateTime.now();
+      final duration = endTime.difference(startTime);
+
       // Si el token es válido, debería devolver 200
       // Si es inválido, devolverá 401 o 403
-      return response.statusCode == 200;
+      final isValid = response.statusCode == 200;
+      return isValid;
     } catch (e) {
       developer.log('Error al validar token: $e');
       return false;
@@ -197,11 +205,12 @@ class AuthService {
   // Cambiar la sucursal activa del usuario
   Future<Map<String, dynamic>> cambiarSucursal(String idSucursal) async {
     final startTime = DateTime.now();
-    developer.log('Cambiando sucursal activa a: $idSucursal');
     
     try {
       final token = await getToken();
-      if (token == null) throw Exception('No autorizado');
+      if (token == null) {
+        throw Exception('No autorizado');
+      }
 
       final response = await http.post(
         Uri.parse('$baseUrl/auth/cambiar-sucursal'),
@@ -218,8 +227,6 @@ class AuthService {
       final endTime = DateTime.now();
       final duration = endTime.difference(startTime);
       
-      developer.log('Código de respuesta: ${response.statusCode}');
-      developer.log('Cuerpo de respuesta: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

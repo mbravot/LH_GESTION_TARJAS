@@ -311,12 +311,6 @@ class _MasterLayoutState extends State<MasterLayout>
                                   'Dashboards',
                                   [
                                     _buildMenuItem(
-                                      icon: Icons.dashboard,
-                                      title: 'Inicio',
-                                      onTap: () => _navigateToScreen('home'),
-                                      screenKey: 'home',
-                                    ),
-                                    _buildMenuItem(
                                       icon: Icons.insights,
                                       title: 'Indicadores',
                                       onTap: () => _navigateToScreen('indicadores'),

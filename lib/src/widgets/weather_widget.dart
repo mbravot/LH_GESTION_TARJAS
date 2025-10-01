@@ -29,8 +29,6 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   }
 
   Future<void> _loadWeather() async {
-    final startTime = DateTime.now();
-    
     try {
       if (mounted) {
         setState(() {
@@ -39,56 +37,8 @@ class _WeatherWidgetState extends State<WeatherWidget> {
         });
       }
 
-      // Obtener información de la sucursal activa
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final userData = authProvider.userData;
-      
-      String? cityName;
-      double? latitude;
-      double? longitude;
-      
-      if (userData != null) {
-        cityName = userData['nombre_sucursal'];
-        
-        // Intentar obtener coordenadas de la sucursal (usando cache)
-        try {
-          final sucursales = await authProvider.getSucursalesDisponibles();
-          
-          final sucursalActual = sucursales.firstWhere(
-            (s) => s['id'].toString() == userData['id_sucursal'].toString(),
-            orElse: () => {},
-          );
-          
-          if (sucursalActual['ubicacion'] != null) {
-            final ubicacion = sucursalActual['ubicacion'].toString();
-            final coords = ubicacion.split(',');
-            if (coords.length == 2) {
-              latitude = double.tryParse(coords[0].trim());
-              longitude = double.tryParse(coords[1].trim());
-            }
-          } else {
-          }
-        } catch (e) {
-        }
-      }
-
-      // Intentar primero con la API simple (sin API key)
-      var weatherData = await WeatherService.getCurrentWeatherSimple(
-        cityName: cityName,
-      );
-      
-      // Si falla, intentar con OpenWeatherMap (necesita API key)
-      if (weatherData == null) {
-        weatherData = await WeatherService.getCurrentWeather(
-          latitude: latitude,
-          longitude: longitude,
-          cityName: cityName,
-        );
-      }
-      
-      if (weatherData != null) {
-      } else {
-      }
+      // Usar el nuevo método que obtiene automáticamente la ubicación de la sucursal
+      final weatherData = await WeatherService.getWeatherForSucursal();
 
       if (mounted) {
         setState(() {
@@ -96,9 +46,6 @@ class _WeatherWidgetState extends State<WeatherWidget> {
           _isLoading = false;
         });
       }
-      
-      final endTime = DateTime.now();
-      final duration = endTime.difference(startTime);
       
     } catch (e) {
       if (mounted) {

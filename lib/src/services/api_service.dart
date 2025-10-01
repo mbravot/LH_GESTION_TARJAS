@@ -772,6 +772,8 @@ class ApiService {
 
   // ===== MÉTODOS DE COLABORADORES =====
   static Future<List<Map<String, dynamic>>> obtenerColaboradores() async {
+    final startTime = DateTime.now();
+    
     try {
       final token = await _authService.getToken();
       if (token == null) {
@@ -786,9 +788,13 @@ class ApiService {
         },
       );
 
+      final endTime = DateTime.now();
+      final duration = endTime.difference(startTime);
+
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => Map<String, dynamic>.from(item)).toList();
+        final colaboradores = data.map((item) => Map<String, dynamic>.from(item)).toList();
+        return colaboradores;
       } else {
         final errorData = json.decode(response.body);
         throw Exception(errorData['error'] ?? 'Error al obtener colaboradores');
@@ -2764,6 +2770,30 @@ class ApiService {
   // ========== MÉTODOS PARA SUELDOS BASE ==========
 
   // Obtener sueldos base de un colaborador
+  // Obtener ubicación de la sucursal activa
+  static Future<Map<String, dynamic>> obtenerUbicacionSucursalActiva() async {
+    final token = await _authService.getToken();
+    if (token == null) {
+      throw Exception('Token no encontrado');
+    }
+
+    final uri = Uri.parse('$baseUrl/sucursal/ubicacion-activa');
+    final response = await http.get(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['error'] ?? 'Error al obtener ubicación de sucursal');
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> obtenerSueldosBaseColaborador(String colaboradorId) async {
     try {
       final token = await _authService.getToken();

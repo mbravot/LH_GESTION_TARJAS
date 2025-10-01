@@ -118,6 +118,11 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
     return mapeoEstatico[nombreUsuario.toLowerCase()] ?? nombreUsuario;
   }
 
+  // Cache para evitar recargas múltiples
+  String? _lastSucursalId;
+  DateTime? _lastLoadTime;
+  static const Duration _minInterval = Duration(seconds: 2);
+
   // Método para configurar el AuthProvider y escuchar cambios
   void setAuthProvider(AuthProvider authProvider) {
     _authProvider = authProvider;
@@ -132,7 +137,21 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
 
   // Escuchar cambios en el AuthProvider
   void _onAuthChanged() {
-    _checkAndUpdateSucursal();
+    
+    if (_authProvider?.userData != null) {
+      final currentSucursalId = _authProvider!.userData!['id_sucursal']?.toString();
+      final now = DateTime.now();
+      
+      // Verificar si realmente cambió la sucursal y ha pasado suficiente tiempo
+      if (currentSucursalId != _lastSucursalId && 
+          (_lastLoadTime == null || now.difference(_lastLoadTime!) > _minInterval)) {
+        _lastSucursalId = currentSucursalId;
+        _lastLoadTime = now;
+        _checkAndUpdateSucursal();
+      } else {
+      }
+    } else {
+    }
   }
 
   // Verificar si cambió la sucursal y actualizar si es necesario

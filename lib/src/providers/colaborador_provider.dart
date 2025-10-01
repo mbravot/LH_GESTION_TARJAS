@@ -4,10 +4,25 @@ import '../services/api_service.dart';
 import 'auth_provider.dart';
 
 class ColaboradorProvider extends ChangeNotifier {
+  static ColaboradorProvider? _instance;
   List<Colaborador> _colaboradores = [];
   bool _isLoading = false;
   String? _error;
   AuthProvider? _authProvider;
+  
+  // Singleton pattern
+  static ColaboradorProvider get instance {
+    _instance ??= ColaboradorProvider._internal();
+    return _instance!;
+  }
+  
+  ColaboradorProvider._internal();
+  
+  // Reset singleton (para testing o logout)
+  static void reset() {
+    _instance = null;
+  }
+  
   String _filtroEstado = 'todos';
   String _filtroBusqueda = '';
 
@@ -57,16 +72,43 @@ class ColaboradorProvider extends ChangeNotifier {
     _authProvider!.addListener(_onAuthChanged);
   }
 
+  // Cache para evitar recargas múltiples
+  String? _lastSucursalId;
+  DateTime? _lastLoadTime;
+  static const Duration _minInterval = Duration(seconds: 2);
+
   // Escuchar cambios en el AuthProvider
   void _onAuthChanged() {
-    // Recargar colaboradores cuando cambie la sucursal
+    
+    // NO reaccionar si el AuthProvider está cambiando sucursal
+    if (_authProvider?.isChangingSucursal == true) {
+      return;
+    }
+    
     if (_authProvider?.userData != null) {
-      cargarColaboradores();
+      final currentSucursalId = _authProvider!.userData!['id_sucursal']?.toString();
+      final now = DateTime.now();
+      
+      // Verificar si realmente cambió la sucursal y ha pasado suficiente tiempo
+      if (currentSucursalId != _lastSucursalId && 
+          (_lastLoadTime == null || now.difference(_lastLoadTime!) > _minInterval)) {
+        _lastSucursalId = currentSucursalId;
+        _lastLoadTime = now;
+        cargarColaboradores();
+      } else {
+      }
+    } else {
     }
   }
 
   // Cargar colaboradores
   Future<void> cargarColaboradores() async {
+    
+    // Evitar cargas múltiples simultáneas
+    if (_isLoading) {
+      return;
+    }
+    
     if (_authProvider == null) {
       _error = 'AuthProvider no configurado';
       notifyListeners();

@@ -35,6 +35,11 @@ class HorasExtrasProvider extends ChangeNotifier {
   int? get filtroAno => _filtroAno;
 
   // Método para configurar el AuthProvider
+  // Cache para evitar recargas múltiples
+  String? _lastSucursalId;
+  DateTime? _lastLoadTime;
+  static const Duration _minInterval = Duration(seconds: 2);
+
   void setAuthProvider(AuthProvider authProvider) {
     _authProvider = authProvider;
     // Escuchar cambios en la sucursal activa
@@ -43,8 +48,19 @@ class HorasExtrasProvider extends ChangeNotifier {
 
   // Método para manejar cambios de sucursal
   void _onSucursalChanged() {
+    
     if (_authProvider != null) {
-      cargarRendimientos();
+      final currentSucursalId = _authProvider!.userData?['id_sucursal']?.toString();
+      final now = DateTime.now();
+      
+      // Verificar si realmente cambió la sucursal y ha pasado suficiente tiempo
+      if (currentSucursalId != _lastSucursalId && 
+          (_lastLoadTime == null || now.difference(_lastLoadTime!) > _minInterval)) {
+        _lastSucursalId = currentSucursalId;
+        _lastLoadTime = now;
+        cargarRendimientos();
+      } else {
+      }
     }
   }
 

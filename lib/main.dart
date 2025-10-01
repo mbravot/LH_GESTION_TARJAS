@@ -36,7 +36,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => PermisosProvider()),
         ChangeNotifierProvider(create: (_) => PermisoProvider()),
         ChangeNotifierProvider(create: (_) => TrabajadorProvider()),
-        ChangeNotifierProvider(create: (_) => ColaboradorProvider()),
+        ChangeNotifierProvider(create: (_) => ColaboradorProvider.instance),
         ChangeNotifierProvider(create: (_) => VacacionProvider()),
         ChangeNotifierProvider(create: (_) => LicenciaProvider()),
         ChangeNotifierProvider(create: (_) => HorasTrabajadasProvider()),
