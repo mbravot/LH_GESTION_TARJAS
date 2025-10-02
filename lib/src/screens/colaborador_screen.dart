@@ -436,8 +436,8 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.colorScheme.surface;
-    // Color del borde según el estado del colaborador
-    final borderColor = colaborador.idEstado == '1' ? Colors.green[300]! : Colors.red[300]!;
+    // Color del borde según el indicador activo (filtro seleccionado)
+    final borderColor = _getIndicadorColor(_filtroActivo).withOpacity(0.6);
     final textColor = theme.colorScheme.onSurface;
 
     return Card(
@@ -1323,6 +1323,24 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
     if (result == true) {
       final colaboradorProvider = context.read<ColaboradorProvider>();
       await colaboradorProvider.cargarColaboradores();
+    }
+  }
+
+  // Método para obtener el color del indicador activo
+  Color _getIndicadorColor(String filtro) {
+    switch (filtro) {
+      case 'todos':
+        return Colors.green; // Las tarjetas serán verdes cuando "Total" esté activo
+      case 'activos':
+        return Colors.green;
+      case 'inactivos':
+        return Colors.red;
+      case 'finiquitados':
+        return Colors.orange;
+      case 'preenrolados':
+        return Colors.blue;
+      default:
+        return Colors.grey;
     }
   }
 }
