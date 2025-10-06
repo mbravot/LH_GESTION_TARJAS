@@ -54,7 +54,7 @@ class _SueldoBaseScreenState extends State<SueldoBaseScreen> {
 
   void _filtrarSueldos() {
     final sueldoBaseProvider = Provider.of<SueldoBaseProvider>(context, listen: false);
-    sueldoBaseProvider.setFiltroColaborador(_searchQuery);
+    sueldoBaseProvider.setFiltroBusqueda(_searchQuery);
   }
 
   void _limpiarFiltros() {
@@ -252,25 +252,30 @@ class _SueldoBaseScreenState extends State<SueldoBaseScreen> {
   }
 
   Widget _buildFiltros(SueldoBaseProvider sueldoBaseProvider) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: isDark ? Colors.grey[800] : Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Filtros',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            'Filtros Avanzados',
+            style: TextStyle(
               fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: AppTheme.primaryColor,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           
           // Filtro por colaborador
           DropdownButtonFormField<String>(
@@ -300,42 +305,23 @@ class _SueldoBaseScreenState extends State<SueldoBaseScreen> {
           
           const SizedBox(height: 16),
           
-          // Filtro por fecha
-          DropdownButtonFormField<String>(
-            value: sueldoBaseProvider.filtroFecha.isEmpty 
-                ? null 
-                : sueldoBaseProvider.filtroFecha,
-            decoration: const InputDecoration(
-              labelText: 'Fecha',
-              border: OutlineInputBorder(),
-            ),
-            items: [
-              const DropdownMenuItem<String>(
-                value: '',
-                child: Text('Todas las fechas'),
-              ),
-              ...sueldoBaseProvider.fechasUnicas.map((fecha) {
-                return DropdownMenuItem<String>(
-                  value: fecha,
-                  child: Text(fecha),
-                );
-              }),
-            ],
-            onChanged: (value) {
-              sueldoBaseProvider.setFiltroFecha(value ?? '');
-            },
-          ),
-          
-          const SizedBox(height: 16),
-          
           // Botón limpiar filtros
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _limpiarFiltros,
-              icon: const Icon(Icons.clear_all),
-              label: const Text('Limpiar filtros'),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _limpiarFiltros,
+                  icon: const Icon(Icons.clear_all),
+                  label: const Text('Limpiar filtros'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -343,7 +329,7 @@ class _SueldoBaseScreenState extends State<SueldoBaseScreen> {
   }
 
   Widget _buildEstadisticas(SueldoBaseProvider sueldoBaseProvider) {
-    final grupos = sueldoBaseProvider.sueldosBaseAgrupados;
+    final grupos = sueldoBaseProvider.sueldosBaseAgrupadosFiltrados;
     final totalColaboradores = grupos.length;
     final totalSueldos = sueldoBaseProvider.sueldosBaseFiltrados.length;
     final totalMonto = sueldoBaseProvider.sueldosBaseFiltrados
@@ -392,31 +378,54 @@ class _SueldoBaseScreenState extends State<SueldoBaseScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: Colors.grey.withOpacity(0.3),
           width: 1,
         ),
-      ),
-      child: Column(
-        children: [
-          Icon(icono, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            valor,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          const SizedBox(height: 4),
-          Text(
-            titulo,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: color.withOpacity(0.8),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
-            textAlign: TextAlign.center,
+            child: Icon(icono, color: color.withOpacity(0.8), size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  valor,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -424,7 +433,7 @@ class _SueldoBaseScreenState extends State<SueldoBaseScreen> {
   }
 
   Widget _buildListaSueldosBase(SueldoBaseProvider sueldoBaseProvider) {
-    final grupos = sueldoBaseProvider.sueldosBaseAgrupados;
+    final grupos = sueldoBaseProvider.sueldosBaseAgrupadosFiltrados;
     final sueldos = sueldoBaseProvider.sueldosBaseFiltrados;
     
 
@@ -1448,8 +1457,7 @@ class _SueldoBaseScreenState extends State<SueldoBaseScreen> {
   // Método para verificar si hay filtros activos
   bool _tieneFiltrosActivos(SueldoBaseProvider sueldoBaseProvider) {
     return sueldoBaseProvider.filtroColaborador.isNotEmpty || 
-           sueldoBaseProvider.filtroFecha.isNotEmpty ||
-           _searchQuery.isNotEmpty;
+           sueldoBaseProvider.filtroBusqueda.isNotEmpty;
   }
 
   @override

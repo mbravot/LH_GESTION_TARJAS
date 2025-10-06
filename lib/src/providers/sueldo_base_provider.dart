@@ -18,17 +18,74 @@ class SueldoBaseProvider extends ChangeNotifier with SessionHandlerMixin {
   // Filtros
   String _filtroColaborador = '';
   String _filtroFecha = '';
+  String _filtroBusqueda = '';
 
   // Getters
   List<SueldoBaseAgrupado> get sueldosBaseAgrupados => _sueldosBaseAgrupados;
   List<SueldoBase> get sueldosBase => _sueldosBase;
   List<SueldoBase> get sueldosBaseFiltrados => _sueldosBaseFiltrados;
+  
+  // Grupos filtrados
+  List<SueldoBaseAgrupado> get sueldosBaseAgrupadosFiltrados {
+    if (_filtroColaborador.isEmpty && _filtroBusqueda.isEmpty) {
+      return _sueldosBaseAgrupados;
+    }
+    
+    return _sueldosBaseAgrupados.where((grupo) {
+      return grupo.sueldosBase.any((sueldo) {
+        // Aplicar los mismos filtros que en _aplicarFiltros
+        if (_filtroColaborador.isNotEmpty) {
+          if (sueldo.nombreColaborador == null || 
+              sueldo.nombreColaborador != _filtroColaborador) {
+            return false;
+          }
+        }
+
+        if (_filtroBusqueda.isNotEmpty) {
+          if (sueldo.nombreColaborador == null || 
+              !sueldo.nombreColaborador!.toLowerCase().contains(_filtroBusqueda.toLowerCase())) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+    }).map((grupo) {
+      // Filtrar los sueldos dentro del grupo
+      final sueldosFiltrados = grupo.sueldosBase.where((sueldo) {
+        if (_filtroColaborador.isNotEmpty) {
+          if (sueldo.nombreColaborador == null || 
+              sueldo.nombreColaborador != _filtroColaborador) {
+            return false;
+          }
+        }
+
+        if (_filtroBusqueda.isNotEmpty) {
+          if (sueldo.nombreColaborador == null || 
+              !sueldo.nombreColaborador!.toLowerCase().contains(_filtroBusqueda.toLowerCase())) {
+            return false;
+          }
+        }
+
+        return true;
+      }).toList();
+      
+      return SueldoBaseAgrupado(
+        colaboradorId: grupo.colaboradorId,
+        nombreColaborador: grupo.nombreColaborador,
+        rut: grupo.rut,
+        nombreSucursal: grupo.nombreSucursal,
+        sueldosBase: sueldosFiltrados,
+      );
+    }).where((grupo) => grupo.sueldosBase.isNotEmpty).toList();
+  }
   bool get isLoading => _isLoading;
   String? get error => _error;
 
   // Getters para filtros
   String get filtroColaborador => _filtroColaborador;
   String get filtroFecha => _filtroFecha;
+  String get filtroBusqueda => _filtroBusqueda;
 
   // Listas únicas para filtros
   List<String> get colaboradoresUnicos {
@@ -143,25 +200,32 @@ class SueldoBaseProvider extends ChangeNotifier with SessionHandlerMixin {
     _aplicarFiltros();
   }
 
+  void setFiltroBusqueda(String value) {
+    _filtroBusqueda = value;
+    _aplicarFiltros();
+  }
+
   void limpiarFiltros() {
     _filtroColaborador = '';
     _filtroFecha = '';
+    _filtroBusqueda = '';
     _aplicarFiltros();
   }
 
   void _aplicarFiltros() {
     _sueldosBaseFiltrados = _sueldosBase.where((sueldo) {
-      // Filtro por colaborador
+      // Filtro por colaborador (dropdown)
       if (_filtroColaborador.isNotEmpty) {
         if (sueldo.nombreColaborador == null || 
-            !sueldo.nombreColaborador!.toLowerCase().contains(_filtroColaborador.toLowerCase())) {
+            sueldo.nombreColaborador != _filtroColaborador) {
           return false;
         }
       }
 
-      // Filtro por fecha
-      if (_filtroFecha.isNotEmpty) {
-        if (sueldo.fechaFormateada != _filtroFecha) {
+      // Filtro por búsqueda (texto libre)
+      if (_filtroBusqueda.isNotEmpty) {
+        if (sueldo.nombreColaborador == null || 
+            !sueldo.nombreColaborador!.toLowerCase().contains(_filtroBusqueda.toLowerCase())) {
           return false;
         }
       }

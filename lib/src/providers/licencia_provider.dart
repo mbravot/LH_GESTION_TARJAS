@@ -59,11 +59,34 @@ class LicenciaProvider extends ChangeNotifier {
     return filtradas;
   }
 
-  // Estadísticas
-  int get totalLicencias => _licencias.length;
-  int get licenciasProgramadas => _licencias.where((l) => l.estado == 'Programada').length;
-  int get licenciasEnCurso => _licencias.where((l) => l.estado == 'En curso').length;
-  int get licenciasCompletadas => _licencias.where((l) => l.estado == 'Completada').length;
+  // Estadísticas - usar licencias filtradas si hay filtros activos
+  int get totalLicencias {
+    final licencias = _filtroBusqueda.isNotEmpty || _filtroColaborador != null || _filtroMes != null || _filtroAno != null 
+        ? licenciasFiltradas 
+        : _licencias;
+    return licencias.length;
+  }
+  
+  int get licenciasProgramadas {
+    final licencias = _filtroBusqueda.isNotEmpty || _filtroColaborador != null || _filtroMes != null || _filtroAno != null 
+        ? licenciasFiltradas 
+        : _licencias;
+    return licencias.where((l) => l.estado == 'Programada').length;
+  }
+  
+  int get licenciasEnCurso {
+    final licencias = _filtroBusqueda.isNotEmpty || _filtroColaborador != null || _filtroMes != null || _filtroAno != null 
+        ? licenciasFiltradas 
+        : _licencias;
+    return licencias.where((l) => l.estado == 'En curso').length;
+  }
+  
+  int get licenciasCompletadas {
+    final licencias = _filtroBusqueda.isNotEmpty || _filtroColaborador != null || _filtroMes != null || _filtroAno != null 
+        ? licenciasFiltradas 
+        : _licencias;
+    return licencias.where((l) => l.estado == 'Completada').length;
+  }
 
   // Listas únicas para filtros
   List<int> get mesesUnicos {

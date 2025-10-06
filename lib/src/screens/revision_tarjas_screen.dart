@@ -2227,7 +2227,7 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                         icon: Icon(_showFiltros ? Icons.filter_list_off : Icons.filter_list),
                         label: Text(_showFiltros ? 'Ocultar filtros' : 'Mostrar filtros'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: tieneFiltrosActivos ? Colors.orange : AppTheme.primaryColor,
+                          backgroundColor: tieneFiltrosActivos ? Colors.orange : Colors.grey[500],
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -2411,24 +2411,6 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        tarjaProvider.cargarTarjas();
-                      },
-                      icon: const Icon(Icons.search),
-                      label: const Text('Aplicar filtros'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ],
@@ -2441,7 +2423,13 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
   Widget _buildEstadisticas() {
     return Consumer<TarjaProvider>(
       builder: (context, tarjaProvider, child) {
-        final tarjas = tarjaProvider.tarjas;
+        // Usar las tarjas filtradas si hay filtros avanzados aplicados
+        final tarjas = tarjaProvider.filtroContratista.isNotEmpty || 
+                       tarjaProvider.filtroTipoRendimiento.isNotEmpty ||
+                       tarjaProvider.filtroUsuario.isNotEmpty ||
+                       tarjaProvider.filtroTipoCeco.isNotEmpty
+            ? tarjaProvider.tarjasFiltradas
+            : tarjaProvider.tarjas;
         
         // Calcular estadísticas
         final total = tarjas.where((t) => t.idEstadoactividad == '1' || t.idEstadoactividad == '2').length;
@@ -2533,12 +2521,12 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
         cursor: SystemMouseCursors.click,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isActive ? color.withOpacity(0.2) : color.withOpacity(0.1),
+            color: isActive ? color.withOpacity(0.2) : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isActive ? color : color.withOpacity(0.3),
+              color: isActive ? color : Colors.grey.withOpacity(0.3),
               width: isActive ? 2 : 1,
             ),
             boxShadow: isActive ? [
@@ -2547,45 +2535,49 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
-            ] : null,
+            ] : [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          child: Column(
+          child: Row(
             children: [
-              Icon(
-                icono,
-                color: color,
-                size: 24,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isActive ? color.withOpacity(0.3) : color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icono, color: isActive ? color : color.withOpacity(0.8), size: 20),
               ),
-              const SizedBox(height: 4),
-              Text(
-                valor,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: color,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      titulo,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isActive ? color : Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      valor,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isActive ? color : Colors.grey[800],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                titulo,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: color.withOpacity(0.8),
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              if (isActive) ...[
-                const SizedBox(height: 4),
-                Container(
-                  width: 20,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ],
             ],
           ),
         ),

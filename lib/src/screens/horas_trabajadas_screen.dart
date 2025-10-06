@@ -421,24 +421,6 @@ class _HorasTrabajadasScreenState extends State<HorasTrabajadasScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        provider.cargarHorasTrabajadas();
-                      },
-                      icon: const Icon(Icons.search),
-                      label: const Text('Aplicar filtros'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ],

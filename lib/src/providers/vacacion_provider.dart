@@ -59,11 +59,34 @@ class VacacionProvider extends ChangeNotifier {
     return filtradas;
   }
 
-  // Estadísticas
-  int get totalVacaciones => _vacaciones.length;
-  int get vacacionesProgramadas => _vacaciones.where((v) => v.estado == 'Programada').length;
-  int get vacacionesEnCurso => _vacaciones.where((v) => v.estado == 'En curso').length;
-  int get vacacionesCompletadas => _vacaciones.where((v) => v.estado == 'Completada').length;
+  // Estadísticas - usar vacaciones filtradas si hay filtros activos
+  int get totalVacaciones {
+    final vacaciones = _filtroBusqueda.isNotEmpty || _filtroColaborador != null || _filtroMes != null || _filtroAno != null 
+        ? vacacionesFiltradas 
+        : _vacaciones;
+    return vacaciones.length;
+  }
+  
+  int get vacacionesProgramadas {
+    final vacaciones = _filtroBusqueda.isNotEmpty || _filtroColaborador != null || _filtroMes != null || _filtroAno != null 
+        ? vacacionesFiltradas 
+        : _vacaciones;
+    return vacaciones.where((v) => v.estado == 'Programada').length;
+  }
+  
+  int get vacacionesEnCurso {
+    final vacaciones = _filtroBusqueda.isNotEmpty || _filtroColaborador != null || _filtroMes != null || _filtroAno != null 
+        ? vacacionesFiltradas 
+        : _vacaciones;
+    return vacaciones.where((v) => v.estado == 'En curso').length;
+  }
+  
+  int get vacacionesCompletadas {
+    final vacaciones = _filtroBusqueda.isNotEmpty || _filtroColaborador != null || _filtroMes != null || _filtroAno != null 
+        ? vacacionesFiltradas 
+        : _vacaciones;
+    return vacaciones.where((v) => v.estado == 'Completada').length;
+  }
 
   // Listas únicas para filtros
   List<int> get mesesUnicos {

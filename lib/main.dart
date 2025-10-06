@@ -17,6 +17,7 @@ import 'src/providers/horas_extras_otroscecos_provider.dart';
 import 'src/providers/bono_especial_provider.dart';
 import 'src/providers/contratista_provider.dart';
 import 'src/providers/sueldo_base_provider.dart';
+import 'src/providers/tarja_propio_provider.dart';
 import 'src/providers/notification_provider.dart';
 import 'src/providers/sidebar_provider.dart';
 import 'src/screens/splash_screen.dart';
@@ -45,6 +46,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => BonoEspecialProvider()),
         ChangeNotifierProvider(create: (_) => ContratistaProvider()),
         ChangeNotifierProvider(create: (_) => SueldoBaseProvider()),
+        ChangeNotifierProvider(create: (context) => TarjaPropioProvider(context.read<AuthProvider>())),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => SidebarProvider()),
       ],

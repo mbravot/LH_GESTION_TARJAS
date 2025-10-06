@@ -279,24 +279,6 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        provider.cargarContratistas();
-                      },
-                      icon: const Icon(Icons.search),
-                      label: const Text('Aplicar filtros'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ],
@@ -363,12 +345,12 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
     return GestureDetector(
       onTap: () => _aplicarFiltro(filtro),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isActivo ? color.withOpacity(0.2) : color.withOpacity(0.1),
+          color: isActivo ? color.withOpacity(0.2) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isActivo ? color : color.withOpacity(0.3),
+            color: isActivo ? color : Colors.grey.withOpacity(0.3),
             width: isActivo ? 2 : 1,
           ),
           boxShadow: isActivo ? [
@@ -377,40 +359,49 @@ class _ContratistaScreenState extends State<ContratistaScreen> {
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
-          ] : null,
+          ] : [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: Column(
+        child: Row(
           children: [
-            Icon(icono, color: color, size: 24),
-            const SizedBox(height: 4),
-            Text(
-              valor,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isActivo ? color.withOpacity(0.3) : color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icono, color: isActivo ? color : color.withOpacity(0.8), size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titulo,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isActivo ? color : Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    valor,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isActivo ? color : Colors.grey[800],
+                    ),
+                  ),
+                ],
               ),
             ),
-            Text(
-              titulo,
-              style: TextStyle(
-                fontSize: 10,
-                color: color.withOpacity(0.8),
-                fontWeight: isActivo ? FontWeight.w600 : FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (isActivo) ...[
-              const SizedBox(height: 4),
-              Container(
-                width: 20,
-                height: 3,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ],
           ],
         ),
       ),

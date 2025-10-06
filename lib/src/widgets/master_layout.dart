@@ -16,6 +16,7 @@ import '../providers/bono_especial_provider.dart';
 import '../providers/trabajador_provider.dart';
 import '../providers/contratista_provider.dart';
 import '../providers/sueldo_base_provider.dart';
+import '../providers/tarja_propio_provider.dart';
 import '../theme/app_theme.dart';
 import '../screens/revision_tarjas_screen.dart';
 import '../screens/aprobacion_tarjas_screen.dart';
@@ -30,6 +31,7 @@ import '../screens/bono_especial_screen.dart';
 import '../screens/trabajador_screen.dart';
 import '../screens/contratista_screen.dart';
 import '../screens/sueldo_base_screen.dart';
+import '../screens/tarja_propio_screen.dart';
 import '../screens/indicadores_screen.dart';
 import '../screens/ejemplo_permisos_screen.dart';
 import '../screens/info_screen.dart';
@@ -69,6 +71,7 @@ class _MasterLayoutState extends State<MasterLayout>
     {'key': 'trabajadores', 'screen': TrabajadorScreen(), 'title': 'Trabajadores'},
     {'key': 'contratistas', 'screen': ContratistaScreen(), 'title': 'Contratistas'},
     {'key': 'sueldos_base', 'screen': SueldoBaseScreen(), 'title': 'Sueldos Base'},
+    {'key': 'tarjas_propios', 'screen': TarjaPropioScreen(), 'title': 'Tarjas Propios'},
     {'key': 'ejemplo_permisos', 'screen': EjemploPermisosScreen(), 'title': 'Ejemplo de Permisos'},
     {'key': 'info', 'screen': const InfoScreen(), 'title': 'Acerca de'},
     {'key': 'cambiar_clave', 'screen': const CambiarClaveScreen(), 'title': 'Cambiar Contraseña'},
@@ -147,6 +150,7 @@ class _MasterLayoutState extends State<MasterLayout>
       final trabajadorProvider = Provider.of<TrabajadorProvider>(context, listen: false);
       final contratistaProvider = Provider.of<ContratistaProvider>(context, listen: false);
       final sueldoBaseProvider = Provider.of<SueldoBaseProvider>(context, listen: false);
+      final tarjaPropioProvider = Provider.of<TarjaPropioProvider>(context, listen: false);
       
       // Limpiar cache de tarjas primero
       tarjaProvider.limpiarCacheRendimientos();
@@ -165,6 +169,7 @@ class _MasterLayoutState extends State<MasterLayout>
         trabajadorProvider.cargarTrabajadores(),
         contratistaProvider.cargarContratistas(),
         sueldoBaseProvider.cargarSueldosBase(),
+        tarjaPropioProvider.cargarTarjasPropios(),
       ]);
       
       // Mostrar mensaje de éxito
@@ -330,11 +335,17 @@ class _MasterLayoutState extends State<MasterLayout>
                                       screenKey: 'revision_tarjas',
                                     ),
                                     _buildMenuItem(
-                                      icon: Icons.fact_check,
+                                      icon: Icons.check,
                                       title: 'Aprobación de Tarjas',
                                       onTap: () => _navigateToScreen('aprobacion_tarjas'),
                                       permissionId: 3,
                                       screenKey: 'aprobacion_tarjas',
+                                    ),
+                                    _buildMenuItem(
+                                      icon: Icons.assignment,
+                                      title: 'Tarjas Propios',
+                                      onTap: () => _navigateToScreen('tarjas_propios'),
+                                      screenKey: 'tarjas_propios',
                                     ),
                                   ],
                                 ),
@@ -559,7 +570,8 @@ class _MasterLayoutState extends State<MasterLayout>
                             _screens[_currentScreenIndex]['key'] == 'bono_especial' ||
                             _screens[_currentScreenIndex]['key'] == 'trabajadores' ||
                             _screens[_currentScreenIndex]['key'] == 'contratistas' ||
-                            _screens[_currentScreenIndex]['key'] == 'sueldos_base')
+                            _screens[_currentScreenIndex]['key'] == 'sueldos_base' ||
+                            _screens[_currentScreenIndex]['key'] == 'tarjas_propios')
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                             decoration: BoxDecoration(

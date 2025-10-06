@@ -280,11 +280,15 @@ class PermisoProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Método para obtener estadísticas
+  // Método para obtener estadísticas - usar permisos filtrados si hay filtros activos
   Map<String, int> get estadisticas {
-    final creados = _permisos.where((p) => p.estado == 'Creado').length;
-    final aprobados = _permisos.where((p) => p.estado == 'Aprobado').length;
-    final total = _permisos.length;
+    final permisos = _filtroBusqueda.isNotEmpty || _filtroColaborador.isNotEmpty || _filtroTipo.isNotEmpty || _filtroMes != null || _filtroAno != null 
+        ? _permisosFiltrados 
+        : _permisos;
+    
+    final creados = permisos.where((p) => p.estado == 'Creado').length;
+    final aprobados = permisos.where((p) => p.estado == 'Aprobado').length;
+    final total = permisos.length;
 
     return {
       'creados': creados,

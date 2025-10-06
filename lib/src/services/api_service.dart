@@ -2820,6 +2820,88 @@ class ApiService {
     }
   }
 
+  // ========== MÉTODOS PARA TARJAS PROPIOS ==========
 
+  // Obtener tarjas propios con filtros opcionales
+  static Future<Map<String, dynamic>> obtenerTarjasPropios({
+    DateTime? fechaDesde,
+    DateTime? fechaHasta,
+    String? idColaborador,
+    int? idLabor,
+    int? idCeco,
+    int? idEstadoActividad,
+  }) async {
+    final token = await _authService.getToken();
+    if (token == null) {
+      throw Exception('Token no encontrado');
+    }
+
+    final uri = Uri.parse('$baseUrl/tarja-propio/').replace(
+      queryParameters: {
+        if (fechaDesde != null) 'fecha_desde': fechaDesde.toIso8601String().split('T')[0],
+        if (fechaHasta != null) 'fecha_hasta': fechaHasta.toIso8601String().split('T')[0],
+        if (idColaborador != null) 'id_colaborador': idColaborador,
+        if (idLabor != null) 'id_labor': idLabor.toString(),
+        if (idCeco != null) 'id_ceco': idCeco.toString(),
+        if (idEstadoActividad != null) 'id_estadoactividad': idEstadoActividad.toString(),
+      },
+    );
+
+    final response = await http.get(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['error'] ?? 'Error al obtener tarjas propios');
+    }
+  }
+
+  // Obtener resumen de tarjas propios por colaborador
+  static Future<Map<String, dynamic>> obtenerTarjasPropiosResumen({
+    DateTime? fechaDesde,
+    DateTime? fechaHasta,
+    String? idColaborador,
+    int? idLabor,
+    int? idCeco,
+    int? idEstadoActividad,
+  }) async {
+    final token = await _authService.getToken();
+    if (token == null) {
+      throw Exception('Token no encontrado');
+    }
+
+    final uri = Uri.parse('$baseUrl/tarja-propio/resumen').replace(
+      queryParameters: {
+        if (fechaDesde != null) 'fecha_desde': fechaDesde.toIso8601String().split('T')[0],
+        if (fechaHasta != null) 'fecha_hasta': fechaHasta.toIso8601String().split('T')[0],
+        if (idColaborador != null) 'id_colaborador': idColaborador,
+        if (idLabor != null) 'id_labor': idLabor.toString(),
+        if (idCeco != null) 'id_ceco': idCeco.toString(),
+        if (idEstadoActividad != null) 'id_estadoactividad': idEstadoActividad.toString(),
+      },
+    );
+
+    final response = await http.get(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['error'] ?? 'Error al obtener resumen de tarjas propios');
+    }
+  }
 
 } 

@@ -56,10 +56,27 @@ class TrabajadorProvider extends ChangeNotifier {
     return filtrados;
   }
 
-  // Estadísticas
-  int get totalTrabajadores => _trabajadores.length;
-  int get trabajadoresActivos => _trabajadores.where((t) => t.idEstado == '1').length;
-  int get trabajadoresInactivos => _trabajadores.where((t) => t.idEstado == '2').length;
+  // Estadísticas - usar trabajadores filtrados si hay filtros activos
+  int get totalTrabajadores {
+    final trabajadores = _filtroBusqueda.isNotEmpty || _filtroContratista != null || _filtroPorcentaje != null 
+        ? trabajadoresFiltrados 
+        : _trabajadores;
+    return trabajadores.length;
+  }
+  
+  int get trabajadoresActivos {
+    final trabajadores = _filtroBusqueda.isNotEmpty || _filtroContratista != null || _filtroPorcentaje != null 
+        ? trabajadoresFiltrados 
+        : _trabajadores;
+    return trabajadores.where((t) => t.idEstado == '1').length;
+  }
+  
+  int get trabajadoresInactivos {
+    final trabajadores = _filtroBusqueda.isNotEmpty || _filtroContratista != null || _filtroPorcentaje != null 
+        ? trabajadoresFiltrados 
+        : _trabajadores;
+    return trabajadores.where((t) => t.idEstado == '2').length;
+  }
 
   void setAuthProvider(AuthProvider authProvider) {
     _authProvider = authProvider;

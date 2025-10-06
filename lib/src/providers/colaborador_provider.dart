@@ -59,12 +59,31 @@ class ColaboradorProvider extends ChangeNotifier {
     return filtrados;
   }
 
-  // Estadísticas
-  int get totalColaboradores => _colaboradores.length;
-  int get colaboradoresActivos => _colaboradores.where((c) => c.idEstado == '1').length;
-  int get colaboradoresInactivos => _colaboradores.where((c) => c.idEstado == '2').length;
-  int get colaboradoresFiniquitados => _colaboradores.where((c) => c.fechaFiniquito != null && c.fechaFiniquito!.isNotEmpty).length;
-  int get colaboradoresPreenrolados => _colaboradores.where((c) => c.rut == null || c.rut!.isEmpty).length;
+  // Estadísticas - usar colaboradores filtrados si hay filtros activos
+  int get totalColaboradores {
+    final colaboradores = _filtroBusqueda.isNotEmpty ? colaboradoresFiltrados : _colaboradores;
+    return colaboradores.length;
+  }
+  
+  int get colaboradoresActivos {
+    final colaboradores = _filtroBusqueda.isNotEmpty ? colaboradoresFiltrados : _colaboradores;
+    return colaboradores.where((c) => c.idEstado == '1').length;
+  }
+  
+  int get colaboradoresInactivos {
+    final colaboradores = _filtroBusqueda.isNotEmpty ? colaboradoresFiltrados : _colaboradores;
+    return colaboradores.where((c) => c.idEstado == '2').length;
+  }
+  
+  int get colaboradoresFiniquitados {
+    final colaboradores = _filtroBusqueda.isNotEmpty ? colaboradoresFiltrados : _colaboradores;
+    return colaboradores.where((c) => c.fechaFiniquito != null && c.fechaFiniquito!.isNotEmpty).length;
+  }
+  
+  int get colaboradoresPreenrolados {
+    final colaboradores = _filtroBusqueda.isNotEmpty ? colaboradoresFiltrados : _colaboradores;
+    return colaboradores.where((c) => c.rut == null || c.rut!.isEmpty).length;
+  }
 
   void setAuthProvider(AuthProvider authProvider) {
     _authProvider = authProvider;
