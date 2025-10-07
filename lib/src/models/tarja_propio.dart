@@ -203,15 +203,15 @@ class TarjaPropioResumen {
 
   factory TarjaPropioResumen.fromJson(Map<String, dynamic> json) {
     return TarjaPropioResumen(
-      idColaborador: json['id_colaborador'] ?? '',
-      colaborador: json['colaborador'] ?? '',
-      totalRegistros: json['total_registros'] ?? 0,
-      totalHorasTrabajadas: json['total_horas_trabajadas'] ?? '',
-      totalRendimiento: (json['total_rendimiento'] ?? 0.0).toDouble(),
-      totalHorasExtras: (json['total_horas_extras'] ?? 0.0).toDouble(),
-      totalValorHe: (json['total_valor_he'] ?? 0.0).toDouble(),
-      totalLiquidoTratoDia: (json['total_liquido_trato_dia'] ?? 0.0).toDouble(),
-      promedioRendimiento: (json['promedio_rendimiento'] ?? 0.0).toDouble(),
+      idColaborador: json['id_colaborador']?.toString() ?? '',
+      colaborador: json['colaborador']?.toString() ?? '',
+      totalRegistros: TarjaPropio._parseInt(json['total_registros']),
+      totalHorasTrabajadas: json['total_horas_trabajadas']?.toString() ?? '',
+      totalRendimiento: TarjaPropio._parseDouble(json['total_rendimiento']),
+      totalHorasExtras: TarjaPropio._parseDouble(json['total_horas_extras']),
+      totalValorHe: TarjaPropio._parseDouble(json['total_valor_he']),
+      totalLiquidoTratoDia: TarjaPropio._parseDouble(json['total_liquido_trato_dia']),
+      promedioRendimiento: TarjaPropio._parseDouble(json['promedio_rendimiento']),
     );
   }
 }

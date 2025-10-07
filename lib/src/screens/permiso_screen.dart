@@ -42,7 +42,7 @@ class _PermisoScreenState extends State<PermisoScreen> {
       
       // Configurar el PermisoProvider para escuchar cambios de sucursal
       permisoProvider.setAuthProvider(authProvider);
-      colaboradorProvider.setAuthProvider(authProvider);
+      colaboradorProvider.configureAuthProvider(authProvider);
       
       // Cargar datos
       permisoProvider.inicializar();

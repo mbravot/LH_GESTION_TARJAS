@@ -37,7 +37,11 @@ void main() async {
         ChangeNotifierProvider(create: (_) => PermisosProvider()),
         ChangeNotifierProvider(create: (_) => PermisoProvider()),
         ChangeNotifierProvider(create: (_) => TrabajadorProvider()),
-        ChangeNotifierProvider(create: (_) => ColaboradorProvider.instance),
+        ChangeNotifierProvider(create: (context) {
+          final colaboradorProvider = ColaboradorProvider.instance;
+          colaboradorProvider.configureAuthProvider(context.read<AuthProvider>());
+          return colaboradorProvider;
+        }),
         ChangeNotifierProvider(create: (_) => VacacionProvider()),
         ChangeNotifierProvider(create: (_) => LicenciaProvider()),
         ChangeNotifierProvider(create: (_) => HorasTrabajadasProvider()),

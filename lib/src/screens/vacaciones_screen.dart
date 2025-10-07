@@ -46,7 +46,7 @@ class _VacacionesScreenState extends State<VacacionesScreen> {
       
       // Configurar el VacacionProvider para escuchar cambios de sucursal
       vacacionProvider.setAuthProvider(authProvider);
-      colaboradorProvider.setAuthProvider(authProvider);
+      colaboradorProvider.configureAuthProvider(authProvider);
       
       // Cargar datos
       vacacionProvider.cargarVacaciones();

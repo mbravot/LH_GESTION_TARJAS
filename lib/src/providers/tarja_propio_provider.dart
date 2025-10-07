@@ -16,6 +16,7 @@ class TarjaPropioProvider extends ChangeNotifier {
   DateTime? _fechaDesde;
   DateTime? _fechaHasta;
   String? _idColaborador;
+  String? _idSupervisor;
   int? _idLabor;
   int? _idCeco;
   int? _idEstadoActividad;
@@ -33,15 +34,241 @@ class TarjaPropioProvider extends ChangeNotifier {
   String? get error => _error;
   int get total => _total;
   
-  // Estadísticas por estado
-  int get totalTarjas => _tarjasPropios.length;
-  int get tarjasCreadas => _tarjasPropios.where((t) => t.idEstadoActividad == 1).length;
-  int get tarjasRevisadas => _tarjasPropios.where((t) => t.idEstadoActividad == 2).length;
-  int get tarjasAprobadas => _tarjasPropios.where((t) => t.idEstadoActividad == 3).length;
+  // Estadísticas por estado - igual que Colaboradores: solo filtro por búsqueda, NO por indicadores
+  int get totalTarjas {
+    // Solo usar filtros de búsqueda, NO filtros de indicadores
+    return _tarjasPropios.length;
+  }
+  
+  int get tarjasCreadas {
+    // Solo usar filtros de búsqueda, NO filtros de indicadores
+    return _tarjasPropios.where((t) => t.idEstadoActividad == 1).length;
+  }
+  
+  int get tarjasRevisadas {
+    // Solo usar filtros de búsqueda, NO filtros de indicadores
+    return _tarjasPropios.where((t) => t.idEstadoActividad == 2).length;
+  }
+  
+  int get tarjasAprobadas {
+    // Solo usar filtros de búsqueda, NO filtros de indicadores
+    return _tarjasPropios.where((t) => t.idEstadoActividad == 3).length;
+  }
+  
+  // Datos únicos para filtros (actualizados dinámicamente)
+  List<Map<String, dynamic>> get supervisoresUnicos {
+    final supervisores = <String, Map<String, dynamic>>{};
+    for (final tarja in _tarjasPropios) {
+      // Aplicar filtros existentes
+      if (_aplicaFiltros(tarja) && tarja.usuario.isNotEmpty) {
+        supervisores[tarja.usuario] = {
+          'id': tarja.usuario,
+          'nombre': tarja.usuario,
+        };
+      }
+    }
+    return supervisores.values.toList()
+      ..sort((a, b) => a['nombre'].compareTo(b['nombre']));
+  }
+  
+  List<Map<String, dynamic>> get cecosUnicos {
+    final cecos = <String, Map<String, dynamic>>{};
+    for (final tarja in _tarjasPropios) {
+      // Aplicar filtros existentes
+      if (_aplicaFiltros(tarja) && tarja.centroDeCosto.isNotEmpty) {
+        cecos[tarja.centroDeCosto] = {
+          'id': tarja.idCeco,
+          'nombre': tarja.centroDeCosto,
+        };
+      }
+    }
+    return cecos.values.toList()
+      ..sort((a, b) => a['nombre'].compareTo(b['nombre']));
+  }
+
+  List<Map<String, dynamic>> get laboresUnicas {
+    final labores = <String, Map<String, dynamic>>{};
+    for (final tarja in _tarjasPropios) {
+      // Aplicar filtros existentes
+      if (_aplicaFiltros(tarja) && tarja.labor.isNotEmpty) {
+        labores[tarja.labor] = {
+          'id': tarja.idLabor,
+          'nombre': tarja.labor,
+        };
+      }
+    }
+    return labores.values.toList()
+      ..sort((a, b) => a['nombre'].compareTo(b['nombre']));
+  }
+
+  // Getter público para obtener tarjas filtradas (sin incluir filtro de estado)
+  List<TarjaPropio> get tarjasPropiosFiltradasSinEstado {
+    return _tarjasPropios.where((tarja) => _aplicaFiltrosSinEstado(tarja)).toList();
+  }
+
+  // Método auxiliar para verificar si una tarja aplica a los filtros actuales
+  bool _aplicaFiltros(TarjaPropio tarja) {
+    // Si hay filtro de colaborador, verificar que coincida
+    if (_idColaborador != null && tarja.idColaborador != _idColaborador) {
+      return false;
+    }
+    
+    // Si hay filtro de supervisor, verificar que coincida
+    if (_idSupervisor != null && tarja.usuario != _idSupervisor) {
+      return false;
+    }
+    
+    // Si hay filtro de labor, verificar que coincida
+    if (_idLabor != null && tarja.idLabor != _idLabor) {
+      return false;
+    }
+    
+    // Si hay filtro de CECO, verificar que coincida
+    if (_idCeco != null && tarja.idCeco != _idCeco) {
+      return false;
+    }
+    
+    // Si hay filtro de mes, verificar que coincida
+    if (_filtroMes != null) {
+      try {
+        final fecha = DateTime.parse(tarja.fecha);
+        if (fecha.month != _filtroMes) {
+          return false;
+        }
+      } catch (e) {
+        return false;
+      }
+    }
+    
+    // Si hay filtro de año, verificar que coincida
+    if (_filtroAno != null) {
+      try {
+        final fecha = DateTime.parse(tarja.fecha);
+        if (fecha.year != _filtroAno) {
+          return false;
+        }
+      } catch (e) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
+  // Método auxiliar para verificar si una tarja aplica a los filtros actuales (sin incluir estado)
+  bool _aplicaFiltrosSinEstado(TarjaPropio tarja) {
+    // Si hay filtro de colaborador, verificar que coincida
+    if (_idColaborador != null && tarja.idColaborador != _idColaborador) {
+      return false;
+    }
+    
+    // Si hay filtro de supervisor, verificar que coincida
+    if (_idSupervisor != null && tarja.usuario != _idSupervisor) {
+      return false;
+    }
+    
+    // Si hay filtro de labor, verificar que coincida
+    if (_idLabor != null && tarja.idLabor != _idLabor) {
+      return false;
+    }
+    
+    // Si hay filtro de CECO, verificar que coincida
+    if (_idCeco != null && tarja.idCeco != _idCeco) {
+      return false;
+    }
+    
+    // Si hay filtro de mes, verificar que coincida
+    if (_filtroMes != null) {
+      try {
+        final fecha = DateTime.parse(tarja.fecha);
+        if (fecha.month != _filtroMes) {
+          return false;
+        }
+      } catch (e) {
+        return false;
+      }
+    }
+    
+    // Si hay filtro de año, verificar que coincida
+    if (_filtroAno != null) {
+      try {
+        final fecha = DateTime.parse(tarja.fecha);
+        if (fecha.year != _filtroAno) {
+          return false;
+        }
+      } catch (e) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
+  // Método auxiliar para verificar si hay filtros avanzados activos (sin incluir estado)
+  bool _tieneFiltrosAvanzados() {
+    return _idColaborador != null || 
+           _idSupervisor != null || 
+           _idLabor != null || 
+           _idCeco != null || 
+           _filtroMes != null || 
+           _filtroAno != null;
+  }
+
+  // Método auxiliar para aplicar filtros sin incluir el filtro de estado
+  List<TarjaPropio> _aplicarFiltrosSinEstado() {
+    return _tarjasPropios.where((tarja) {
+      // Si hay filtro de colaborador, verificar que coincida
+      if (_idColaborador != null && tarja.idColaborador != _idColaborador) {
+        return false;
+      }
+      
+      // Si hay filtro de supervisor, verificar que coincida
+      if (_idSupervisor != null && tarja.usuario != _idSupervisor) {
+        return false;
+      }
+      
+      // Si hay filtro de labor, verificar que coincida
+      if (_idLabor != null && tarja.idLabor != _idLabor) {
+        return false;
+      }
+      
+      // Si hay filtro de CECO, verificar que coincida
+      if (_idCeco != null && tarja.idCeco != _idCeco) {
+        return false;
+      }
+      
+      // Si hay filtro de mes, verificar que coincida
+      if (_filtroMes != null) {
+        try {
+          final fecha = DateTime.parse(tarja.fecha);
+          if (fecha.month != _filtroMes) {
+            return false;
+          }
+        } catch (e) {
+          return false;
+        }
+      }
+      
+      // Si hay filtro de año, verificar que coincida
+      if (_filtroAno != null) {
+        try {
+          final fecha = DateTime.parse(tarja.fecha);
+          if (fecha.year != _filtroAno) {
+            return false;
+          }
+        } catch (e) {
+          return false;
+        }
+      }
+      
+      return true;
+    }).toList();
+  }
   
   DateTime? get fechaDesde => _fechaDesde;
   DateTime? get fechaHasta => _fechaHasta;
   String? get idColaborador => _idColaborador;
+  String? get idSupervisor => _idSupervisor;
   int? get idLabor => _idLabor;
   int? get idCeco => _idCeco;
   int? get idEstadoActividad => _idEstadoActividad;
@@ -72,19 +299,6 @@ class TarjaPropioProvider extends ChangeNotifier {
     return anos.toList()..sort();
   }
 
-  // Obtener labores únicas de los datos
-  List<Map<String, dynamic>> get laboresUnicas {
-    final labores = <String, Map<String, dynamic>>{};
-    for (var tarja in _tarjasPropios) {
-      if (tarja.labor != null && tarja.labor!.isNotEmpty) {
-        labores[tarja.labor!] = {
-          'id': tarja.idLabor,
-          'nombre': tarja.labor,
-        };
-      }
-    }
-    return labores.values.toList()..sort((a, b) => a['nombre'].compareTo(b['nombre']));
-  }
 
   void _onAuthChanged() {
     if (_authProvider.isAuthenticated) {
@@ -177,6 +391,23 @@ class TarjaPropioProvider extends ChangeNotifier {
 
   void setIdColaborador(String? id) {
     _idColaborador = id;
+    // Limpiar supervisor cuando se selecciona colaborador
+    if (id != null) {
+      _idSupervisor = null;
+    }
+    // Notificar cambios inmediatamente para actualizar la UI
+    notifyListeners();
+    aplicarFiltros();
+  }
+
+  void setIdSupervisor(String? id) {
+    _idSupervisor = id;
+    // Limpiar colaborador cuando se selecciona supervisor
+    if (id != null) {
+      _idColaborador = null;
+    }
+    // Notificar cambios inmediatamente para actualizar la UI
+    notifyListeners();
     aplicarFiltros();
   }
 
@@ -209,6 +440,7 @@ class TarjaPropioProvider extends ChangeNotifier {
     _fechaDesde = null;
     _fechaHasta = null;
     _idColaborador = null;
+    _idSupervisor = null;
     _idLabor = null;
     _idCeco = null;
     _idEstadoActividad = null;

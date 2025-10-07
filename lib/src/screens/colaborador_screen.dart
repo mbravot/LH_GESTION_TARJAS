@@ -38,7 +38,7 @@ class _ColaboradorScreenState extends State<ColaboradorScreen> {
       final colaboradorProvider = context.read<ColaboradorProvider>();
       
       // Configurar el ColaboradorProvider para escuchar cambios de sucursal
-      colaboradorProvider.setAuthProvider(authProvider);
+      colaboradorProvider.configureAuthProvider(authProvider);
       colaboradorProvider.cargarColaboradores();
     });
   }

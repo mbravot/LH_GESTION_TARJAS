@@ -46,7 +46,7 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
       
       // Configurar el LicenciaProvider para escuchar cambios de sucursal
       licenciaProvider.setAuthProvider(authProvider);
-      colaboradorProvider.setAuthProvider(authProvider);
+      colaboradorProvider.configureAuthProvider(authProvider);
       
       // Cargar datos
       licenciaProvider.cargarLicencias();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/colaborador.dart';
 import '../services/api_service.dart';
+import '../services/loading_manager.dart';
 import 'auth_provider.dart';
 
 class ColaboradorProvider extends ChangeNotifier {
@@ -20,7 +21,15 @@ class ColaboradorProvider extends ChangeNotifier {
   
   // Reset singleton (para testing o logout)
   static void reset() {
+    LoadingManager().clearQueue();
     _instance = null;
+  }
+  
+  // Configurar AuthProvider después de la creación
+  void configureAuthProvider(AuthProvider authProvider) {
+    _authProvider = authProvider;
+    // Escuchar cambios en el AuthProvider para recargar colaboradores cuando cambie la sucursal
+    _authProvider!.addListener(_onAuthChanged);
   }
   
   String _filtroEstado = 'todos';
@@ -85,44 +94,34 @@ class ColaboradorProvider extends ChangeNotifier {
     return colaboradores.where((c) => c.rut == null || c.rut!.isEmpty).length;
   }
 
-  void setAuthProvider(AuthProvider authProvider) {
-    _authProvider = authProvider;
-    // Escuchar cambios en el AuthProvider para recargar colaboradores cuando cambie la sucursal
-    _authProvider!.addListener(_onAuthChanged);
-  }
 
   // Cache para evitar recargas múltiples
-  String? _lastSucursalId;
   DateTime? _lastLoadTime;
-  static const Duration _minInterval = Duration(seconds: 2);
 
   // Escuchar cambios en el AuthProvider
   void _onAuthChanged() {
-    
-    // NO reaccionar si el AuthProvider está cambiando sucursal
-    if (_authProvider?.isChangingSucursal == true) {
-      return;
-    }
-    
-    if (_authProvider?.userData != null) {
-      final currentSucursalId = _authProvider!.userData!['id_sucursal']?.toString();
-      final now = DateTime.now();
-      
-      // Verificar si realmente cambió la sucursal y ha pasado suficiente tiempo
-      if (currentSucursalId != _lastSucursalId && 
-          (_lastLoadTime == null || now.difference(_lastLoadTime!) > _minInterval)) {
-        _lastSucursalId = currentSucursalId;
-        _lastLoadTime = now;
-        cargarColaboradores();
-      } else {
-      }
-    } else {
-    }
+    // DESACTIVAR COMPLETAMENTE el listener para evitar bucle infinito
+    return;
   }
 
   // Cargar colaboradores
   Future<void> cargarColaboradores() async {
+    // PROTECCIÓN SIMPLE: Si ya está cargando, no hacer nada
+    if (_isLoading) {
+      return;
+    }
     
+    // PROTECCIÓN SIMPLE: Si ya se cargó recientemente, no recargar
+    final now = DateTime.now();
+    if (_lastLoadTime != null && now.difference(_lastLoadTime!) < const Duration(seconds: 5)) {
+      return;
+    }
+    
+    _lastLoadTime = now;
+    return _loadColaboradores();
+  }
+
+  Future<void> _loadColaboradores() async {
     // Evitar cargas múltiples simultáneas
     if (_isLoading) {
       return;
@@ -133,11 +132,11 @@ class ColaboradorProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-
+    
     _isLoading = true;
     _error = null;
     notifyListeners();
-
+    
     try {
       final data = await ApiService.obtenerColaboradores();
       _colaboradores = data.map((json) => Colaborador.fromJson(json)).toList();

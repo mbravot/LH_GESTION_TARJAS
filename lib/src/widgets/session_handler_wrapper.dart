@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../screens/login_screen.dart';
+import 'loading_screen.dart';
 import 'dart:async';
 
 class SessionHandlerWrapper extends StatefulWidget {
@@ -18,6 +19,7 @@ class SessionHandlerWrapper extends StatefulWidget {
 
 class _SessionHandlerWrapperState extends State<SessionHandlerWrapper> with WidgetsBindingObserver {
   AuthProvider? _authProvider;
+  bool _isInitializing = true;
 
   @override
   void initState() {
@@ -37,24 +39,33 @@ class _SessionHandlerWrapperState extends State<SessionHandlerWrapper> with Widg
   Future<void> _checkInitialAuthStatus() async {
     final authProvider = context.read<AuthProvider>();
     
-    // Verificar si hay un token almacenado y si es válido
-    final token = await authProvider.getToken();
-    
-    if (token != null) {
-      // Si hay token, verificar si es válido
-      final isValid = await authProvider.isTokenValid();
-      if (!isValid) {
-        // Si el token no es válido, limpiar la sesión
-        await authProvider.handleSessionExpired();
-      }
-    } else {
-      // Si no hay token, asegurar que el estado sea no autenticado
-      if (authProvider.isAuthenticated) {
-        await authProvider.handleSessionExpired();
+          try {
+            // Verificar si hay un token almacenado y si es válido
+            final token = await authProvider.getToken();
+
+            if (token != null) {
+              // Si hay token, verificar si es válido
+              final isValid = await authProvider.isTokenValid();
+              if (!isValid) {
+                // Si el token no es válido, limpiar la sesión
+                await authProvider.handleSessionExpired();
+              }
+            } else {
+              // Si no hay token, asegurar que el estado sea no autenticado
+              if (authProvider.isAuthenticated) {
+                await authProvider.handleSessionExpired();
+              }
+            }
+          } catch (e) {
+            // Error en verificación de autenticación
+          } finally {
+      // Marcar como inicializado
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+        });
       }
     }
-    
-    // El listener ya se agregó en initState
   }
 
   @override
@@ -131,6 +142,13 @@ class _SessionHandlerWrapperState extends State<SessionHandlerWrapper> with Widg
 
   @override
   Widget build(BuildContext context) {
+    // Mostrar pantalla de carga mientras se inicializa
+    if (_isInitializing) {
+      return const LoadingScreen(
+        message: 'Inicializando aplicación...',
+      );
+    }
+    
     return widget.child;
   }
 }

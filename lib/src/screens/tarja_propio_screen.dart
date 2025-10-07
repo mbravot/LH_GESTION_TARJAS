@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/tarja_propio_provider.dart';
@@ -88,37 +88,42 @@ class _TarjaPropioScreenState extends State<TarjaPropioScreen> {
       _filtroActivo = filtro;
     });
     
-    final tarjaPropioProvider = context.read<TarjaPropioProvider>();
-    if (filtro != null) {
-      switch (filtro) {
-        case 'creadas':
-          tarjaPropioProvider.setIdEstadoActividad(1);
-          break;
-        case 'revisadas':
-          tarjaPropioProvider.setIdEstadoActividad(2);
-          break;
-        case 'aprobadas':
-          tarjaPropioProvider.setIdEstadoActividad(3);
-          break;
-        default: // 'todos'
-          tarjaPropioProvider.setIdEstadoActividad(null);
-          break;
-      }
-    } else {
-      tarjaPropioProvider.setIdEstadoActividad(null);
-    }
+    // NO aplicar filtros al provider - solo cambiar el estado visual
+    // Los indicadores deben mostrar números fijos, solo la tabla se filtra
   }
 
   List<TarjaPropio> _filtrarTarjas(List<TarjaPropio> tarjas) {
-    if (_searchQuery.isEmpty) {
-      return tarjas;
+    var tarjasFiltradas = tarjas;
+    
+    // Filtrar por búsqueda
+    if (_searchQuery.isNotEmpty) {
+      tarjasFiltradas = tarjasFiltradas.where((tarja) {
+        return tarja.colaborador.toLowerCase().contains(_searchQuery) ||
+               tarja.labor.toLowerCase().contains(_searchQuery) ||
+               tarja.centroDeCosto.toLowerCase().contains(_searchQuery);
+      }).toList();
     }
     
-    return tarjas.where((tarja) {
-      return tarja.colaborador.toLowerCase().contains(_searchQuery) ||
-             tarja.labor.toLowerCase().contains(_searchQuery) ||
-             tarja.centroDeCosto.toLowerCase().contains(_searchQuery);
-    }).toList();
+    // Filtrar por indicador seleccionado
+    if (_filtroActivo != null) {
+      switch (_filtroActivo) {
+        case 'creadas':
+          tarjasFiltradas = tarjasFiltradas.where((tarja) => tarja.idEstadoActividad == 1).toList();
+          break;
+        case 'revisadas':
+          tarjasFiltradas = tarjasFiltradas.where((tarja) => tarja.idEstadoActividad == 2).toList();
+          break;
+        case 'aprobadas':
+          tarjasFiltradas = tarjasFiltradas.where((tarja) => tarja.idEstadoActividad == 3).toList();
+          break;
+        case 'todos':
+        default:
+          // No filtrar por estado
+          break;
+      }
+    }
+    
+    return tarjasFiltradas;
   }
 
   List<TarjaPropioResumen> _filtrarResumen(List<TarjaPropioResumen> resumen) {
@@ -369,6 +374,12 @@ class _TarjaPropioScreenState extends State<TarjaPropioScreen> {
   Widget _buildEstadisticas() {
     return Consumer<TarjaPropioProvider>(
       builder: (context, provider, child) {
+        // Usar los getters del provider igual que en Colaboradores
+        final total = provider.totalTarjas;
+        final creadas = provider.tarjasCreadas;
+        final revisadas = provider.tarjasRevisadas;
+        final aprobadas = provider.tarjasAprobadas;
+        
         return Container(
           margin: const EdgeInsets.all(16),
           child: Row(
@@ -376,7 +387,7 @@ class _TarjaPropioScreenState extends State<TarjaPropioScreen> {
               Expanded(
                 child: _buildTarjetaEstadistica(
                   'Total',
-                  provider.totalTarjas.toString(),
+                  total.toString(),
                   Icons.assessment,
                   Colors.purple,
                   'todos',
@@ -388,7 +399,7 @@ class _TarjaPropioScreenState extends State<TarjaPropioScreen> {
               Expanded(
                 child: _buildTarjetaEstadistica(
                   'Creadas',
-                  provider.tarjasCreadas.toString(),
+                  creadas.toString(),
                   Icons.create,
                   Colors.orange,
                   'creadas',
@@ -400,7 +411,7 @@ class _TarjaPropioScreenState extends State<TarjaPropioScreen> {
               Expanded(
                 child: _buildTarjetaEstadistica(
                   'Revisadas',
-                  provider.tarjasRevisadas.toString(),
+                  revisadas.toString(),
                   Icons.check_circle,
                   Colors.blue,
                   'revisadas',
@@ -412,7 +423,7 @@ class _TarjaPropioScreenState extends State<TarjaPropioScreen> {
               Expanded(
                 child: _buildTarjetaEstadistica(
                   'Aprobadas',
-                  provider.tarjasAprobadas.toString(),
+                  aprobadas.toString(),
                   Icons.verified,
                   Colors.green,
                   'aprobadas',
@@ -529,6 +540,18 @@ class _TarjaPropioScreenState extends State<TarjaPropioScreen> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
+                    child: _buildSupervisorField(provider),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildCecoField(provider),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
                     child: _buildLaborField(provider),
                   ),
                 ],
@@ -640,7 +663,7 @@ class _TarjaPropioScreenState extends State<TarjaPropioScreen> {
         Consumer<ColaboradorProvider>(
           builder: (context, colaboradorProvider, child) {
             return DropdownButtonFormField<String>(
-              value: provider.idColaborador,
+              value: _getValidColaboradorValue(provider, colaboradorProvider),
               decoration: InputDecoration(
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -659,9 +682,99 @@ class _TarjaPropioScreenState extends State<TarjaPropioScreen> {
                   );
                 }),
               ],
-              onChanged: (value) => provider.setIdColaborador(value),
+              onChanged: (value) {
+                provider.setIdColaborador(value);
+                // Limpiar supervisor cuando se cambia el colaborador
+                if (value != null) {
+                  provider.setIdSupervisor(null);
+                }
+              },
             );
           },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSupervisorField(TarjaPropioProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Supervisor',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey,
+          ),
+        ),
+        const SizedBox(height: 4),
+        DropdownButtonFormField<String>(
+          value: _getValidSupervisorValue(provider),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          items: [
+            const DropdownMenuItem<String>(
+              value: null,
+              child: Text('Todos los supervisores'),
+            ),
+            ...provider.supervisoresUnicos.map((supervisor) {
+              return DropdownMenuItem<String>(
+                value: supervisor['id'],
+                child: Text(supervisor['nombre']),
+              );
+            }),
+          ],
+          onChanged: (value) {
+            provider.setIdSupervisor(value);
+            // Limpiar colaborador cuando se cambia el supervisor
+            if (value != null) {
+              provider.setIdColaborador(null);
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCecoField(TarjaPropioProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'CECO',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey,
+          ),
+        ),
+        const SizedBox(height: 4),
+        DropdownButtonFormField<int>(
+          value: provider.idCeco,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          items: [
+            const DropdownMenuItem<int>(
+              value: null,
+              child: Text('Todos los CECOs'),
+            ),
+            ...provider.cecosUnicos.map((ceco) {
+              return DropdownMenuItem<int>(
+                value: ceco['id'],
+                child: Text(ceco['nombre']),
+              );
+            }),
+          ],
+          onChanged: (value) => provider.setIdCeco(value),
         ),
       ],
     );
@@ -706,39 +819,6 @@ class _TarjaPropioScreenState extends State<TarjaPropioScreen> {
     );
   }
 
-  Widget _buildCecoField(TarjaPropioProvider provider) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Centro de Costo',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey,
-          ),
-        ),
-        const SizedBox(height: 4),
-        DropdownButtonFormField<int>(
-          value: provider.idCeco,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          ),
-          items: [
-            const DropdownMenuItem<int>(
-              value: null,
-              child: Text('Todos los CECOs'),
-            ),
-            // Aquí podrías agregar los CECOs disponibles
-          ],
-          onChanged: (value) => provider.setIdCeco(value),
-        ),
-      ],
-    );
-  }
 
   Widget _buildEstadoField(TarjaPropioProvider provider) {
     return Column(
@@ -927,123 +1007,204 @@ class _TarjaPropioScreenState extends State<TarjaPropioScreen> {
           final tarjas = grupo.value;
           final isExpanded = _expansionState[index];
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+          return ExpansionTile(
+            initiallyExpanded: true,
+            onExpansionChanged: (isExpanded) {
+              if (_expansionState.length > index) {
+                setState(() {
+                  _expansionState[index] = isExpanded;
+                });
+              }
+            },
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: EdgeInsets.zero,
+            shape: Border(),
+            collapsedShape: Border(),
+            collapsedIconColor: AppTheme.primaryColor,
+            iconColor: AppTheme.primaryColor,
+            title: Row(
+              children: [
+                Icon(
+                  Icons.calendar_month,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _formatearMesAno(mesAno),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${tarjas.length}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
                 ),
               ],
             ),
-            child: Column(
-              children: [
-                // Header del grupo
-                InkWell(
-                  onTap: () {
-                    setState(() {
-                      _expansionState[index] = !_expansionState[index];
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
+            children: [
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: MediaQuery.of(context).size.width - 100,
+                  ),
+                  child: Theme(
+                    data: Theme.of(context).copyWith(
+                      dividerColor: const Color(0xFFBDBDBD),
+                      dividerTheme: const DividerThemeData(
+                        color: Color(0xFFBDBDBD),
+                        thickness: 1,
+                        space: 0,
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          isExpanded ? Icons.expand_less : Icons.expand_more,
-                          color: AppTheme.primaryColor,
-                        ),
-                        const SizedBox(width: 12),
-                        Icon(
-                          Icons.calendar_month,
-                          color: AppTheme.primaryColor,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _formatearMesAno(mesAno),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${tarjas.length} registros',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
+                    child: DataTable(
+                      headingRowColor: MaterialStateProperty.all(AppTheme.primaryColor.withOpacity(0.1)),
+                      dataRowColor: MaterialStateProperty.resolveWith<Color?>(
+                        (Set<MaterialState> states) {
+                          if (states.contains(MaterialState.hovered)) {
+                            return AppTheme.primaryColor.withOpacity(0.05);
+                          }
+                          return null;
+                        },
+                      ),
+                      dividerThickness: 1,
+                      border: TableBorder(
+                        top: const BorderSide(color: Color(0xFFBDBDBD), width: 1),
+                        bottom: const BorderSide(color: Color(0xFFBDBDBD), width: 1),
+                        left: const BorderSide(color: Color(0xFFBDBDBD), width: 1),
+                        right: const BorderSide(color: Color(0xFFBDBDBD), width: 1),
+                        horizontalInside: const BorderSide(color: Color(0xFFBDBDBD), width: 1),
+                        verticalInside: const BorderSide(color: Color(0xFFBDBDBD), width: 1),
+                      ),
+                    columnSpacing: 12,
+                    horizontalMargin: 8,
+                  columns: [
+                    DataColumn(
+                      label: Row(
+                        children: [
+                          Icon(Icons.calendar_today, size: 16, color: AppTheme.primaryColor),
+                          const SizedBox(width: 8),
+                          const Text('Fecha', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    DataColumn(
+                      label: Row(
+                        children: [
+                          Icon(Icons.person, size: 16, color: AppTheme.primaryColor),
+                          const SizedBox(width: 8),
+                          const Text('Colaborador', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    DataColumn(
+                      label: Row(
+                        children: [
+                          Icon(Icons.supervisor_account, size: 16, color: AppTheme.primaryColor),
+                          const SizedBox(width: 8),
+                          const Text('Supervisor', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    DataColumn(
+                      label: Row(
+                        children: [
+                          Icon(Icons.work, size: 16, color: AppTheme.primaryColor),
+                          const SizedBox(width: 8),
+                          const Text('Labor', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    DataColumn(
+                      label: Row(
+                        children: [
+                          Icon(Icons.business, size: 16, color: AppTheme.primaryColor),
+                          const SizedBox(width: 8),
+                          const Text('CECO', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    DataColumn(
+                      label: Row(
+                        children: [
+                          Icon(Icons.description, size: 16, color: AppTheme.primaryColor),
+                          const SizedBox(width: 8),
+                          const Text('Detalle CECO', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    DataColumn(
+                      label: Row(
+                        children: [
+                          Icon(Icons.straighten, size: 16, color: AppTheme.primaryColor),
+                          const SizedBox(width: 8),
+                          const Text('Unidad', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    DataColumn(
+                      label: Row(
+                        children: [
+                          Icon(Icons.trending_up, size: 16, color: AppTheme.primaryColor),
+                          const SizedBox(width: 8),
+                          const Text('Rendimiento', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    DataColumn(
+                      label: Row(
+                        children: [
+                          Icon(Icons.attach_money, size: 16, color: AppTheme.primaryColor),
+                          const SizedBox(width: 8),
+                          const Text('Tarifa', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    DataColumn(
+                      label: Row(
+                        children: [
+                          Icon(Icons.payments, size: 16, color: AppTheme.primaryColor),
+                          const SizedBox(width: 8),
+                          const Text('Líquido', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ],
+                  rows: tarjas.map((tarja) {
+                    return DataRow(
+                      cells: [
+                        DataCell(Text(tarja.fechaFormateadaChilena)),
+                        DataCell(Text(tarja.colaborador)),
+                        DataCell(Text(tarja.usuario)),
+                        DataCell(Text(tarja.labor)),
+                        DataCell(Text(tarja.centroDeCosto)),
+                        DataCell(Text(tarja.detalleCeco)),
+                        DataCell(Text(tarja.unidad)),
+                        DataCell(Text(tarja.rendimiento.toStringAsFixed(2))),
+                        DataCell(Text(_formatearMoneda(tarja.tarifa))),
+                        DataCell(Text(_formatearMoneda(tarja.liquidoTratoDia))),
                       ],
+                    );
+                  }).toList(),
                     ),
                   ),
                 ),
-                
-                // Contenido expandible
-                if (isExpanded) ...[
-                  const SizedBox(height: 8),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      columns: const [
-                        DataColumn(label: Text('Fecha', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Colaborador', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Labor', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('CECO', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Horas', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Rendimiento', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Tarifa', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Líquido', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('H.E.', style: TextStyle(fontWeight: FontWeight.bold))),
-                                DataColumn(label: Text('Valor H.E.', style: TextStyle(fontWeight: FontWeight.bold))),
-                                DataColumn(label: Text('Total H.E.', style: TextStyle(fontWeight: FontWeight.bold))),
-                                DataColumn(label: Text('Estado', style: TextStyle(fontWeight: FontWeight.bold))),
-                      ],
-                      rows: tarjas.map((tarja) {
-                        return DataRow(
-                          cells: [
-                            DataCell(Text(tarja.fechaFormateadaChilena)),
-                            DataCell(Text(tarja.colaborador)),
-                            DataCell(Text(tarja.labor)),
-                            DataCell(Text(tarja.centroDeCosto)),
-                            DataCell(Text(_formatearHora(tarja.horasTrabajadas))),
-                            DataCell(Text(tarja.rendimiento.toStringAsFixed(2))),
-                            DataCell(Text(_formatearMoneda(tarja.tarifa))),
-                            DataCell(Text(_formatearMoneda(tarja.liquidoTratoDia))),
-                            DataCell(Text(tarja.horasExtras.toStringAsFixed(1))),
-                            DataCell(Text(_formatearMoneda(tarja.valorHe))),
-                            DataCell(Text(_formatearMoneda(tarja.totalHe))),
-                            DataCell(Text(tarja.estado)),
-                          ],
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),
@@ -1100,17 +1261,114 @@ class _TarjaPropioScreenState extends State<TarjaPropioScreen> {
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: DataTable(
-          columns: const [
-            DataColumn(label: Text('Colaborador', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Registros', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Total Horas', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Total Rendimiento', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Total H.E.', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Total Valor H.E.', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Total Líquido', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Promedio Rend.', style: TextStyle(fontWeight: FontWeight.bold))),
-          ],
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: MediaQuery.of(context).size.width - 100,
+          ),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              dividerColor: const Color(0xFFBDBDBD),
+              dividerTheme: const DividerThemeData(
+                color: Color(0xFFBDBDBD),
+                thickness: 1,
+                space: 0,
+              ),
+            ),
+            child: DataTable(
+              headingRowColor: MaterialStateProperty.all(AppTheme.primaryColor.withOpacity(0.1)),
+              dataRowColor: MaterialStateProperty.resolveWith<Color?>(
+                (Set<MaterialState> states) {
+                  if (states.contains(MaterialState.hovered)) {
+                    return AppTheme.primaryColor.withOpacity(0.05);
+                  }
+                  return null;
+                },
+              ),
+              dividerThickness: 1,
+              border: TableBorder(
+                top: const BorderSide(color: Color(0xFFBDBDBD), width: 1),
+                bottom: const BorderSide(color: Color(0xFFBDBDBD), width: 1),
+                left: const BorderSide(color: Color(0xFFBDBDBD), width: 1),
+                right: const BorderSide(color: Color(0xFFBDBDBD), width: 1),
+                horizontalInside: const BorderSide(color: Color(0xFFBDBDBD), width: 1),
+                verticalInside: const BorderSide(color: Color(0xFFBDBDBD), width: 1),
+              ),
+            columnSpacing: 12,
+            horizontalMargin: 8,
+            columns: [
+              DataColumn(
+                label: Row(
+                  children: [
+                    Icon(Icons.person, size: 16, color: AppTheme.primaryColor),
+                    const SizedBox(width: 8),
+                    const Text('Colaborador', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              DataColumn(
+                label: Row(
+                  children: [
+                    Icon(Icons.numbers, size: 16, color: AppTheme.primaryColor),
+                    const SizedBox(width: 8),
+                    const Text('Registros', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              DataColumn(
+                label: Row(
+                  children: [
+                    Icon(Icons.access_time, size: 16, color: AppTheme.primaryColor),
+                    const SizedBox(width: 8),
+                    const Text('Total Horas', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              DataColumn(
+                label: Row(
+                  children: [
+                    Icon(Icons.trending_up, size: 16, color: AppTheme.primaryColor),
+                    const SizedBox(width: 8),
+                    const Text('Total Rendimiento', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              DataColumn(
+                label: Row(
+                  children: [
+                    Icon(Icons.schedule, size: 16, color: AppTheme.primaryColor),
+                    const SizedBox(width: 8),
+                    const Text('Total H.E.', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              DataColumn(
+                label: Row(
+                  children: [
+                    Icon(Icons.attach_money, size: 16, color: AppTheme.primaryColor),
+                    const SizedBox(width: 8),
+                    const Text('Total Valor H.E.', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              DataColumn(
+                label: Row(
+                  children: [
+                    Icon(Icons.account_balance_wallet, size: 16, color: AppTheme.primaryColor),
+                    const SizedBox(width: 8),
+                    const Text('Total Líquido', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              DataColumn(
+                label: Row(
+                  children: [
+                    Icon(Icons.analytics, size: 16, color: AppTheme.primaryColor),
+                    const SizedBox(width: 8),
+                    const Text('Promedio Rend.', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ],
           rows: resumenFiltrado.map((resumen) {
             return DataRow(
               cells: [
@@ -1125,8 +1383,33 @@ class _TarjaPropioScreenState extends State<TarjaPropioScreen> {
               ],
             );
           }).toList(),
+            ),
+          ),
         ),
       ),
     );
   }
+
+  String? _getValidSupervisorValue(TarjaPropioProvider provider) {
+    final currentValue = provider.idSupervisor;
+    if (currentValue == null) return null;
+    
+    // Verificar si el valor actual existe en la lista de opciones
+    final supervisores = provider.supervisoresUnicos;
+    final exists = supervisores.any((supervisor) => supervisor['id'] == currentValue);
+    
+    return exists ? currentValue : null;
+  }
+
+  String? _getValidColaboradorValue(TarjaPropioProvider provider, ColaboradorProvider colaboradorProvider) {
+    final currentValue = provider.idColaborador;
+    if (currentValue == null) return null;
+    
+    // Verificar si el valor actual existe en la lista de opciones
+    final colaboradores = colaboradorProvider.colaboradores;
+    final exists = colaboradores.any((colaborador) => colaborador.id == currentValue);
+    
+    return exists ? currentValue : null;
+  }
+
 }
