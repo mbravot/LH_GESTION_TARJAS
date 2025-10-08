@@ -71,28 +71,20 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      print('🔄 [AuthProvider] Iniciando login para: $email');
       final response = await _authService.login(email, password);
       _isAuthenticated = true;
       
-      print('🔄 [AuthProvider] Obteniendo datos del usuario...');
       // Cargar solo los datos básicos del usuario sin validación adicional
       _userData = await _authService.getCurrentUser();
       
       _isLoading = false;
       notifyListeners();
       
-      final endTime = DateTime.now();
-      final duration = endTime.difference(startTime);
-      print('✅ [AuthProvider] Login exitoso en ${duration.inMilliseconds}ms');
-      
       return true;
     } catch (e) {
       _error = e.toString();
       _isAuthenticated = false;
       _userData = null;
-      final duration = DateTime.now().difference(startTime);
-      print('❌ [AuthProvider] Error en login: $e (${duration.inMilliseconds}ms)');
       _isLoading = false;
       notifyListeners();
       return false;
@@ -228,7 +220,6 @@ class AuthProvider extends ChangeNotifier {
     _error = null;
 
     try {
-      print('🔄 [AuthProvider] Cambiando sucursal a: $idSucursal');
       final result = await _authService.cambiarSucursal(idSucursal);
       final resultStr = result.toString();
       
@@ -239,14 +230,9 @@ class AuthProvider extends ChangeNotifier {
           _userData!['nombre_sucursal'] = result['sucursal_nombre'];
         }
       } else {
-        print('🔄 [AuthProvider] Fallback: recargando datos completos del usuario...');
         // Fallback: recargar datos completos si no hay información en la respuesta
         await _loadUserData();
       }
-      
-      final endTime = DateTime.now();
-      final duration = endTime.difference(startTime);
-      print('✅ [AuthProvider] Cambio de sucursal exitoso en ${duration.inMilliseconds}ms');
       
       _isLoading = false;
       isChangingSucursal = false;

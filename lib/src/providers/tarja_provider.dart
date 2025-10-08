@@ -197,7 +197,6 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
       }
     } catch (e) {
       // Si falla la carga de usuarios, continuar con el mapeo estático
-      // print('⚠️ No se pudieron cargar usuarios: $e');
     }
   }
 

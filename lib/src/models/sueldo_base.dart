@@ -226,7 +226,6 @@ class SueldoBaseAgrupado {
       try {
         sueldosBaseJson = jsonDecode(json['sueldos_base']) as List<dynamic>;
       } catch (e) {
-        // print('❌ [SUELDO_BASE] Error al parsear sueldos_base string: $e');
         sueldosBaseJson = [];
       }
     }

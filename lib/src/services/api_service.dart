@@ -775,13 +775,11 @@ class ApiService {
     final startTime = DateTime.now();
     
     try {
-      print('🔄 [ApiService] Obteniendo token para colaboradores...');
       final token = await _authService.getToken();
       if (token == null) {
         throw Exception('Token no encontrado');
       }
 
-      print('🔄 [ApiService] Haciendo petición GET a /colaboradores...');
       final response = await http.get(
         Uri.parse('$baseUrl/colaboradores'),
         headers: {
@@ -790,14 +788,9 @@ class ApiService {
         },
       );
 
-      final endTime = DateTime.now();
-      final duration = endTime.difference(startTime);
-
       if (response.statusCode == 200) {
-        print('🔄 [ApiService] Procesando respuesta de colaboradores...');
         final List<dynamic> data = json.decode(response.body);
         final colaboradores = data.map((item) => Map<String, dynamic>.from(item)).toList();
-        print('✅ [ApiService] Colaboradores obtenidos: ${colaboradores.length} en ${duration.inMilliseconds}ms');
         return colaboradores;
       } else {
         final errorData = json.decode(response.body);
