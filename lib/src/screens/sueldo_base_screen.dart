@@ -329,13 +329,6 @@ class _SueldoBaseScreenState extends State<SueldoBaseScreen> {
   }
 
   Widget _buildEstadisticas(SueldoBaseProvider sueldoBaseProvider) {
-    final grupos = sueldoBaseProvider.sueldosBaseAgrupadosFiltrados;
-    final totalColaboradores = grupos.length;
-    final totalSueldos = sueldoBaseProvider.sueldosBaseFiltrados.length;
-    final totalMonto = sueldoBaseProvider.sueldosBaseFiltrados
-        .fold<int>(0, (sum, sueldo) => sum + sueldo.sueldobase);
-    final promedioSueldo = totalSueldos > 0 ? totalMonto / totalSueldos : 0;
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -343,7 +336,7 @@ class _SueldoBaseScreenState extends State<SueldoBaseScreen> {
           Expanded(
             child: _buildTarjetaEstadistica(
               'Colaboradores',
-              totalColaboradores.toString(),
+              sueldoBaseProvider.totalColaboradores.toString(),
               Icons.people,
               Colors.blue,
             ),
@@ -351,9 +344,24 @@ class _SueldoBaseScreenState extends State<SueldoBaseScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: _buildTarjetaEstadistica(
-              'Total Sueldos',
-              totalSueldos.toString(),
-              Icons.attach_money,
+              'Sueldo Más Bajo',
+              '\$${sueldoBaseProvider.sueldoMasBajo.toString().replaceAllMapped(
+                RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                (Match m) => '${m[1]}.',
+              )}',
+              Icons.trending_down,
+              Colors.red,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildTarjetaEstadistica(
+              'Sueldo Más Alto',
+              '\$${sueldoBaseProvider.sueldoMasAlto.toString().replaceAllMapped(
+                RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                (Match m) => '${m[1]}.',
+              )}',
+              Icons.trending_up,
               Colors.green,
             ),
           ),
@@ -361,11 +369,11 @@ class _SueldoBaseScreenState extends State<SueldoBaseScreen> {
           Expanded(
             child: _buildTarjetaEstadistica(
               'Promedio',
-              '\$${promedioSueldo.round().toString().replaceAllMapped(
+              '\$${sueldoBaseProvider.promedioSueldos.round().toString().replaceAllMapped(
                 RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
                 (Match m) => '${m[1]}.',
               )}',
-              Icons.trending_up,
+              Icons.analytics,
               Colors.orange,
             ),
           ),

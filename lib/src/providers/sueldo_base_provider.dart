@@ -87,6 +87,25 @@ class SueldoBaseProvider extends ChangeNotifier with SessionHandlerMixin {
   String get filtroFecha => _filtroFecha;
   String get filtroBusqueda => _filtroBusqueda;
 
+  // Indicadores estadísticos
+  int get totalColaboradores => _sueldosBaseAgrupados.length;
+  
+  int get sueldoMasBajo {
+    if (_sueldosBase.isEmpty) return 0;
+    return _sueldosBase.map((s) => s.sueldobase).reduce((a, b) => a < b ? a : b);
+  }
+  
+  int get sueldoMasAlto {
+    if (_sueldosBase.isEmpty) return 0;
+    return _sueldosBase.map((s) => s.sueldobase).reduce((a, b) => a > b ? a : b);
+  }
+  
+  double get promedioSueldos {
+    if (_sueldosBase.isEmpty) return 0.0;
+    final total = _sueldosBase.fold<int>(0, (sum, sueldo) => sum + sueldo.sueldobase);
+    return total / _sueldosBase.length;
+  }
+
   // Listas únicas para filtros
   List<String> get colaboradoresUnicos {
     final colaboradores = <String>{};
