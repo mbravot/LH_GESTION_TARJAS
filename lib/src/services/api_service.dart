@@ -2579,8 +2579,9 @@ class ApiService {
         throw Exception('Token no encontrado');
       }
 
+      print('ApiService: Obteniendo usuarios desde $baseUrl/usuarios/');
       final response = await http.get(
-        Uri.parse('$baseUrl/usuarios'),
+        Uri.parse('$baseUrl/usuarios/'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -2589,10 +2590,153 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
+        print('ApiService: Usuarios obtenidos: ${data.length}');
+        if (data.isNotEmpty) {
+          print('ApiService: Primer usuario: ${data.first}');
+        }
         return data.cast<Map<String, dynamic>>();
       } else {
         final errorData = json.decode(response.body);
         throw Exception(errorData['error'] ?? 'Error al obtener usuarios');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // ===== MÉTODOS DE USUARIOS =====
+
+  // Desactivar usuario (cambiar estado a inactivo)
+  static Future<void> desactivarUsuario(String usuarioId) async {
+    try {
+      print('ApiService: Desactivando usuario $usuarioId');
+      
+      // Obtener datos del usuario desde la lista de usuarios
+      final usuarios = await obtenerUsuarios();
+      final usuarioData = usuarios.firstWhere(
+        (usuario) => usuario['id'] == usuarioId,
+        orElse: () => throw Exception('Usuario no encontrado'),
+      );
+      
+      print('ApiService: Datos del usuario obtenidos: $usuarioData');
+      
+      // Extraer nombre y apellido del nombre_completo si no están disponibles individualmente
+      String nombre = usuarioData['nombre'] ?? '';
+      String apellidoPaterno = usuarioData['apellido_paterno'] ?? '';
+      
+      if (nombre.isEmpty && apellidoPaterno.isEmpty && usuarioData['nombre_completo'] != null) {
+        final nombreCompleto = usuarioData['nombre_completo'].toString();
+        final partes = nombreCompleto.split(' ');
+        if (partes.isNotEmpty) {
+          nombre = partes[0];
+          if (partes.length > 1) {
+            apellidoPaterno = partes[1];
+          }
+        }
+      }
+      
+      // Crear datos de actualización con solo el cambio de estado
+      final updateData = {
+        'usuario': usuarioData['usuario'],
+        'correo': usuarioData['correo'],
+        'id_sucursalactiva': usuarioData['id_sucursalactiva'],
+        'nombre': nombre,
+        'apellido_paterno': apellidoPaterno,
+        'id_estado': '2', // Estado inactivo
+      };
+
+      // Incluir apellido_materno si existe
+      if (usuarioData['apellido_materno'] != null && usuarioData['apellido_materno'].toString().isNotEmpty) {
+        updateData['apellido_materno'] = usuarioData['apellido_materno'];
+      }
+
+      print('ApiService: Datos de actualización para desactivar: $updateData');
+
+      // Usar el método actualizarUsuario existente
+      await actualizarUsuario(usuarioId, updateData);
+      print('ApiService: Usuario desactivado exitosamente');
+    } catch (e) {
+      print('ApiService: Error al desactivar usuario: $e');
+      throw Exception('Error al desactivar usuario: $e');
+    }
+  }
+
+  // Activar usuario (cambiar estado a activo)
+  static Future<void> activarUsuario(String usuarioId) async {
+    try {
+      print('ApiService: Activando usuario $usuarioId');
+      
+      // Obtener datos del usuario desde la lista de usuarios
+      final usuarios = await obtenerUsuarios();
+      final usuarioData = usuarios.firstWhere(
+        (usuario) => usuario['id'] == usuarioId,
+        orElse: () => throw Exception('Usuario no encontrado'),
+      );
+      
+      print('ApiService: Datos del usuario obtenidos: $usuarioData');
+      
+      // Extraer nombre y apellido del nombre_completo si no están disponibles individualmente
+      String nombre = usuarioData['nombre'] ?? '';
+      String apellidoPaterno = usuarioData['apellido_paterno'] ?? '';
+      
+      if (nombre.isEmpty && apellidoPaterno.isEmpty && usuarioData['nombre_completo'] != null) {
+        final nombreCompleto = usuarioData['nombre_completo'].toString();
+        final partes = nombreCompleto.split(' ');
+        if (partes.isNotEmpty) {
+          nombre = partes[0];
+          if (partes.length > 1) {
+            apellidoPaterno = partes[1];
+          }
+        }
+      }
+      
+      // Crear datos de actualización con solo el cambio de estado
+      final updateData = {
+        'usuario': usuarioData['usuario'],
+        'correo': usuarioData['correo'],
+        'id_sucursalactiva': usuarioData['id_sucursalactiva'],
+        'nombre': nombre,
+        'apellido_paterno': apellidoPaterno,
+        'id_estado': '1', // Estado activo
+      };
+
+      // Incluir apellido_materno si existe
+      if (usuarioData['apellido_materno'] != null && usuarioData['apellido_materno'].toString().isNotEmpty) {
+        updateData['apellido_materno'] = usuarioData['apellido_materno'];
+      }
+
+      print('ApiService: Datos de actualización para activar: $updateData');
+
+      // Usar el método actualizarUsuario existente
+      await actualizarUsuario(usuarioId, updateData);
+      print('ApiService: Usuario activado exitosamente');
+    } catch (e) {
+      print('ApiService: Error al activar usuario: $e');
+      throw Exception('Error al activar usuario: $e');
+    }
+  }
+
+  // Obtener usuario por ID
+  static Future<Map<String, dynamic>> obtenerUsuarioPorId(String usuarioId) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('Token no encontrado');
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/usuarios/$usuarioId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return Map<String, dynamic>.from(json.decode(response.body));
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al obtener usuario');
       }
     } catch (e) {
       throw Exception('Error de conexión: $e');
@@ -2898,6 +3042,222 @@ class ApiService {
     } else {
       final errorData = json.decode(response.body);
       throw Exception(errorData['error'] ?? 'Error al obtener resumen de tarjas propios');
+    }
+  }
+
+  // ===== MÉTODOS DE GESTIÓN DE USUARIOS =====
+  
+  // Crear usuario
+  static Future<Map<String, dynamic>> crearUsuario(Map<String, dynamic> usuarioData) async {
+    final token = await _authService.getToken();
+    if (token == null) {
+      throw Exception('Token no encontrado');
+    }
+
+    print('ApiService: Creando usuario');
+    print('ApiService: Datos enviados: $usuarioData');
+    print('ApiService: URL: $baseUrl/usuarios/');
+
+    // Limpiar datos para evitar problemas
+    final cleanData = Map<String, dynamic>.from(usuarioData);
+    cleanData.removeWhere((key, value) => value == null || value == '');
+    
+    print('ApiService: Datos limpios: $cleanData');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/usuarios/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(cleanData),
+    );
+
+    print('ApiService: Respuesta - Status: ${response.statusCode}');
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      print('ApiService: Error al crear usuario: ${errorData['error']}');
+      throw Exception(errorData['error'] ?? 'Error al crear usuario');
+    }
+  }
+
+  // Actualizar usuario
+        static Future<Map<String, dynamic>> actualizarUsuario(String usuarioId, Map<String, dynamic> usuarioData) async {
+          final token = await _authService.getToken();
+          if (token == null) {
+            throw Exception('Token no encontrado');
+          }
+
+          print('ApiService: Actualizando usuario $usuarioId');
+          print('ApiService: Longitud del ID: ${usuarioId.length}');
+          print('ApiService: Formato del ID: ${usuarioId.runtimeType}');
+          print('ApiService: ID contiene caracteres especiales: ${usuarioId.contains('-')}');
+          print('ApiService: ID es UUID válido: ${RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', caseSensitive: false).hasMatch(usuarioId)}');
+          print('ApiService: Datos enviados: $usuarioData');
+          print('ApiService: id_sucursalactiva en datos: ${usuarioData['id_sucursalactiva']}');
+          print('ApiService: URL: $baseUrl/usuarios/$usuarioId');
+
+    // Limpiar datos para evitar problemas
+    final cleanData = Map<String, dynamic>.from(usuarioData);
+    cleanData.removeWhere((key, value) => value == null || value == '');
+    
+    print('ApiService: Datos limpios: $cleanData');
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/usuarios/$usuarioId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(cleanData),
+    );
+
+    print('ApiService: Respuesta - Status: ${response.statusCode}');
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      print('ApiService: Error al actualizar usuario: ${errorData['error']}');
+      throw Exception(errorData['error'] ?? 'Error al actualizar usuario');
+    }
+  }
+
+  // Eliminar usuario
+  static Future<Map<String, dynamic>> eliminarUsuario(String usuarioId) async {
+    final token = await _authService.getToken();
+    if (token == null) {
+      throw Exception('Token no encontrado');
+    }
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/usuarios/$usuarioId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['error'] ?? 'Error al eliminar usuario');
+    }
+  }
+
+  // Obtener permisos disponibles
+  static Future<List<Map<String, dynamic>>> obtenerPermisosDisponibles() async {
+    final token = await _authService.getToken();
+    if (token == null) {
+      throw Exception('Token no encontrado');
+    }
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/usuarios/permisos-disponibles'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return List<Map<String, dynamic>>.from(data['permisos']);
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['error'] ?? 'Error al obtener permisos disponibles');
+    }
+  }
+
+  // Obtener permisos de un usuario específico
+  static Future<Map<String, dynamic>> obtenerPermisosUsuarioEspecifico(String usuarioId) async {
+    final token = await _authService.getToken();
+    if (token == null) {
+      throw Exception('Token no encontrado');
+    }
+
+    print('ApiService: Obteniendo permisos del usuario $usuarioId desde $baseUrl/usuarios/$usuarioId/permisos');
+    final response = await http.get(
+      Uri.parse('$baseUrl/usuarios/$usuarioId/permisos'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    print('ApiService: Respuesta permisos usuario - Status: ${response.statusCode}');
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      print('ApiService: Permisos del usuario: $data');
+      return data;
+    } else {
+      final errorData = json.decode(response.body);
+      print('ApiService: Error al obtener permisos del usuario: ${errorData['error']}');
+      throw Exception(errorData['error'] ?? 'Error al obtener permisos del usuario');
+    }
+  }
+
+  // Obtener sucursales disponibles
+  static Future<List<Map<String, dynamic>>> obtenerSucursales() async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) {
+        throw Exception('Token no encontrado');
+      }
+
+      print('ApiService: Obteniendo sucursales desde $baseUrl/colaboradores/opciones-crear');
+      final response = await http.get(
+        Uri.parse('$baseUrl/colaboradores/opciones-crear'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('ApiService: Respuesta sucursales - Status: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> sucursales = data['sucursales'] ?? [];
+        print('ApiService: Sucursales encontradas: ${sucursales.length}');
+        return sucursales.cast<Map<String, dynamic>>();
+      } else {
+        final errorData = json.decode(response.body);
+        print('ApiService: Error al obtener sucursales: ${errorData['error']}');
+        throw Exception(errorData['error'] ?? 'Error al obtener sucursales');
+      }
+    } catch (e) {
+      print('ApiService: Error de conexión al obtener sucursales: $e');
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  // Obtener sucursales de un usuario específico
+  static Future<Map<String, dynamic>> obtenerSucursalesUsuario(String usuarioId) async {
+    final token = await _authService.getToken();
+    if (token == null) {
+      throw Exception('Token no encontrado');
+    }
+
+    print('ApiService: Obteniendo sucursales del usuario $usuarioId desde $baseUrl/usuarios/$usuarioId/sucursales');
+    final response = await http.get(
+      Uri.parse('$baseUrl/usuarios/$usuarioId/sucursales'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    print('ApiService: Respuesta sucursales usuario - Status: ${response.statusCode}');
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      print('ApiService: Sucursales del usuario: $data');
+      return data;
+    } else {
+      final errorData = json.decode(response.body);
+      print('ApiService: Error al obtener sucursales del usuario: ${errorData['error']}');
+      throw Exception(errorData['error'] ?? 'Error al obtener sucursales del usuario');
     }
   }
 

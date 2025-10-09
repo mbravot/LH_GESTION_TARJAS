@@ -119,9 +119,10 @@ class LicenciaProvider extends ChangeNotifier {
 
   // Escuchar cambios en el AuthProvider
   void _onAuthChanged() {
-    // Recargar licencias cuando cambie la sucursal
+    // Solo limpiar datos, no cargar automáticamente
     if (_authProvider?.userData != null) {
-      cargarLicencias();
+      _licencias = [];
+      notifyListeners();
     }
   }
 
@@ -130,6 +131,11 @@ class LicenciaProvider extends ChangeNotifier {
     if (_authProvider == null) {
       _error = 'AuthProvider no configurado';
       notifyListeners();
+      return;
+    }
+
+    // Si ya hay datos, no recargar
+    if (_licencias.isNotEmpty && !_isLoading) {
       return;
     }
 

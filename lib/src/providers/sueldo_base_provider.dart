@@ -133,7 +133,11 @@ class SueldoBaseProvider extends ChangeNotifier with SessionHandlerMixin {
   }
 
   void _onAuthChanged() {
-    _checkAndUpdateSucursal();
+    // Solo limpiar datos, no cargar automáticamente
+    if (_authProvider?.userData != null) {
+      _sueldosBase = [];
+      notifyListeners();
+    }
   }
 
   // Verificar si cambió la sucursal y actualizar si es necesario
@@ -158,6 +162,11 @@ class SueldoBaseProvider extends ChangeNotifier with SessionHandlerMixin {
     if (_idSucursal == null) {
       _error = 'No se ha especificado una sucursal';
       notifyListeners();
+      return;
+    }
+
+    // Si ya hay datos, no recargar
+    if (_sueldosBase.isNotEmpty && !_isLoading) {
       return;
     }
 

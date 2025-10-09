@@ -7,6 +7,7 @@ import '../providers/permisos_provider.dart';
 import '../providers/permiso_provider.dart';
 import '../providers/trabajador_provider.dart';
 import '../providers/colaborador_provider.dart';
+import '../providers/usuario_provider.dart';
 import '../providers/vacacion_provider.dart';
 import '../providers/licencia_provider.dart';
 import '../providers/horas_trabajadas_provider.dart';
@@ -48,6 +49,7 @@ class MainScaffold extends StatelessWidget {
     final permisoProvider = Provider.of<PermisoProvider>(context, listen: false);
     final trabajadorProvider = Provider.of<TrabajadorProvider>(context, listen: false);
     final colaboradorProvider = Provider.of<ColaboradorProvider>(context, listen: false);
+    final usuarioProvider = Provider.of<UsuarioProvider>(context, listen: false);
     final vacacionProvider = Provider.of<VacacionProvider>(context, listen: false);
     final licenciaProvider = Provider.of<LicenciaProvider>(context, listen: false);
     
@@ -104,6 +106,13 @@ class MainScaffold extends StatelessWidget {
         // Si hay ColaboradorProvider disponible, recargar colaboradores
         try {
           await colaboradorProvider.cargarColaboradores();
+        } catch (e) {
+          // Ignorar si el provider no está disponible
+        }
+        
+        // Si hay UsuarioProvider disponible, recargar usuarios
+        try {
+          await usuarioProvider.cargarUsuarios();
         } catch (e) {
           // Ignorar si el provider no está disponible
         }

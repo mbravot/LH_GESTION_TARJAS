@@ -137,20 +137,10 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
 
   // Escuchar cambios en el AuthProvider
   void _onAuthChanged() {
-    
+    // Solo limpiar datos, no cargar automáticamente
     if (_authProvider?.userData != null) {
-      final currentSucursalId = _authProvider!.userData!['id_sucursal']?.toString();
-      final now = DateTime.now();
-      
-      // Verificar si realmente cambió la sucursal y ha pasado suficiente tiempo
-      if (currentSucursalId != _lastSucursalId && 
-          (_lastLoadTime == null || now.difference(_lastLoadTime!) > _minInterval)) {
-        _lastSucursalId = currentSucursalId;
-        _lastLoadTime = now;
-        _checkAndUpdateSucursal();
-      } else {
-      }
-    } else {
+      _tarjas = [];
+      notifyListeners();
     }
   }
 
@@ -205,6 +195,12 @@ class TarjaProvider extends ChangeNotifier with SessionHandlerMixin {
     if (_idSucursal == null) {
       _error = 'No se ha especificado una sucursal';
       notifyListeners();
+      return;
+    }
+
+    // Si ya hay datos, no recargar
+    if (_tarjas.isNotEmpty && !_isLoading) {
+      print('TarjaProvider: Tarjas ya cargadas, saltando carga...');
       return;
     }
 

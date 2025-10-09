@@ -187,8 +187,10 @@ class _RevisionTarjasScreenState extends State<RevisionTarjasScreen> {
       // Escuchar cambios del TarjaProvider para limpiar cache cuando sea necesario
       _tarjaProvider!.addListener(_onTarjaProviderChanged);
       
-      // Cargar tarjas sin precargar rendimientos para mejor rendimiento
-      _tarjaProvider!.cargarTarjas();
+      // Cargar datos cuando el usuario navegue a la pantalla
+      if (_tarjaProvider!.tarjas.isEmpty) {
+        _tarjaProvider!.cargarTarjas();
+      }
     });
   }
 

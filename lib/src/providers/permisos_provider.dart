@@ -7,6 +7,7 @@ class PermisosProvider with ChangeNotifier {
   Map<String, bool> _permisosCache = {};
   bool _isLoading = false;
   String? _error;
+  bool _permisosCargados = false; // Flag para saber si ya se intentó cargar
 
   List<Map<String, dynamic>> get permisos => _permisos;
   bool get isLoading => _isLoading;
@@ -16,6 +17,7 @@ class PermisosProvider with ChangeNotifier {
   Future<void> cargarPermisos() async {
     _isLoading = true;
     _error = null;
+    _permisosCargados = true; // Marcar que ya se intentó cargar
     notifyListeners();
 
     try {
@@ -54,9 +56,14 @@ class PermisosProvider with ChangeNotifier {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         cargarPermisos();
       });
-      // Durante el hot reload, asumir que el usuario tiene permisos temporalmente
-      // para evitar que los elementos del menú desaparezcan
-      // Los permisos se validarán correctamente una vez que se carguen
+      
+      // Si ya se intentó cargar permisos y no hay resultados, el usuario no tiene permisos
+      if (_permisosCargados) {
+        return false;
+      }
+      
+      // Si aún no se han cargado los permisos, asumir que SÍ tiene permisos
+      // para usuarios que realmente los tienen (como migue)
       return true;
     }
     

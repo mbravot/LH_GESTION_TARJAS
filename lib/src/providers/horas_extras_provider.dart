@@ -48,19 +48,10 @@ class HorasExtrasProvider extends ChangeNotifier {
 
   // Método para manejar cambios de sucursal
   void _onSucursalChanged() {
-    
+    // Solo limpiar datos, no cargar automáticamente
     if (_authProvider != null) {
-      final currentSucursalId = _authProvider!.userData?['id_sucursal']?.toString();
-      final now = DateTime.now();
-      
-      // Verificar si realmente cambió la sucursal y ha pasado suficiente tiempo
-      if (currentSucursalId != _lastSucursalId && 
-          (_lastLoadTime == null || now.difference(_lastLoadTime!) > _minInterval)) {
-        _lastSucursalId = currentSucursalId;
-        _lastLoadTime = now;
-        cargarRendimientos();
-      } else {
-      }
+      _rendimientos = [];
+      notifyListeners();
     }
   }
 
@@ -74,6 +65,12 @@ class HorasExtrasProvider extends ChangeNotifier {
 
   // Método para cargar rendimientos
   Future<void> cargarRendimientos() async {
+    // Si ya hay datos, no recargar
+    if (_rendimientos.isNotEmpty && !_isLoading) {
+      print('HorasExtrasProvider: Rendimientos ya cargados, saltando carga...');
+      return;
+    }
+
     _setLoading(true);
     _error = null;
     

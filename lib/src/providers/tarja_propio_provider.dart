@@ -302,7 +302,10 @@ class TarjaPropioProvider extends ChangeNotifier {
 
   void _onAuthChanged() {
     if (_authProvider.isAuthenticated) {
-      cargarTarjasPropios();
+      // Solo limpiar datos, no cargar automáticamente
+      _tarjasPropios = [];
+      _resumenColaboradores = [];
+      notifyListeners();
     } else {
       _clearData();
     }
@@ -318,6 +321,11 @@ class TarjaPropioProvider extends ChangeNotifier {
 
   Future<void> cargarTarjasPropios() async {
     if (_isLoading) return;
+    
+    // Si ya hay datos, no recargar
+    if (_tarjasPropios.isNotEmpty && !_isLoading) {
+      return;
+    }
     
     _isLoading = true;
     _error = null;

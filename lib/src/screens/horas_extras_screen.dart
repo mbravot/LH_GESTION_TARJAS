@@ -57,11 +57,13 @@ class _HorasExtrasScreenState extends State<HorasExtrasScreen> {
     
     provider.setAuthProvider(authProvider);
     
-    // Usar Future.delayed para evitar el error de setState durante build
-    Future.delayed(Duration.zero, () async {
+    // Cargar datos cuando el usuario navegue a la pantalla
+    if (provider.rendimientos.isEmpty) {
       await provider.cargarRendimientos();
+    }
+    if (provider.bonos.isEmpty) {
       await provider.cargarBonos();
-    });
+    }
   }
 
   Future<void> _refrescarDatos() async {

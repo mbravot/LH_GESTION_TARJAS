@@ -5,6 +5,7 @@ import '../providers/horas_trabajadas_provider.dart';
 import '../providers/horas_extras_provider.dart';
 import '../providers/colaborador_provider.dart';
 import '../providers/tarja_provider.dart';
+import '../providers/usuario_provider.dart';
 import '../theme/app_theme.dart';
 // import '../widgets/main_scaffold.dart'; // No usar MainScaffold para evitar duplicación de AppBar
 
@@ -29,6 +30,7 @@ class _IndicadoresScreenState extends State<IndicadoresScreen> {
     super.didChangeDependencies();
     // No cargar datos automáticamente para evitar setState durante build
     // Los datos se cargarán cuando el usuario navegue a esta pantalla
+    _cargarIndicadores();
   }
 
   Future<void> _cargarIndicadores() async {
@@ -42,14 +44,30 @@ class _IndicadoresScreenState extends State<IndicadoresScreen> {
       final horasExtrasProvider = context.read<HorasExtrasProvider>();
       final colaboradorProvider = context.read<ColaboradorProvider>();
       final tarjaProvider = context.read<TarjaProvider>();
+      final usuarioProvider = context.read<UsuarioProvider>();
 
-      // Cargar datos de todos los providers
-      await Future.wait([
-        horasTrabajadasProvider.cargarHorasTrabajadas(),
-        horasExtrasProvider.cargarRendimientos(),
-        colaboradorProvider.cargarColaboradores(),
-        tarjaProvider.cargarTarjas(),
-      ]);
+      // Cargar datos solo si no están cargados
+      final futures = <Future>[];
+      
+      if (horasTrabajadasProvider.horasTrabajadas.isEmpty) {
+        futures.add(horasTrabajadasProvider.cargarHorasTrabajadas());
+      }
+      if (horasExtrasProvider.rendimientos.isEmpty) {
+        futures.add(horasExtrasProvider.cargarRendimientos());
+      }
+      if (colaboradorProvider.colaboradores.isEmpty) {
+        futures.add(colaboradorProvider.cargarColaboradores());
+      }
+      if (tarjaProvider.tarjas.isEmpty) {
+        futures.add(tarjaProvider.cargarTarjas());
+      }
+      if (usuarioProvider.usuarios.isEmpty) {
+        futures.add(usuarioProvider.cargarUsuarios());
+      }
+
+      if (futures.isNotEmpty) {
+        await Future.wait(futures);
+      }
 
       // Calcular indicadores
       _calcularIndicadores(
@@ -57,6 +75,7 @@ class _IndicadoresScreenState extends State<IndicadoresScreen> {
         horasExtrasProvider,
         colaboradorProvider,
         tarjaProvider,
+        usuarioProvider,
       );
 
       setState(() {
@@ -82,6 +101,7 @@ class _IndicadoresScreenState extends State<IndicadoresScreen> {
     HorasExtrasProvider horasExtrasProvider,
     ColaboradorProvider colaboradorProvider,
     TarjaProvider tarjaProvider,
+    UsuarioProvider usuarioProvider,
   ) {
     // 1. Horas trabajadas sobre lo esperado
     final horasTrabajadas = horasTrabajadasProvider.horasTrabajadas;
@@ -140,6 +160,23 @@ class _IndicadoresScreenState extends State<IndicadoresScreen> {
         ? (colaboradoresConSueldoBase / colaboradores.length) * 100
         : 0.0;
 
+    // 7. Usuarios activos vs inactivos
+    final usuarios = usuarioProvider.usuarios;
+    final usuariosActivos = usuarios.where(
+      (u) => u.idEstado == 1,
+    ).length;
+    final usuariosInactivos = usuarios.where(
+      (u) => u.idEstado == 2,
+    ).length;
+    final porcentajeUsuariosActivos = usuarios.isNotEmpty
+        ? (usuariosActivos / usuarios.length) * 100
+        : 0.0;
+
+    // 8. Usuarios por rol
+    final usuariosAdmin = usuarios.where((u) => u.idRol == 1).length;
+    final usuariosSupervisor = usuarios.where((u) => u.idRol == 2).length;
+    final usuariosOperador = usuarios.where((u) => u.idRol == 3).length;
+
     _indicadores = {
       'horasTrabajadas': {
         'total': totalHorasTrabajadas,
@@ -170,6 +207,15 @@ class _IndicadoresScreenState extends State<IndicadoresScreen> {
       'rendimiento': {
         'promedio': promedioRendimiento,
         'totalRendimientos': tarjasConRendimiento,
+      },
+      'usuarios': {
+        'total': usuarios.length,
+        'activos': usuariosActivos,
+        'inactivos': usuariosInactivos,
+        'porcentajeActivos': porcentajeUsuariosActivos,
+        'admin': usuariosAdmin,
+        'supervisor': usuariosSupervisor,
+        'operador': usuariosOperador,
       },
     };
   }
@@ -265,6 +311,14 @@ class _IndicadoresScreenState extends State<IndicadoresScreen> {
           Icons.people,
           Colors.blue,
           'Estado de colaboradores',
+        ),
+        _buildIndicadorCard(
+          'Usuarios Activos',
+          '${_indicadores['usuarios']['porcentajeActivos'].toStringAsFixed(1)}%',
+          '${_indicadores['usuarios']['activos']} de ${_indicadores['usuarios']['total']} usuarios',
+          Icons.person,
+          Colors.green,
+          'Estado de usuarios',
         ),
         _buildIndicadorCard(
           'Tarjas Aprobadas',
@@ -419,6 +473,20 @@ class _IndicadoresScreenState extends State<IndicadoresScreen> {
             'Colaboradores activos: ${_indicadores['colaboradores']['activos']} (${_indicadores['colaboradores']['porcentajeActivos'].toStringAsFixed(1)}%)',
             'Colaboradores inactivos: ${_indicadores['colaboradores']['inactivos']}',
             'Con sueldo base asignado: ${_indicadores['colaboradores']['conSueldoBase']} (${_indicadores['colaboradores']['porcentajeConSueldoBase'].toStringAsFixed(1)}%)',
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildDetalleCategoria(
+          'Gestión de Usuarios',
+          Icons.person,
+          Colors.blue,
+          [
+            'Total de usuarios: ${_indicadores['usuarios']['total']}',
+            'Usuarios activos: ${_indicadores['usuarios']['activos']} (${_indicadores['usuarios']['porcentajeActivos'].toStringAsFixed(1)}%)',
+            'Usuarios inactivos: ${_indicadores['usuarios']['inactivos']}',
+            'Administradores: ${_indicadores['usuarios']['admin']}',
+            'Supervisores: ${_indicadores['usuarios']['supervisor']}',
+            'Operadores: ${_indicadores['usuarios']['operador']}',
           ],
         ),
         const SizedBox(height: 16),

@@ -47,6 +47,11 @@ class ContratistaProvider extends ChangeNotifier {
 
   // Métodos para cargar datos
   Future<void> cargarContratistas() async {
+    // Si ya hay datos, no recargar
+    if (_contratistas.isNotEmpty && !_isLoading) {
+      return;
+    }
+
     _setLoading(true);
     try {
       final response = await ApiService.obtenerContratistas();
@@ -236,9 +241,10 @@ class ContratistaProvider extends ChangeNotifier {
   }
 
   void _onSucursalChanged() {
-    // Recargar datos cuando cambie la sucursal
-    cargarContratistas();
-    cargarOpciones();
+    // Solo limpiar datos, no cargar automáticamente
+    _contratistas = [];
+    _contratistasFiltradas = [];
+    notifyListeners();
   }
 
   void limpiarError() {

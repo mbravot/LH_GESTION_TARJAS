@@ -17,6 +17,7 @@ import '../providers/trabajador_provider.dart';
 import '../providers/contratista_provider.dart';
 import '../providers/sueldo_base_provider.dart';
 import '../providers/tarja_propio_provider.dart';
+import '../providers/usuario_provider.dart';
 import '../theme/app_theme.dart';
 import '../screens/revision_tarjas_screen.dart';
 import '../screens/aprobacion_tarjas_screen.dart';
@@ -32,6 +33,7 @@ import '../screens/trabajador_screen.dart';
 import '../screens/contratista_screen.dart';
 import '../screens/sueldo_base_screen.dart';
 import '../screens/tarja_propio_screen.dart';
+import '../screens/usuario_screen.dart';
 import '../screens/indicadores_screen.dart';
 import '../screens/ejemplo_permisos_screen.dart';
 import '../screens/info_screen.dart';
@@ -71,6 +73,7 @@ class _MasterLayoutState extends State<MasterLayout>
     {'key': 'trabajadores', 'screen': TrabajadorScreen(), 'title': 'Trabajadores'},
     {'key': 'contratistas', 'screen': ContratistaScreen(), 'title': 'Contratistas'},
     {'key': 'sueldos_base', 'screen': SueldoBaseScreen(), 'title': 'Sueldos Base'},
+    {'key': 'usuarios', 'screen': UsuarioScreen(), 'title': 'Usuarios'},
     {'key': 'tarjas_propios', 'screen': TarjaPropioScreen(), 'title': 'Tarjas Propios'},
     {'key': 'ejemplo_permisos', 'screen': EjemploPermisosScreen(), 'title': 'Ejemplo de Permisos'},
     {'key': 'info', 'screen': const InfoScreen(), 'title': 'Acerca de'},
@@ -140,6 +143,7 @@ class _MasterLayoutState extends State<MasterLayout>
       // Obtener todos los providers
       final tarjaProvider = Provider.of<TarjaProvider>(context, listen: false);
       final colaboradorProvider = Provider.of<ColaboradorProvider>(context, listen: false);
+      final usuarioProvider = Provider.of<UsuarioProvider>(context, listen: false);
       final vacacionProvider = Provider.of<VacacionProvider>(context, listen: false);
       final licenciaProvider = Provider.of<LicenciaProvider>(context, listen: false);
       final permisoProvider = Provider.of<PermisoProvider>(context, listen: false);
@@ -159,6 +163,7 @@ class _MasterLayoutState extends State<MasterLayout>
       await Future.wait([
         tarjaProvider.cargarTarjas(),
         colaboradorProvider.cargarColaboradores(),
+        usuarioProvider.cargarUsuarios(),
         vacacionProvider.cargarVacaciones(),
         licenciaProvider.cargarLicencias(),
         permisoProvider.cargarPermisos(),
@@ -442,6 +447,13 @@ class _MasterLayoutState extends State<MasterLayout>
                                   'Sistema de Permisos',
                                   [
                                     _buildMenuItem(
+                                      icon: Icons.admin_panel_settings,
+                                      title: 'Usuarios',
+                                      onTap: () => _navigateToScreen('usuarios'),
+                                      screenKey: 'usuarios',
+                                      permissionId: 6, // Solo usuarios con permiso Full
+                                    ),
+                                    _buildMenuItem(
                                       icon: Icons.security,
                                       title: 'Ejemplo de Permisos',
                                       onTap: () => _navigateToScreen('ejemplo_permisos'),
@@ -564,6 +576,7 @@ class _MasterLayoutState extends State<MasterLayout>
                             _screens[_currentScreenIndex]['key'] == 'horas_extras' ||
                             _screens[_currentScreenIndex]['key'] == 'horas_extras_otroscecos' ||
                             _screens[_currentScreenIndex]['key'] == 'colaboradores' ||
+                            _screens[_currentScreenIndex]['key'] == 'usuarios' ||
                             _screens[_currentScreenIndex]['key'] == 'licencias' ||
                             _screens[_currentScreenIndex]['key'] == 'vacaciones' ||
                             _screens[_currentScreenIndex]['key'] == 'permisos' ||
@@ -627,6 +640,20 @@ class _MasterLayoutState extends State<MasterLayout>
   Widget _buildMenuSection(String title, List<Widget> children) {
     final sidebarProvider = Provider.of<SidebarProvider>(context);
     
+    // Filtrar elementos que no tienen permisos
+    final filteredChildren = children.where((child) {
+      // Si el widget es un SizedBox.shrink(), significa que no tiene permisos
+      if (child is SizedBox && child.width == 0 && child.height == 0) {
+        return false;
+      }
+      return true;
+    }).toList();
+    
+    // Si no hay elementos visibles, no mostrar la sección
+    if (filteredChildren.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -644,7 +671,7 @@ class _MasterLayoutState extends State<MasterLayout>
             ),
           ),
         ],
-        ...children,
+        ...filteredChildren,
         const SizedBox(height: 8),
       ],
     );
@@ -660,10 +687,13 @@ class _MasterLayoutState extends State<MasterLayout>
   }) {
     final sidebarProvider = Provider.of<SidebarProvider>(context);
     
-    // Verificar permisos si se especifica
+    // Verificar permisos si se especifica - esto debe hacerse ANTES de crear cualquier widget
     if (permissionId != null) {
       final permisosProvider = Provider.of<PermisosProvider>(context, listen: false);
-      if (!permisosProvider.tienePermisoPorId(permissionId)) {
+      final tienePermiso = permisosProvider.tienePermisoPorId(permissionId);
+      print('MasterLayout: Verificando permiso $permissionId para "$title": $tienePermiso');
+      if (!tienePermiso) {
+        print('MasterLayout: Ocultando elemento "$title" por falta de permisos');
         return const SizedBox.shrink();
       }
     }
@@ -722,6 +752,16 @@ class _MasterLayoutState extends State<MasterLayout>
         );
       },
     );
+  }
+
+  // Método auxiliar para verificar si un elemento del menú debe mostrarse
+  bool _debeMostrarElemento(int? permissionId) {
+    if (permissionId == null) {
+      return true; // Sin restricción de permisos
+    }
+    
+    final permisosProvider = Provider.of<PermisosProvider>(context, listen: false);
+    return permisosProvider.tienePermisoPorId(permissionId);
   }
 
   void _confirmarCerrarSesion(BuildContext context, AuthProvider authProvider) {

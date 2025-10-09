@@ -100,30 +100,41 @@ class ColaboradorProvider extends ChangeNotifier {
 
   // Escuchar cambios en el AuthProvider
   void _onAuthChanged() {
-    // DESACTIVAR COMPLETAMENTE el listener para evitar bucle infinito
-    return;
+    // Solo limpiar datos, no cargar automáticamente
+    if (_authProvider?.userData != null) {
+      _colaboradores = [];
+      notifyListeners();
+    }
   }
 
   // Cargar colaboradores
   Future<void> cargarColaboradores() async {
-    // PROTECCIÓN SIMPLE: Si ya está cargando, no hacer nada
+    // Si ya hay datos y no están expirados, no recargar
+    if (_colaboradores.isNotEmpty && _lastLoadTime != null) {
+      final now = DateTime.now();
+      if (now.difference(_lastLoadTime!) < const Duration(minutes: 5)) {
+        return;
+      }
+    }
+    
+    // PROTECCIÓN: Si ya está cargando, no hacer nada
     if (_isLoading) {
       return;
     }
     
-    // PROTECCIÓN SIMPLE: Si ya se cargó recientemente, no recargar
-    final now = DateTime.now();
-    if (_lastLoadTime != null && now.difference(_lastLoadTime!) < const Duration(seconds: 5)) {
-      return;
-    }
-    
-    _lastLoadTime = now;
+    _lastLoadTime = DateTime.now();
     return _loadColaboradores();
   }
 
   Future<void> _loadColaboradores() async {
     // Evitar cargas múltiples simultáneas
     if (_isLoading) {
+      return;
+    }
+
+    // Si ya hay datos, no recargar
+    if (_colaboradores.isNotEmpty) {
+      print('ColaboradorProvider: Colaboradores ya cargados, saltando carga...');
       return;
     }
     

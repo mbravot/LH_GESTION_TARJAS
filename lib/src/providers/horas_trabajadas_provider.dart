@@ -50,19 +50,10 @@ class HorasTrabajadasProvider extends ChangeNotifier {
 
   // Método para manejar cambios de sucursal
   void _onSucursalChanged() {
-    
+    // Solo limpiar datos, no cargar automáticamente
     if (_authProvider != null) {
-      final currentSucursalId = _authProvider!.userData?['id_sucursal']?.toString();
-      final now = DateTime.now();
-      
-      // Verificar si realmente cambió la sucursal y ha pasado suficiente tiempo
-      if (currentSucursalId != _lastSucursalId && 
-          (_lastLoadTime == null || now.difference(_lastLoadTime!) > _minInterval)) {
-        _lastSucursalId = currentSucursalId;
-        _lastLoadTime = now;
-        cargarHorasTrabajadas();
-      } else {
-      }
+      _horasTrabajadas = [];
+      notifyListeners();
     }
   }
 
@@ -76,6 +67,12 @@ class HorasTrabajadasProvider extends ChangeNotifier {
 
   // Método para cargar horas trabajadas
   Future<void> cargarHorasTrabajadas() async {
+    // Si ya hay datos, no recargar
+    if (_horasTrabajadas.isNotEmpty && !_isLoading) {
+      print('HorasTrabajadasProvider: Horas ya cargadas, saltando carga...');
+      return;
+    }
+
     _setLoading(true);
     _error = null;
     

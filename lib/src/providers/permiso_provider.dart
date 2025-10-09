@@ -46,7 +46,9 @@ class PermisoProvider extends ChangeNotifier {
   // Método para manejar cambios de sucursal
   void _onSucursalChanged() {
     if (_authProvider != null) {
-      cargarPermisos();
+      // Solo limpiar datos, no cargar automáticamente
+      _permisos = [];
+      notifyListeners();
     }
   }
 
@@ -69,6 +71,11 @@ class PermisoProvider extends ChangeNotifier {
 
   // Método para cargar permisos
   Future<void> cargarPermisos() async {
+    // Si ya hay datos, no recargar
+    if (_permisos.isNotEmpty && !_isLoading) {
+      return;
+    }
+
     _setLoading(true);
     _error = null;
     

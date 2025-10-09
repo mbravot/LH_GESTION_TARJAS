@@ -25,6 +25,7 @@ class _SueldoBaseScreenState extends State<SueldoBaseScreen> {
   @override
   void initState() {
     super.initState();
+    // Cargar datos cuando el usuario navegue a la pantalla
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _cargarDatos();
     });

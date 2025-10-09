@@ -119,9 +119,10 @@ class VacacionProvider extends ChangeNotifier {
 
   // Escuchar cambios en el AuthProvider
   void _onAuthChanged() {
-    // Recargar vacaciones cuando cambie la sucursal
+    // Solo limpiar datos, no cargar automáticamente
     if (_authProvider?.userData != null) {
-      cargarVacaciones();
+      _vacaciones = [];
+      notifyListeners();
     }
   }
 
@@ -130,6 +131,11 @@ class VacacionProvider extends ChangeNotifier {
     if (_authProvider == null) {
       _error = 'AuthProvider no configurado';
       notifyListeners();
+      return;
+    }
+
+    // Si ya hay datos, no recargar
+    if (_vacaciones.isNotEmpty && !_isLoading) {
       return;
     }
 

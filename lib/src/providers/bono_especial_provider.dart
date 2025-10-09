@@ -102,6 +102,11 @@ class BonoEspecialProvider extends ChangeNotifier {
 
   // Métodos para cargar datos
   Future<void> cargarBonosEspeciales() async {
+    // Si ya hay datos, no recargar
+    if (_bonosEspeciales.isNotEmpty && !_isLoading) {
+      return;
+    }
+
     _setLoading(true);
     try {
       final response = await ApiService.obtenerBonosEspeciales(
@@ -289,9 +294,10 @@ class BonoEspecialProvider extends ChangeNotifier {
   }
 
   void _onSucursalChanged() {
-    // Recargar datos cuando cambie la sucursal
-    cargarBonosEspeciales();
-    cargarResumenes();
+    // Solo limpiar datos, no cargar automáticamente
+    _bonosEspeciales = [];
+    _resumenes = [];
+    notifyListeners();
   }
 
   void limpiarError() {

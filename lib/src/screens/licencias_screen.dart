@@ -48,9 +48,13 @@ class _LicenciasScreenState extends State<LicenciasScreen> {
       licenciaProvider.setAuthProvider(authProvider);
       colaboradorProvider.configureAuthProvider(authProvider);
       
-      // Cargar datos
-      licenciaProvider.cargarLicencias();
-      colaboradorProvider.cargarColaboradores();
+      // Cargar datos cuando el usuario navegue a la pantalla
+      if (licenciaProvider.licencias.isEmpty) {
+        licenciaProvider.cargarLicencias();
+      }
+      if (colaboradorProvider.colaboradores.isEmpty) {
+        colaboradorProvider.cargarColaboradores();
+      }
     });
   }
 
