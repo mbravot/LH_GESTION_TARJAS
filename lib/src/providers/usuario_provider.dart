@@ -290,8 +290,10 @@ class UsuarioProvider extends ChangeNotifier with SessionHandlerMixin {
   }
 
   void setFiltroEstado(String value) {
+    print('UsuarioProvider: Estableciendo filtro de estado: $value');
     _filtroEstado = value;
     notifyListeners();
+    print('UsuarioProvider: Filtro establecido. Total usuarios filtrados: ${usuariosFiltrados.length}');
   }
 
   void limpiarFiltros() {

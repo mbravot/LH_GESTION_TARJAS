@@ -74,6 +74,7 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
   }
 
   void _aplicarFiltro(String filtro) {
+    print('UsuarioScreen: Aplicando filtro: $filtro');
     setState(() {
       _filtroActivo = filtro;
     });
@@ -81,15 +82,19 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
     final usuarioProvider = Provider.of<UsuarioProvider>(context, listen: false);
     switch (filtro) {
       case 'activos':
+        print('UsuarioScreen: Filtrando usuarios activos');
         usuarioProvider.setFiltroEstado('1');
         break;
       case 'inactivos':
+        print('UsuarioScreen: Filtrando usuarios inactivos');
         usuarioProvider.setFiltroEstado('2');
         break;
       default: // 'todos'
+        print('UsuarioScreen: Mostrando todos los usuarios');
         usuarioProvider.setFiltroEstado('todos');
         break;
     }
+    print('UsuarioScreen: Filtro aplicado. Total usuarios filtrados: ${usuarioProvider.usuariosFiltrados.length}');
   }
 
   String _formatearFechaCreacion(String? fechaStr) {
