@@ -95,6 +95,9 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
         break;
     }
     print('UsuarioScreen: Filtro aplicado. Total usuarios filtrados: ${usuarioProvider.usuariosFiltrados.length}');
+    
+    // Forzar actualización de la UI
+    setState(() {});
   }
 
   String _formatearFechaCreacion(String? fechaStr) {
