@@ -395,7 +395,7 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
               totalUsuarios.toString(),
               Icons.people,
               Colors.blue,
-              filtro: 'todos',
+              'todos',
             ),
           ),
           const SizedBox(width: 12),
@@ -405,7 +405,7 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
               usuariosActivos.toString(),
               Icons.check_circle,
               Colors.green,
-              filtro: 'activos',
+              'activos',
             ),
           ),
           const SizedBox(width: 12),
@@ -415,7 +415,7 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
               usuariosInactivos.toString(),
               Icons.cancel,
               Colors.red,
-              filtro: 'inactivos',
+              'inactivos',
             ),
           ),
         ],
@@ -425,11 +425,11 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
     );
   }
 
-  Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color, {String? filtro}) {
-    final isActivo = filtro != null && _filtroActivo == filtro;
+  Widget _buildTarjetaEstadistica(String titulo, String valor, IconData icono, Color color, String filtro) {
+    final isActivo = _filtroActivo == filtro;
     
     return GestureDetector(
-      onTap: filtro != null ? () => _aplicarFiltro(filtro) : null,
+      onTap: () => _aplicarFiltro(filtro),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -492,12 +492,11 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
                 ],
               ),
             ),
-            if (filtro != null)
-              Icon(
-                Icons.filter_list,
-                color: isActivo ? color : Colors.grey[400],
-                size: 16,
-              ),
+            Icon(
+              Icons.filter_list,
+              color: isActivo ? color : Colors.grey[400],
+              size: 16,
+            ),
           ],
         ),
       ),
