@@ -1016,8 +1016,9 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
 
   // Método para verificar si hay filtros activos
   bool _tieneFiltrosActivos(UsuarioProvider usuarioProvider) {
+    // Solo considerar filtros avanzados (sucursal y búsqueda), no los indicadores básicos
     return usuarioProvider.filtroSucursal.isNotEmpty || 
-           usuarioProvider.filtroEstado != 'todos';
+           usuarioProvider.filtroBusqueda.isNotEmpty;
   }
 
   void _confirmarDesactivarUsuario(Usuario usuario) {
