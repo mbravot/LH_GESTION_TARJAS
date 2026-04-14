@@ -28,7 +28,8 @@
       "Bash(touch api/.gitkeep components/layout/.gitkeep components/shared/.gitkeep pages/.gitkeep hooks/.gitkeep)",
       "Bash(ls -la .env*)",
       "Bash(curl -s http://localhost:5173/login)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(npx shadcn@latest add separator tooltip scroll-area avatar dropdown-menu -y)"
     ]
   }
 }
