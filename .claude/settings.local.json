@@ -30,7 +30,8 @@
       "Bash(curl -s http://localhost:5173/login)",
       "Bash(npm run:*)",
       "Bash(npx shadcn@latest add separator tooltip scroll-area avatar dropdown-menu -y)",
-      "Bash(npx shadcn@latest add table badge dialog select -y)"
+      "Bash(npx shadcn@latest add table badge dialog select -y)",
+      "Bash(npx shadcn@latest add textarea -y)"
     ]
   }
 }

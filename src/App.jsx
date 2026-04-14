@@ -3,6 +3,8 @@ import { ProtectedRoute } from '@/components/shared/ProtectedRoute'
 import { AppLayout } from '@/components/layout/AppLayout'
 import LoginPage from '@/pages/auth/LoginPage'
 import DashboardPage from '@/pages/dashboard/DashboardPage'
+import RevisionPage from '@/pages/revision/RevisionPage'
+import RevisionDetalle from '@/pages/revision/RevisionDetalle'
 
 const App = () => {
   return (
@@ -15,8 +17,9 @@ const App = () => {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
 
-            {/* Flujo principal - placeholder routes */}
-            <Route path="/revision" element={<PlaceholderPage title="Revision de Tarjas" />} />
+            {/* Flujo principal */}
+            <Route path="/revision" element={<RevisionPage />} />
+            <Route path="/revision/:id" element={<RevisionDetalle />} />
             <Route path="/aprobacion" element={<PlaceholderPage title="Aprobacion de Tarjas" />} />
 
             {/* Maestros */}
