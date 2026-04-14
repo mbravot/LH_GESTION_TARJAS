@@ -20,7 +20,13 @@
       "Bash(lsof -ti:5174)",
       "Bash(xargs kill:*)",
       "Bash(tasklist)",
-      "Bash(npx shadcn@latest init -d)"
+      "Bash(npx shadcn@latest init -d)",
+      "Bash(npx shadcn@latest add button -y)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174)",
+      "Bash(curl -s http://localhost:5174)",
+      "Bash(mkdir -p api components/layout components/shared pages hooks store)",
+      "Bash(touch api/.gitkeep components/layout/.gitkeep components/shared/.gitkeep pages/.gitkeep hooks/.gitkeep)",
+      "Bash(ls -la .env*)"
     ]
   }
 }
