@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(npx shadcn@latest --help)",
+      "Read(//c/Users/migue/OneDrive/Documentos/Mis_Proyectos/LH_Tarja/**)",
+      "Bash(npm create:*)",
+      "Bash(cp -r lh-temp/* LH_Gestion_Tarjas/)",
+      "Bash(cp lh-temp/.gitignore LH_Gestion_Tarjas/)",
+      "Bash(rm -rf lh-temp)",
+      "Bash(npm install:*)",
+      "Bash(npx vite:*)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(kill %1)",
+      "Bash(wait)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); const deps=Object.keys\\({...p.dependencies,...p.devDependencies}\\); ['react-router-dom','@tanstack/react-query','zustand','axios','react-hook-form','@hookform/resolvers','zod','date-fns','sonner','tailwindcss','@tailwindcss/vite'].forEach\\(d=>{if\\(!deps.includes\\(d\\)\\)console.log\\('MISSING:',d\\);else console.log\\('OK:',d\\)}\\)\")",
+      "Bash(disown)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
+      "Bash(npx kill-port:*)",
+      "Bash(lsof -ti:5174)",
+      "Bash(xargs kill:*)",
+      "Bash(tasklist)",
+      "Bash(npx shadcn@latest init -d)"
+    ]
+  }
+}
