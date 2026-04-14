@@ -5,6 +5,8 @@ import LoginPage from '@/pages/auth/LoginPage'
 import DashboardPage from '@/pages/dashboard/DashboardPage'
 import RevisionPage from '@/pages/revision/RevisionPage'
 import RevisionDetalle from '@/pages/revision/RevisionDetalle'
+import AprobacionPage from '@/pages/aprobacion/AprobacionPage'
+import AprobacionDetalle from '@/pages/aprobacion/AprobacionDetalle'
 
 const App = () => {
   return (
@@ -20,7 +22,8 @@ const App = () => {
             {/* Flujo principal */}
             <Route path="/revision" element={<RevisionPage />} />
             <Route path="/revision/:id" element={<RevisionDetalle />} />
-            <Route path="/aprobacion" element={<PlaceholderPage title="Aprobacion de Tarjas" />} />
+            <Route path="/aprobacion" element={<AprobacionPage />} />
+            <Route path="/aprobacion/:id" element={<AprobacionDetalle />} />
 
             {/* Maestros */}
             <Route path="/maestros/colaboradores" element={<PlaceholderPage title="Colaboradores" />} />
